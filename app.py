@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 st.title("📦 Planograma 2.0")
-st.markdown("Carga tu base de datos en Excel para generar la vista interactiva del pasillo.")
+st.markdown("Carga tu base de datos en Excel (hoja MATRIZ) para generar la vista interactiva del pasillo.")
 st.markdown("---")
 
 # --- GENERADOR DEL PASILLO HTML COMPLETO ---
@@ -228,11 +228,17 @@ def generar_html_pasillo_interactivo(df):
     """
 
 # --- SECCIÓN DE CARGA ---
-archivo_excel = st.file_uploader("📥 Cargar Base de Datos del Planograma (Excel)", type=["xlsb"])
+archivo_excel = st.file_uploader("📥 Cargar Base de Datos del Planograma (Excel o XLSB)", type=["xlsx", "xls", "xlsb"])
 
 if archivo_excel is not None:
     try:
-        df = pd.read_excel(archivo_excel)
+        # Intentamos leer específicamente la hoja "MATRIZ"
+        try:
+            df = pd.read_excel(archivo_excel, sheet_name="MATRIZ", engine="pyxlsb" if archivo_excel.name.endswith(".xlsb") else None)
+        except Exception:
+            # Si no encuentra la hoja "MATRIZ", lee la primera hoja por defecto
+            df = pd.read_excel(archivo_excel, engine="pyxlsb" if archivo_excel.name.endswith(".xlsb") else None)
+            
         st.success(f"✅ Archivo cargado correctamente. Se encontraron {len(df)} registros.")
         
         st.markdown("### Vista Gráfica Interactiva")
