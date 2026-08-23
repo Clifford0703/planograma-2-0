@@ -13,14 +13,22 @@ st.title("📦 Planograma 2.0")
 st.markdown("Carga tu base de datos en Excel (hoja MATRIZ) para generar la vista interactiva del pasillo.")
 st.markdown("---")
 
-# --- LÓGICA DE COLORES DE LA MACRO VBA ---
-def obtener_color_estado_stock(estado, stock):
-    estado = str(estado).strip().upper()
+# --- FUNCIONES DE APOYO Y LIMPIEZA ---
+def safe_float(val, default=0.0):
+    """Convierte de forma segura cualquier valor a float, ignorando texto o símbolos."""
+    if pd.isna(val):
+        return default
     try:
-        stock_val = float(stock)
+        if isinstance(val, str):
+            val = val.replace('%', '').replace(',', '').strip()
+        return float(val)
     except (ValueError, TypeError):
-        stock_val = 0.0
+        return default
 
+def obtener_color_estado_stock(estado, stock_val):
+    """Aplica los colores según la lógica de la macro VBA."""
+    estado = str(estado).strip().upper()
+    
     if estado == "B":
         return "#FFC7CE", "#9C0006" # Bloqueado: Fondo rojo claro, texto rojo oscuro
     elif estado == "A":
@@ -84,8 +92,8 @@ def generar_html_pasillo_interactivo(df):
 
             cards_html = ""
             for it in items:
-                # Variables de la macro
-                pos = it.get("N° ORDEN", "-")
+                # Usamos N° para la posición gráfica (como se ve en la columna D de tu imagen)
+                pos = it.get("N°", "-")
                 if pd.isna(pos): pos = "-"
                 
                 cod_real = str(it.get("COD REAL", ""))
@@ -93,33 +101,35 @@ def generar_html_pasillo_interactivo(df):
                 nombre = str(it.get("Descripción", it.get("Nombre", "")))
                 marca = str(it.get("Marca", "S/M"))
                 estado = str(it.get("Estado", ""))
-                stock = it.get("Stock", 0)
-                cobertura = it.get("Cobertura", 0)
-                venta = it.get("Venta", 0)
-                participacion = it.get("% Part", 0)
                 top_ventas = str(it.get("TOPVENTAS", "")).strip().upper()
                 
                 caras_val = str(it.get("Caras", "1"))
                 caras = caras_val if caras_val.isdigit() and int(caras_val) > 0 else "1"
 
+                # Extracción segura de números
+                stock_val = safe_float(it.get("Stock", 0))
+                cob_val = safe_float(it.get("Cobertura", 0))
+                venta_val = safe_float(it.get("Venta", 0))
+                part_val = safe_float(it.get("% Part", 0))
+                
+                # Excel suele guardar los porcentajes como decimales (ej. 0.2124), si es mayor a 1 lo asumimos entero.
+                if part_val < 1:
+                    part_fmt = f"{part_val*100:.2f}%"
+                else:
+                    part_fmt = f"{part_val:.2f}%"
+
                 # Formateos lógicos (Reglas VBA)
-                bg_color, text_color = obtener_color_estado_stock(estado, stock)
+                bg_color, text_color = obtener_color_estado_stock(estado, stock_val)
                 
                 es_top = top_ventas == "TOP"
                 border_style = "border: 3px solid #FFC000;" if es_top else "border: 1px solid #7f7f7f;"
                 
-                try:
-                    cob_val = float(cobertura)
-                except:
-                    cob_val = 0.0
-                    
                 estilo_cobertura = "color: red; font-weight: bold;" if cob_val >= 30 else ""
                 
                 ean_corto = ean[-4:] if len(ean) >= 4 else ean
-                stock_fmt = f"{float(stock):.2f}" if pd.notna(stock) else "0.00"
+                stock_fmt = f"{stock_val:.2f}"
                 cob_fmt = f"{cob_val:.2f}"
-                venta_fmt = f"{float(venta):.2f}" if pd.notna(venta) else "0.00"
-                part_fmt = f"{float(participacion)*100:.2f}%" if pd.notna(participacion) else "0.00%"
+                venta_fmt = f"{venta_val:.2f}"
 
                 # Tooltip nativo simulando "AgregarNotaProducto" de VBA
                 tooltip_text = f"Descripción: {nombre}&#10;Código de barras: {ean}&#10;Venta: {venta_fmt}&#10;% Part: {part_fmt}&#10;TOPVENTAS: {top_ventas}"
@@ -300,23 +310,16 @@ if archivo_excel is not None:
     try:
         motor = "pyxlsb" if archivo_excel.name.endswith(".xlsb") else None
         
-        # Leemos exactamente el rango indicado: Desde la fila 6 (saltando 5) y las columnas C hasta AB
+        # Leemos el archivo exactamente desde C6 hasta AB
         try:
-            df = pd.read_excel(
-                archivo_excel, 
-                sheet_name="MATRIZ", 
-                skiprows=5,         # La fila 6 es el encabezado (índice 5 para Python)
-                usecols="C:AB",     # Solo leemos desde la C hasta la AB
-                engine=motor
-            )
+            df = pd.read_excel(archivo_excel, sheet_name="MATRIZ", skiprows=5, usecols="C:AB", engine=motor)
         except Exception:
-            # Respaldo por si no existe la hoja MATRIZ
             df = pd.read_excel(archivo_excel, skiprows=5, usecols="C:AB", engine=motor)
 
-        # Limpieza de los nombres de columnas (quita espacios invisibles)
+        # Limpieza de nombres de columnas (quita espacios invisibles)
         df.columns = [str(c).strip() for c in df.columns]
         
-        # Eliminar las filas vacías que puedan quedar debajo de la tabla
+        # Eliminar filas vacías debajo de la tabla
         if "Bandeja" in df.columns and "EAN" in df.columns:
             df = df.dropna(subset=["Bandeja", "EAN"], how="all")
 
@@ -327,6 +330,6 @@ if archivo_excel is not None:
         components.html(html_pasillo, height=850, scrolling=True)
         
     except Exception as e:
-        st.error(f"Error al leer el archivo Excel. Verifica que la tabla esté en C6: {e}")
+        st.error(f"Error general en el proceso. Revisa el formato de la tabla: {e}")
 else:
     st.info("👆 Por favor, sube tu Excel con la tabla maestra (hoja MATRIZ) para previsualizar el planograma.")
