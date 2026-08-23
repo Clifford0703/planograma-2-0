@@ -228,7 +228,7 @@ def generar_html_pasillo_interactivo(df):
     """
 
 # --- SECCIÓN DE CARGA ---
-archivo_excel = st.file_uploader("📥 Cargar Base de Datos del Planograma (Excel)", type=["xlsx", "xls"])
+archivo_excel = st.file_uploader("📥 Cargar Base de Datos del Planograma (Excel)", type=["xlsb"])
 
 if archivo_excel is not None:
     try:
