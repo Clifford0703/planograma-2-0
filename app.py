@@ -13,16 +13,51 @@ st.title("📦 Planograma 2.0")
 st.markdown("Carga tu base de datos en Excel (hoja MATRIZ) para generar la vista interactiva del pasillo.")
 st.markdown("---")
 
+# --- LÓGICA DE COLORES DE LA MACRO VBA ---
+def obtener_color_estado_stock(estado, stock):
+    estado = str(estado).strip().upper()
+    try:
+        stock_val = float(stock)
+    except (ValueError, TypeError):
+        stock_val = 0.0
+
+    if estado == "B":
+        return "#FFC7CE", "#9C0006" # Bloqueado: Fondo rojo claro, texto rojo oscuro
+    elif estado == "A":
+        if stock_val <= 0:
+            return "#F4B084", "#833C0C" # Activo sin stock: Naranja
+        elif stock_val <= 5:
+            return "#FFFF99", "#9C6500" # Activo stock bajo: Amarillo
+        else:
+            return "#C6EFCE", "#006100" # Activo stock ok: Verde claro
+    else:
+        return "#D9D9D9", "#000000" # Desconocido: Gris
+
 # --- GENERADOR DEL PASILLO HTML COMPLETO ---
 def generar_html_pasillo_interactivo(df):
-    modulos = {}
     
-    if "Marca" in df.columns:
-        todas_marcas = sorted(list(df["Marca"].dropna().unique()))
-    else:
-        todas_marcas = []
+    # 1. Preparar datos y replicar ordenamiento de la Macro
+    df = df.copy()
+    df['FilaOriginal'] = range(len(df))
+    df['TieneOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').notna()
+    df['NumOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').fillna(999999)
+    
+    # Extraer Módulo y Nivel para ordenar correctamente
+    bandeja_str = df.get('Bandeja', pd.Series(["1.1"]*len(df))).astype(str)
+    df[['Modulo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')
+    df['Modulo_Ord'] = pd.to_numeric(df['Modulo_Ord'], errors='coerce').fillna(1)
+    df['Nivel_Ord'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
 
-    # Agrupar por Módulo y Bandeja
+    # Ordenar: Módulo -> Nivel (Desc) -> TieneOrden (Primero los True) -> NumOrden -> FilaOriginal
+    df = df.sort_values(
+        by=['Modulo_Ord', 'Nivel_Ord', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
+        ascending=[True, False, False, True, True]
+    )
+
+    modulos = {}
+    todas_marcas = sorted(list(df["Marca"].dropna().unique())) if "Marca" in df.columns else []
+
+    # 2. Agrupar por Módulo y Bandeja
     for _, r in df.iterrows():
         b_str = str(r.get("Bandeja", "1.1")).strip()
         mod_id = f"Módulo {b_str.split('.')[0]}" if "." in b_str else "Módulo 1"
@@ -34,9 +69,11 @@ def generar_html_pasillo_interactivo(df):
 
         modulos[mod_id][b_str].append(r)
 
+    # 3. Construir HTML
     html_modulos = ""
     for mod_nombre, bandejas_dict in sorted(modulos.items()):
         mod_num = mod_nombre.replace("Módulo ", "").strip()
+        # El ordenamiento de las bandejas se maneja de mayor a menor (de arriba hacia abajo)
         bandejas_ordenadas = sorted(bandejas_dict.keys(), reverse=True)
         html_bandejas = ""
 
@@ -47,28 +84,57 @@ def generar_html_pasillo_interactivo(df):
 
             cards_html = ""
             for it in items:
-                pos = it.get("N°", "-")
+                # Variables de la macro
+                pos = it.get("N° ORDEN", "-")
+                if pd.isna(pos): pos = "-"
+                
+                cod_real = str(it.get("COD REAL", ""))
                 ean = str(it.get("EAN", ""))
-                nombre = str(it.get("Nombre", ""))
-                marca = str(it.get("Marca", ""))
+                nombre = str(it.get("Descripción", it.get("Nombre", "")))
+                marca = str(it.get("Marca", "S/M"))
+                estado = str(it.get("Estado", ""))
+                stock = it.get("Stock", 0)
+                cobertura = it.get("Cobertura", 0)
+                venta = it.get("Venta", 0)
+                participacion = it.get("% Part", 0)
+                top_ventas = str(it.get("TOPVENTAS", "")).strip().upper()
+                
                 caras_val = str(it.get("Caras", "1"))
                 caras = caras_val if caras_val.isdigit() and int(caras_val) > 0 else "1"
-                cap = it.get("Total_Unidades", "-") 
-                if pd.isna(cap): cap = "-"
 
+                # Formateos lógicos (Reglas VBA)
+                bg_color, text_color = obtener_color_estado_stock(estado, stock)
+                
+                es_top = top_ventas == "TOP"
+                border_style = "border: 3px solid #FFC000;" if es_top else "border: 1px solid #7f7f7f;"
+                
+                try:
+                    cob_val = float(cobertura)
+                except:
+                    cob_val = 0.0
+                    
+                estilo_cobertura = "color: red; font-weight: bold;" if cob_val >= 30 else ""
+                
                 ean_corto = ean[-4:] if len(ean) >= 4 else ean
+                stock_fmt = f"{float(stock):.2f}" if pd.notna(stock) else "0.00"
+                cob_fmt = f"{cob_val:.2f}"
+                venta_fmt = f"{float(venta):.2f}" if pd.notna(venta) else "0.00"
+                part_fmt = f"{float(participacion)*100:.2f}%" if pd.notna(participacion) else "0.00%"
+
+                # Tooltip nativo simulando "AgregarNotaProducto" de VBA
+                tooltip_text = f"Descripción: {nombre}&#10;Código de barras: {ean}&#10;Venta: {venta_fmt}&#10;% Part: {part_fmt}&#10;TOPVENTAS: {top_ventas}"
 
                 cards_html += f"""
-                <div class="sku-card" style="flex: {caras};" data-brand="{marca}" data-name="{nombre}" data-ean="{ean}">
+                <div class="sku-card" style="flex: {caras}; background-color: {bg_color}; {border_style}" data-brand="{marca}" data-name="{nombre}" data-ean="{ean}" title="{tooltip_text}">
                   <div class="sku-pos">{pos}</div>
                   <div class="sku-caras-tag">{caras} C</div>
                   <div class="sku-details">
-                    <span class="sku-brand-text">{marca}</span>
-                    <span class="sku-name-text">{nombre}</span>
+                    <span class="sku-brand-text" style="color: {text_color};">{cod_real}</span>
+                    <span class="sku-name-text" style="color: {text_color};">Stock: {stock_fmt}</span>
                   </div>
-                  <div class="sku-bottom-bar">
-                    <span class="sku-ean-code">...{ean_corto}</span>
-                    <span class="sku-cap-val">Cap: {cap}</span>
+                  <div class="sku-bottom-bar" style="border-top-color: {text_color};">
+                    <span class="sku-ean-code" style="color: {text_color};">...{ean_corto}</span>
+                    <span class="sku-cap-val" style="{estilo_cobertura}">Cob: {cob_fmt}</span>
                   </div>
                 </div>
                 """
@@ -109,7 +175,7 @@ def generar_html_pasillo_interactivo(df):
         .filter-select, .filter-input {{ background: #0b132b; border: 1px solid #3b82f6; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; outline: none; min-width: 140px; }}
         .filter-input {{ min-width: 220px; }}
         .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 7px 14px; border-radius: 4px; cursor: pointer; align-self: flex-end; }}
-        .aisle-container {{ display: flex; flex-direction: row; gap: 12px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; }}
+        .aisle-container {{ display: flex; flex-direction: row; gap: 12px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; align-items: stretch; }}
         .bay-column {{ flex: 0 0 460px; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; }}
         .bay-column.hidden {{ display: none; }}
         .bay-title {{ background: #1e3a8a; padding: 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; }}
@@ -119,17 +185,17 @@ def generar_html_pasillo_interactivo(df):
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         .shelf-caras-count {{ background: rgba(0, 0, 0, 0.4); padding: 1px 6px; border-radius: 3px; color: #93c5fd; font-size: 0.65rem; }}
         .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px; min-height: 125px; overflow-x: auto; }}
-        .sku-card {{ background: #fff; border: 1px solid #cbd5e1; border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; }}
+        .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; cursor: help; }}
         .sku-card.dimmed {{ opacity: 0.15; filter: grayscale(1); }}
-        .sku-card.highlighted {{ border: 2px solid #e11d48; box-shadow: 0 0 10px rgba(225, 29, 72, 0.8); transform: scale(1.02); z-index: 5; }}
+        .sku-card.highlighted {{ box-shadow: 0 0 12px rgba(59, 130, 246, 0.8); transform: scale(1.02); z-index: 5; }}
         .sku-pos {{ position: absolute; top: 4px; left: 4px; background: #0f172a; color: #fff; font-size: 0.6rem; font-weight: 800; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 2px; }}
-        .sku-caras-tag {{ position: absolute; top: 4px; right: 4px; background: #dbeafe; color: #1e40af; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 2px; }}
-        .sku-details {{ margin-top: 18px; display: flex; flex-direction: column; gap: 2px; }}
-        .sku-brand-text {{ font-size: 0.58rem; font-weight: 800; color: #2563eb; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-        .sku-name-text {{ font-size: 0.62rem; font-weight: 600; color: #0f172a; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }}
-        .sku-bottom-bar {{ margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 2px; display: flex; justify-content: space-between; align-items: center; font-size: 0.55rem; color: #64748b; }}
-        .sku-ean-code {{ font-family: monospace; font-weight: 700; color: #334155; }}
-        .sku-cap-val {{ font-weight: 700; color: #0f766e; background: #ccfbf1; padding: 1px 3px; border-radius: 2px; }}
+        .sku-caras-tag {{ position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.7); color: #000; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 2px; }}
+        .sku-details {{ margin-top: 18px; display: flex; flex-direction: column; gap: 2px; text-align: center; }}
+        .sku-brand-text {{ font-size: 0.7rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+        .sku-name-text {{ font-size: 0.75rem; font-weight: 600; line-height: 1.1; }}
+        .sku-bottom-bar {{ margin-top: 4px; border-top: 1px dashed; padding-top: 2px; display: flex; justify-content: space-between; align-items: center; font-size: 0.65rem; }}
+        .sku-ean-code {{ font-family: monospace; font-weight: 700; }}
+        .sku-cap-val {{ font-weight: 800; padding: 1px 3px; border-radius: 2px; }}
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; }}
       </style>
     </head>
@@ -239,7 +305,7 @@ if archivo_excel is not None:
             # Si no encuentra la hoja "MATRIZ", lee la primera hoja por defecto
             df = pd.read_excel(archivo_excel, engine="pyxlsb" if archivo_excel.name.endswith(".xlsb") else None)
             
-        st.success(f"✅ Archivo cargado correctamente. Se encontraron {len(df)} registros.")
+        st.success(f"✅ Archivo cargado correctamente. Se procesaron {len(df)} registros.")
         
         st.markdown("### Vista Gráfica Interactiva")
         html_pasillo = generar_html_pasillo_interactivo(df)
@@ -248,4 +314,4 @@ if archivo_excel is not None:
     except Exception as e:
         st.error(f"Error al leer el archivo Excel: {e}")
 else:
-    st.info("👆 Por favor, sube un archivo Excel con las columnas: Bandeja, N°, EAN, Nombre, Marca, Caras, Total_Unidades para previsualizar el planograma.")
+    st.info("👆 Por favor, sube tu Excel con la tabla maestra (hoja MATRIZ) para previsualizar el planograma.")
