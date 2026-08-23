@@ -298,20 +298,35 @@ archivo_excel = st.file_uploader("📥 Cargar Base de Datos del Planograma (Exce
 
 if archivo_excel is not None:
     try:
-        # Intentamos leer específicamente la hoja "MATRIZ"
+        motor = "pyxlsb" if archivo_excel.name.endswith(".xlsb") else None
+        
+        # Leemos exactamente el rango indicado: Desde la fila 6 (saltando 5) y las columnas C hasta AB
         try:
-            df = pd.read_excel(archivo_excel, sheet_name="MATRIZ", engine="pyxlsb" if archivo_excel.name.endswith(".xlsb") else None)
+            df = pd.read_excel(
+                archivo_excel, 
+                sheet_name="MATRIZ", 
+                skiprows=5,         # La fila 6 es el encabezado (índice 5 para Python)
+                usecols="C:AB",     # Solo leemos desde la C hasta la AB
+                engine=motor
+            )
         except Exception:
-            # Si no encuentra la hoja "MATRIZ", lee la primera hoja por defecto
-            df = pd.read_excel(archivo_excel, engine="pyxlsb" if archivo_excel.name.endswith(".xlsb") else None)
-            
-        st.success(f"✅ Archivo cargado correctamente. Se procesaron {len(df)} registros.")
+            # Respaldo por si no existe la hoja MATRIZ
+            df = pd.read_excel(archivo_excel, skiprows=5, usecols="C:AB", engine=motor)
+
+        # Limpieza de los nombres de columnas (quita espacios invisibles)
+        df.columns = [str(c).strip() for c in df.columns]
+        
+        # Eliminar las filas vacías que puedan quedar debajo de la tabla
+        if "Bandeja" in df.columns and "EAN" in df.columns:
+            df = df.dropna(subset=["Bandeja", "EAN"], how="all")
+
+        st.success(f"✅ Archivo cargado correctamente. Se procesaron {len(df)} SKUs.")
         
         st.markdown("### Vista Gráfica Interactiva")
         html_pasillo = generar_html_pasillo_interactivo(df)
         components.html(html_pasillo, height=850, scrolling=True)
         
     except Exception as e:
-        st.error(f"Error al leer el archivo Excel: {e}")
+        st.error(f"Error al leer el archivo Excel. Verifica que la tabla esté en C6: {e}")
 else:
     st.info("👆 Por favor, sube tu Excel con la tabla maestra (hoja MATRIZ) para previsualizar el planograma.")
