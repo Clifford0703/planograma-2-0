@@ -26,20 +26,20 @@ def safe_float(val, default=0.0):
         return default
 
 def obtener_color_estado_stock(estado, stock_val):
-    """Aplica los colores según la lógica de la macro VBA."""
+    """Aplica los colores según la lógica de la macro VBA, con textos de alto contraste."""
     estado = str(estado).strip().upper()
     
     if estado == "B":
         return "#FFC7CE", "#9C0006" # Bloqueado: Fondo rojo claro, texto rojo oscuro
     elif estado == "A":
         if stock_val <= 0:
-            return "#F4B084", "#833C0C" # Activo sin stock: Naranja
+            return "#F4B084", "#833C0C" # Activo sin stock: Naranja, texto marrón oscuro
         elif stock_val <= 5:
-            return "#FFFF99", "#9C6500" # Activo stock bajo: Amarillo
+            return "#FFFF99", "#8A5A00" # Activo stock bajo: Amarillo, texto ocre muy oscuro (mejor legibilidad)
         else:
-            return "#C6EFCE", "#006100" # Activo stock ok: Verde claro
+            return "#C6EFCE", "#006100" # Activo stock ok: Verde claro, texto verde oscuro
     else:
-        return "#D9D9D9", "#000000" # Desconocido: Gris
+        return "#D9D9D9", "#000000" # Desconocido: Gris, texto negro
 
 # --- GENERADOR DEL PASILLO HTML COMPLETO ---
 def generar_html_pasillo_interactivo(df):
@@ -50,13 +50,11 @@ def generar_html_pasillo_interactivo(df):
     df['TieneOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').notna()
     df['NumOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').fillna(999999)
     
-    # Extraer Módulo y Nivel para ordenar correctamente
     bandeja_str = df.get('Bandeja', pd.Series(["1.1"]*len(df))).astype(str)
     df[['Modulo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')
     df['Modulo_Ord'] = pd.to_numeric(df['Modulo_Ord'], errors='coerce').fillna(1)
     df['Nivel_Ord'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
 
-    # Ordenar: Módulo -> Nivel (Desc) -> TieneOrden (Primero los True) -> NumOrden -> FilaOriginal
     df = df.sort_values(
         by=['Modulo_Ord', 'Nivel_Ord', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
         ascending=[True, False, False, True, True]
@@ -81,7 +79,6 @@ def generar_html_pasillo_interactivo(df):
     html_modulos = ""
     for mod_nombre, bandejas_dict in sorted(modulos.items()):
         mod_num = mod_nombre.replace("Módulo ", "").strip()
-        # El ordenamiento de las bandejas se maneja de mayor a menor (de arriba hacia abajo)
         bandejas_ordenadas = sorted(bandejas_dict.keys(), reverse=True)
         html_bandejas = ""
 
@@ -92,7 +89,6 @@ def generar_html_pasillo_interactivo(df):
 
             cards_html = ""
             for it in items:
-                # Usamos N° para la posición gráfica (como se ve en la columna D de tu imagen)
                 pos = it.get("N°", "-")
                 if pd.isna(pos): pos = "-"
                 
@@ -106,19 +102,16 @@ def generar_html_pasillo_interactivo(df):
                 caras_val = str(it.get("Caras", "1"))
                 caras = caras_val if caras_val.isdigit() and int(caras_val) > 0 else "1"
 
-                # Extracción segura de números
                 stock_val = safe_float(it.get("Stock", 0))
                 cob_val = safe_float(it.get("Cobertura", 0))
                 venta_val = safe_float(it.get("Venta", 0))
                 part_val = safe_float(it.get("% Part", 0))
                 
-                # Excel suele guardar los porcentajes como decimales (ej. 0.2124), si es mayor a 1 lo asumimos entero.
                 if part_val < 1:
                     part_fmt = f"{part_val*100:.2f}%"
                 else:
                     part_fmt = f"{part_val:.2f}%"
 
-                # Formateos lógicos (Reglas VBA)
                 bg_color, text_color = obtener_color_estado_stock(estado, stock_val)
                 
                 es_top = top_ventas == "TOP"
@@ -131,16 +124,16 @@ def generar_html_pasillo_interactivo(df):
                 cob_fmt = f"{cob_val:.2f}"
                 venta_fmt = f"{venta_val:.2f}"
 
-                # Tooltip nativo simulando "AgregarNotaProducto" de VBA
                 tooltip_text = f"Descripción: {nombre}&#10;Código de barras: {ean}&#10;Venta: {venta_fmt}&#10;% Part: {part_fmt}&#10;TOPVENTAS: {top_ventas}"
 
                 cards_html += f"""
-                <div class="sku-card" style="flex: {caras}; background-color: {bg_color}; {border_style}" data-brand="{marca}" data-name="{nombre}" data-ean="{ean}" title="{tooltip_text}">
+                <div class="sku-card" style="flex: {caras}; background-color: {bg_color}; {border_style}" data-brand="{marca}" data-name="{nombre}" data-ean="{ean}" data-top="{top_ventas}" title="{tooltip_text}">
                   <div class="sku-pos">{pos}</div>
                   <div class="sku-caras-tag">{caras} C</div>
                   <div class="sku-details">
-                    <span class="sku-brand-text" style="color: {text_color};">{cod_real}</span>
-                    <span class="sku-name-text" style="color: {text_color};">Stock: {stock_fmt}</span>
+                    <span class="sku-brand-text" style="color: {text_color};">{marca} | {cod_real}</span>
+                    <span class="sku-name-text" style="color: #000000;">{nombre}</span>
+                    <span style="font-size: 0.65rem; color: {text_color}; font-weight: 800; margin-top: 2px;">Stock: {stock_fmt}</span>
                   </div>
                   <div class="sku-bottom-bar" style="border-top-color: {text_color};">
                     <span class="sku-ean-code" style="color: {text_color};">...{ean_corto}</span>
@@ -173,47 +166,102 @@ def generar_html_pasillo_interactivo(df):
 
     return f"""
     <!DOCTYPE html>
-    <html>
+    <html lang="es">
     <head>
       <meta charset="UTF-8">
       <style>
         * {{ box-sizing: border-box; }}
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 12px; }}
-        .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }}
+        
+        /* PANEL DE FILTROS Y BOTONES */
+        .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }}
         .filter-group {{ display: flex; flex-direction: column; gap: 4px; }}
         .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
         .filter-select, .filter-input {{ background: #0b132b; border: 1px solid #3b82f6; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; outline: none; min-width: 140px; }}
-        .filter-input {{ min-width: 220px; }}
-        .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 7px 14px; border-radius: 4px; cursor: pointer; align-self: flex-end; }}
+        .filter-input {{ min-width: 200px; }}
+        
+        .btn-group {{ display: flex; gap: 8px; margin-left: auto; }}
+        .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }}
+        .filter-btn-reset:hover {{ background: #dc2626; }}
+        .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }}
+        .filter-btn-print:hover {{ background: #059669; }}
+
+        /* CONTENEDOR DEL PASILLO */
         .aisle-container {{ display: flex; flex-direction: row; gap: 12px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; align-items: stretch; }}
-        .bay-column {{ flex: 0 0 460px; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; }}
-        .bay-column.hidden {{ display: none; }}
+        .bay-column {{ flex: 0 0 480px; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; }}
+        .bay-column.hidden {{ display: none !important; }}
         .bay-title {{ background: #1e3a8a; padding: 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; }}
         .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }}
+        
+        /* BANDEJAS */
         .shelf-row {{ display: flex; flex-direction: column; background: #162238; border-radius: 4px; }}
-        .shelf-row.hidden {{ display: none; }}
+        .shelf-row.hidden {{ display: none !important; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         .shelf-caras-count {{ background: rgba(0, 0, 0, 0.4); padding: 1px 6px; border-radius: 3px; color: #93c5fd; font-size: 0.65rem; }}
         .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px; min-height: 125px; overflow-x: auto; }}
-        .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; cursor: help; }}
+        
+        /* TARJETAS DE PRODUCTO */
+        .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 100px; position: relative; transition: all 0.2s; cursor: help; }}
         .sku-card.dimmed {{ opacity: 0.15; filter: grayscale(1); }}
-        .sku-card.highlighted {{ box-shadow: 0 0 12px rgba(59, 130, 246, 0.8); transform: scale(1.02); z-index: 5; }}
+        .sku-card.highlighted {{ box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); transform: scale(1.02); z-index: 5; border-color: #3b82f6 !important; }}
+        
         .sku-pos {{ position: absolute; top: 4px; left: 4px; background: #0f172a; color: #fff; font-size: 0.6rem; font-weight: 800; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 2px; }}
-        .sku-caras-tag {{ position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.7); color: #000; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 2px; }}
-        .sku-details {{ margin-top: 18px; display: flex; flex-direction: column; gap: 2px; text-align: center; }}
-        .sku-brand-text {{ font-size: 0.7rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-        .sku-name-text {{ font-size: 0.75rem; font-weight: 600; line-height: 1.1; }}
+        .sku-caras-tag {{ position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.85); color: #000; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 2px; border: 1px solid #ccc; }}
+        
+        .sku-details {{ margin-top: 18px; display: flex; flex-direction: column; gap: 3px; text-align: center; }}
+        .sku-brand-text {{ font-size: 0.65rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+        .sku-name-text {{ font-size: 0.72rem; font-weight: 700; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }}
+        
         .sku-bottom-bar {{ margin-top: 4px; border-top: 1px dashed; padding-top: 2px; display: flex; justify-content: space-between; align-items: center; font-size: 0.65rem; }}
         .sku-ean-code {{ font-family: monospace; font-weight: 700; }}
         .sku-cap-val {{ font-weight: 800; padding: 1px 3px; border-radius: 2px; }}
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; }}
+
+        /* ========================================= */
+        /* HOJA DE ESTILOS PARA IMPRESIÓN (B/N)      */
+        /* ========================================= */
+        @media print {{
+          @page {{ size: landscape; margin: 5mm; }}
+          body {{ background-color: #fff !important; color: #000 !important; padding: 0; margin: 0; }}
+          
+          /* Ocultar botones y filtros al imprimir */
+          .filter-panel {{ display: none !important; }}
+          
+          /* Reajustar pasillo para que los módulos caigan en bloque o se ajusten al papel */
+          .aisle-container {{ background: #fff !important; border: none !important; padding: 0; display: block; overflow: visible !important; }}
+          
+          .bay-column {{ 
+            background: #fff !important; 
+            border: 2px solid #000 !important; 
+            width: 100% !important; 
+            margin-bottom: 20px; 
+            page-break-inside: avoid; 
+          }}
+          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 2px solid #000 !important; }}
+          
+          .shelf-row {{ background: #fff !important; border: 1px solid #000 !important; page-break-inside: avoid; }}
+          .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 3px solid #000 !important; }}
+          
+          /* Tarjetas a blanco y negro */
+          .sku-card {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; }}
+          
+          /* Diferenciar los TOP VENTAS en impresión (Borde Doble) */
+          .sku-card[data-top="TOP"] {{ border: 3px double #000 !important; }}
+          
+          /* Elementos internos a negro */
+          .sku-pos, .sku-caras-tag, .sku-cap-val {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; }}
+          .sku-brand-text, .sku-name-text, .sku-ean-code, span {{ color: #000 !important; }}
+          .sku-bottom-bar {{ border-top: 1px dashed #000 !important; }}
+          
+          .shelf-bottom-rail {{ background: #000 !important; height: 3px !important; }}
+        }}
       </style>
     </head>
     <body>
       <div class="filter-panel">
         <div class="filter-group">
-          <span class="filter-label">🔍 Buscar</span>
-          <input type="text" id="searchInput" class="filter-input" placeholder="Nombre o código...">
+          <span class="filter-label">🔍 Buscar Producto</span>
+          <input type="text" id="searchInput" class="filter-input" placeholder="Nombre o código EAN...">
         </div>
         <div class="filter-group">
           <span class="filter-label">🏷️ Marca</span>
@@ -223,14 +271,14 @@ def generar_html_pasillo_interactivo(df):
           </select>
         </div>
         <div class="filter-group">
-          <span class="filter-label">📦 Módulo</span>
+          <span class="filter-label">📦 Cuerpo / Módulo</span>
           <select id="baySelect" class="filter-select">
             <option value="ALL">Todos</option>
             {options_modulos}
           </select>
         </div>
         <div class="filter-group">
-          <span class="filter-label">📶 Nivel</span>
+          <span class="filter-label">📶 Nivel / Bandeja</span>
           <select id="levelSelect" class="filter-select">
             <option value="ALL">Todos</option>
             <option value="4">Bandeja 4 (Superior)</option>
@@ -239,7 +287,11 @@ def generar_html_pasillo_interactivo(df):
             <option value="1">Bandeja 1 (Base)</option>
           </select>
         </div>
-        <button id="resetBtn" class="filter-btn-reset">Restablecer</button>
+        
+        <div class="btn-group">
+          <button id="resetBtn" class="filter-btn-reset">Restablecer</button>
+          <button type="button" class="filter-btn-print" onclick="window.print()">🖨️ Imprimir B/N</button>
+        </div>
       </div>
 
       <div class="aisle-container">
@@ -291,6 +343,7 @@ def generar_html_pasillo_interactivo(df):
         brandSelect.addEventListener('change', applyFilters);
         baySelect.addEventListener('change', applyFilters);
         levelSelect.addEventListener('change', applyFilters);
+        
         resetBtn.addEventListener('click', () => {{
           searchInput.value = '';
           brandSelect.value = 'ALL';
@@ -310,16 +363,13 @@ if archivo_excel is not None:
     try:
         motor = "pyxlsb" if archivo_excel.name.endswith(".xlsb") else None
         
-        # Leemos el archivo exactamente desde C6 hasta AB
         try:
             df = pd.read_excel(archivo_excel, sheet_name="MATRIZ", skiprows=5, usecols="C:AB", engine=motor)
         except Exception:
             df = pd.read_excel(archivo_excel, skiprows=5, usecols="C:AB", engine=motor)
 
-        # Limpieza de nombres de columnas (quita espacios invisibles)
         df.columns = [str(c).strip() for c in df.columns]
         
-        # Eliminar filas vacías debajo de la tabla
         if "Bandeja" in df.columns and "EAN" in df.columns:
             df = df.dropna(subset=["Bandeja", "EAN"], how="all")
 
