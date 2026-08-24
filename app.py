@@ -552,7 +552,7 @@ def cargar_datos_nube(url):
 # --- ENLACE DIRECTO DE GOOGLE DRIVE ---
 URL_NUBE = "https://drive.google.com/uc?export=download&id=1QFqktucaF983WXcjupQI-jpeEZzWxtX_"
 
-df = None
+df_raw = None
 info_hora = None
 error_nube = None
 
@@ -568,29 +568,30 @@ with st.spinner("Sincronizando con Google Drive..."):
     df_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE)
 
 if df_nube is not None:
-    df = df_nube
+    df_raw = df_nube
 else:
-    # Respaldo Manual si Drive falla (ej. permisos restringidos)
-    st.warning("⚠️ No se pudo conectar a Google Drive (verifica que el enlace sea 'Cualquier persona que tenga el vínculo puede leer'). Puedes subir el archivo manualmente para continuar.")
+    # Respaldo Manual si Drive falla
+    st.warning("⚠️ No se pudo conectar a Google Drive. Puedes subir el archivo manualmente para continuar.")
     archivo_manual = st.file_uploader("📥 Subir archivo Excel del Planograma (.xlsx, .xlsb)", type=["xlsx", "xls", "xlsb"])
     if archivo_manual:
         motor = "pyxlsb" if archivo_manual.name.endswith(".xlsb") else None
         try:
             try:
-                df = pd.read_excel(archivo_manual, sheet_name="MATRIZ", skiprows=5, usecols="C:AB", engine=motor)
+                df_raw = pd.read_excel(archivo_manual, sheet_name="MATRIZ", skiprows=5, usecols="C:AB", engine=motor)
             except Exception:
-                df = pd.read_excel(archivo_manual, skiprows=5, usecols="C:AB", engine=motor)
+                df_raw = pd.read_excel(archivo_manual, skiprows=5, usecols="C:AB", engine=motor)
             
-            df.columns = [str(c).strip() for c in df.columns]
-            if "Bandeja" in df.columns and "EAN" in df.columns:
-                df = df.dropna(subset=["Bandeja", "EAN"], how="all")
+            df_raw.columns = [str(c).strip() for c in df_raw.columns]
+            if "Bandeja" in df_raw.columns and "EAN" in df_raw.columns:
+                df_raw = df_raw.dropna(subset=["Bandeja", "EAN"], how="all")
                 
             info_hora = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p (Carga Local)")
         except Exception as e:
             st.error(f"Error al leer el archivo manual: {e}")
 
 # SI TENEMOS DATOS RENDERIZAMOS LA APP
-if df is not None:
+if df_raw is not None:
+    
     st.markdown(f"""
     <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 20px;">
         <div>
@@ -607,6 +608,42 @@ if df is not None:
     tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard y Reporte Excel"])
     
     with tab1:
+        
+        # ==========================================
+        # ⚙️ MÓDULO DE SEGMENTACIÓN DINÁMICA (NUEVO)
+        # ==========================================
+        st.markdown("### ⚙️ Segmentación Dinámica de Ventas")
+        col_cfg1, col_cfg2 = st.columns([1, 3])
+        
+        with col_cfg1:
+            # El usuario elige dinámicamente qué "Top" quiere ver
+            top_n = st.number_input("🏆 Resaltar TOP Ventas (Cantidad de SKUs):", min_value=1, max_value=200, value=30, step=1)
+        
+        # 1. Aseguramos que los valores sean numéricos
+        df = df_raw.copy()
+        df['Venta_Num'] = df['Venta'].apply(safe_float)
+        df['Part_Num'] = df['% Part'].apply(safe_float)
+        
+        # 2. Sacamos los SKUs únicos para hacer el ranking real
+        df_unicos = df.drop_duplicates(subset=['COD REAL']).copy()
+        df_unicos = df_unicos[df_unicos['COD REAL'].notna()]
+        
+        # 3. Ordenamos de mayor a menor venta
+        df_unicos = df_unicos.sort_values(by='Venta_Num', ascending=False)
+        
+        # 4. Extraemos la lista de los mejores N productos y su participación acumulada
+        skus_top = df_unicos.head(top_n)['COD REAL'].astype(str).str.strip().tolist()
+        part_acumulada = df_unicos.head(top_n)['Part_Num'].sum()
+        
+        with col_cfg2:
+            st.write("") # Espaciador para alinear con el input
+            st.info(f"💡 Has seleccionado el **TOP {top_n}**. Estos {top_n} productos concentran el **{part_acumulada*100:.2f}%** de la venta total de la categoría.")
+
+        # 5. Sobrescribimos la columna TOPVENTAS dinámicamente para que el HTML la lea
+        df['TOPVENTAS'] = df['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top else "NO")
+        # ==========================================
+
+        st.markdown("---")
         st.markdown("##### Control de Vista")
         mobile_preview = st.toggle("📱 Simular Vista Móvil (Celular)")
         
@@ -635,8 +672,7 @@ if df is not None:
         st.markdown("### 📈 Desempeño por Módulo (Cuerpo)")
         
         df_chart = df.copy()
-        df_chart['Venta_Num'] = df_chart['Venta'].apply(safe_float)
-        df_chart['Part_Num'] = df_chart['% Part'].apply(safe_float)
+        # Venta_Num y Part_Num ya están calculados gracias a la sección dinámica
         
         bandeja_str = df_chart.get('Bandeja', pd.Series(["1.1"]*len(df_chart))).astype(str)
         df_chart['Modulo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
