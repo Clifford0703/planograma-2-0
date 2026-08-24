@@ -17,17 +17,13 @@ st.set_page_config(
 st.markdown("""
     <style>
         .block-container {
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
-            padding-top: 2rem !important;
+            padding-left: 1.5rem !important;
+            padding-right: 1.5rem !important;
+            padding-top: 1.5rem !important;
             max-width: 100% !important;
         }
     </style>
 """, unsafe_allow_html=True)
-
-st.title("📦 Planograma 2.0")
-st.markdown("Carga tu base de datos en Excel (hoja MATRIZ) para analizar y visualizar el pasillo.")
-st.markdown("---")
 
 # --- FUNCIONES DE APOYO Y LIMPIEZA ---
 def safe_float(val, default=0.0):
@@ -177,6 +173,11 @@ def generar_html_pasillo_interactivo(df):
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb:hover {{ background: #2563eb; }}
 
+        .kpi-container {{ display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center; }}
+        .kpi-card {{ flex: 1; min-width: 120px; background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 14px 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }}
+        .kpi-title {{ font-size: 0.65rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }}
+        .kpi-val {{ font-size: 1.8rem; font-weight: 900; line-height: 1; display: block; }}
+        
         .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }}
         .filter-group {{ display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }}
         .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
@@ -185,35 +186,19 @@ def generar_html_pasillo_interactivo(df):
         .filter-select option:disabled {{ color: #94a3b8; font-style: italic; }}
         .btn-group {{ display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }}
         
-        /* BOTONES DE ACCIÓN */
         .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
-        .filter-btn-reset:hover {{ background: #dc2626; }}
         .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
-        .filter-btn-print:hover {{ background: #059669; }}
         .filter-btn-fs {{ background: #8b5cf6; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
-        .filter-btn-fs:hover {{ background: #7c3aed; }}
         
-        .summary-wrapper {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }}
-        .summary-table {{ width: 100%; border-collapse: collapse; text-align: center; }}
-        .summary-table th {{ background: #1e3a8a; color: #93c5fd; padding: 10px; font-size: 0.75rem; text-transform: uppercase; font-weight: 800; border-bottom: 2px solid #3b82f6; }}
-        .summary-table td {{ padding: 12px 10px; font-size: 1.3rem; font-weight: 900; color: #fff; }}
-        .t-bloq {{ color: #FFC7CE !important; }}
-        .t-sin {{ color: #F4B084 !important; }}
-        .t-bajo {{ color: #FFFF99 !important; }}
-        .t-ok {{ color: #C6EFCE !important; }}
-        .t-cob {{ color: #ef4444 !important; }}
-        .t-top {{ color: #fbbf24 !important; }}
-        
-        .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; }}
-        .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-bottom: 8px; display: block; }}
-        .legend-chips {{ display: flex; flex-wrap: wrap; gap: 10px; }}
-        .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.75rem; padding: 6px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.8; box-shadow: 0 2px 4px rgba(0,0,0,0.2); outline: none; }}
+        .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }}
+        .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-right: 8px; }}
+        .legend-chips {{ display: flex; flex-wrap: wrap; gap: 8px; }}
+        .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; box-shadow: 0 2px 4px rgba(0,0,0,0.2); outline: none; }}
         .legend-chip:hover {{ opacity: 1; transform: translateY(-2px); }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
         .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; }}
         .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
-        .nav-btn:hover {{ background: #3b82f6; }}
         .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
         
         .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; touch-action: pan-x pan-y pinch-zoom; }}
@@ -243,6 +228,7 @@ def generar_html_pasillo_interactivo(df):
         .sku-cap-val {{ font-size: 0.65rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; flex-shrink: 0; }}
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; }}
         
+        /* AUTO-COMPRESIÓN AL 100% PARA MÓDULO ÚNICO */
         .aisle-container.single-module {{ justify-content: center; }}
         .aisle-container.single-module .bay-column {{ flex: 1 1 100%; max-width: 100%; min-width: unset; }}
         .aisle-container.single-module .shelf-products {{ overflow-x: hidden; justify-content: center; gap: 2px; }}
@@ -253,6 +239,7 @@ def generar_html_pasillo_interactivo(df):
         .aisle-container.single-module .sku-bottom-bar {{ flex-direction: column; align-items: center; gap: 1px; font-size: 0.55rem; }}
         .aisle-container.single-module .sku-ean-code {{ max-width: 100%; }}
         
+        /* MODAL EMERGENTE */
         .modal-overlay {{ position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transform: translateY(20px); transition: transform 0.2s; border: 2px solid #3b82f6; }}
@@ -263,16 +250,19 @@ def generar_html_pasillo_interactivo(df):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
+        /* RESPONSIVE MÓVIL (EMULADOR) */
         @media (max-width: 768px) {{
+            .kpi-card {{ flex: 1 1 30%; min-width: 30%; padding: 8px 4px; }}
+            .kpi-val {{ font-size: 1.2rem; }}
+            .kpi-title {{ font-size: 0.55rem; }}
+            
             .filter-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
-            .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
-            .legend-chips {{ justify-content: center; }}
-            .summary-table th, .summary-table td {{ padding: 6px 4px; font-size: 0.65rem; }}
-            .summary-table td {{ font-size: 1rem; }}
+            .btn-group {{ justify-content: space-between; width: 100%; margin-top: 4px; }}
+            .legend-panel {{ justify-content: center; }}
             
             .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
             .aisle-wrapper {{ gap: 4px; }}
-            .bay-column {{ flex: 0 0 100%; max-width: 100%; margin-right: 0; }}
+            .bay-column {{ flex: 1 0 100%; max-width: 100%; margin-right: 0; }}
             .sku-card {{ min-width: 80px; }}
             .aisle-container.single-module .bay-column {{ flex: 1 0 100%; }}
         }}
@@ -281,9 +271,9 @@ def generar_html_pasillo_interactivo(df):
           @page {{ size: landscape; margin: 5mm; }}
           body {{ background-color: #fff !important; color: #000 !important; overflow: visible !important; }}
           .filter-panel, .legend-panel, .modal-overlay, .nav-btn {{ display: none !important; }}
-          .summary-wrapper {{ border: 2px solid #000 !important; margin-bottom: 20px; }}
-          .summary-table th {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 2px solid #000 !important; }}
-          .summary-table td {{ color: #000 !important; border-right: 1px solid #ccc; }}
+          .kpi-container {{ display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; }}
+          .kpi-card {{ border: 1px solid #000 !important; background: #fff !important; padding: 5px; min-width: 100px; box-shadow: none !important; }}
+          .kpi-title, .kpi-val {{ color: #000 !important; }}
           .aisle-wrapper {{ display: block; }}
           .aisle-container {{ display: block; border: none !important; background: #fff !important; padding: 0; overflow: visible !important; }}
           .bay-column {{ background: #fff !important; border: 2px solid #000 !important; width: 100% !important; margin-bottom: 20px; page-break-inside: avoid; }}
@@ -316,6 +306,39 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
+      <!-- KPIs RESUMEN -->
+      <div class="kpi-container">
+        <div class="kpi-card" style="border-bottom: 4px solid #3b82f6;">
+          <span class="kpi-title">Total SKUs</span>
+          <span class="kpi-val" id="t-total" style="color: #fff;">0</span>
+        </div>
+        <div class="kpi-card" style="border-bottom: 4px solid #FFC7CE;">
+          <span class="kpi-title">Bloqueados</span>
+          <span class="kpi-val" id="t-bloq" style="color: #FFC7CE;">0</span>
+        </div>
+        <div class="kpi-card" style="border-bottom: 4px solid #F4B084;">
+          <span class="kpi-title">Sin Stock (0)</span>
+          <span class="kpi-val" id="t-sin" style="color: #F4B084;">0</span>
+        </div>
+        <div class="kpi-card" style="border-bottom: 4px solid #FFFF99;">
+          <span class="kpi-title">Stock Bajo (1-5)</span>
+          <span class="kpi-val" id="t-bajo" style="color: #FFFF99;">0</span>
+        </div>
+        <div class="kpi-card" style="border-bottom: 4px solid #C6EFCE;">
+          <span class="kpi-title">Stock OK (>5)</span>
+          <span class="kpi-val" id="t-ok" style="color: #C6EFCE;">0</span>
+        </div>
+        <div class="kpi-card" style="border-bottom: 4px solid #ef4444;">
+          <span class="kpi-title">Cob. Alta (≥30)</span>
+          <span class="kpi-val" id="t-cob" style="color: #ef4444;">0</span>
+        </div>
+        <div class="kpi-card" style="border-bottom: 4px solid #fbbf24;">
+          <span class="kpi-title">★ Top Ventas</span>
+          <span class="kpi-val" id="t-top" style="color: #fbbf24;">0</span>
+        </div>
+      </div>
+
+      <!-- FILTROS -->
       <div class="filter-panel">
         <div class="filter-group">
           <span class="filter-label">🔍 Buscar Producto</span>
@@ -341,35 +364,9 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
-      <div class="summary-wrapper">
-        <table class="summary-table">
-          <thead>
-            <tr>
-              <th>Total SKUs</th>
-              <th>Bloqueados</th>
-              <th>Sin Stock (0)</th>
-              <th>Stock Bajo (1-5)</th>
-              <th>Stock OK (>5)</th>
-              <th>Cobert. Alta (≥30)</th>
-              <th>★ Top Ventas</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td id="t-total">0</td>
-              <td id="t-bloq" class="t-bloq">0</td>
-              <td id="t-sin" class="t-sin">0</td>
-              <td id="t-bajo" class="t-bajo">0</td>
-              <td id="t-ok" class="t-ok">0</td>
-              <td id="t-cob" class="t-cob">0</td>
-              <td id="t-top" class="t-top">0</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
+      <!-- LEYENDA -->
       <div class="legend-panel">
-        <span class="legend-title">📍 Leyenda Interactiva (Resalta productos sin desarmar el mueble)</span>
+        <span class="legend-title">📍 Leyenda Interactiva (Filtra módulos y resalta productos)</span>
         <div class="legend-chips">
           <button class="legend-chip" data-filter="bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
           <button class="legend-chip" data-filter="sin-stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
@@ -380,6 +377,7 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
+      <!-- PASILLO -->
       <div class="aisle-wrapper">
         <button class="nav-btn" id="btnPrev" title="Módulo Anterior">❮</button>
         <div class="aisle-container" id="aisleContainer">
@@ -414,6 +412,7 @@ def generar_html_pasillo_interactivo(df):
           let cTot=0, cBloq=0, cSin=0, cBajo=0, cOk=0, cCob=0, cTop=0;
           let visibleBaysCount = 0;
 
+          // EVALUAR TARJETAS Y APLICAR ESTILOS
           document.querySelectorAll('.sku-card').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
@@ -480,6 +479,7 @@ def generar_html_pasillo_interactivo(df):
           document.getElementById('t-cob').textContent = cCob;
           document.getElementById('t-top').textContent = cTop;
 
+          // RECONSTRUIR CASCADAS
           if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
           if (selectedBay !== 'ALL' && !availableBays.has(selectedBay)) selectedBay = 'ALL';
           if (selectedLevel !== 'ALL' && !availableLevels.has(selectedLevel)) selectedLevel = 'ALL';
@@ -493,6 +493,7 @@ def generar_html_pasillo_interactivo(df):
           levelSelect.innerHTML = '';
           allLevels.forEach(opt => {{ if(opt.val === 'ALL' || availableLevels.has(opt.val)) levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel)); }});
 
+          // OCULTAR MÓDULOS NO RELACIONADOS (Filtra la estructura general)
           document.querySelectorAll('.bay-column').forEach(bay => {{
             const bayNum = bay.getAttribute('data-module');
             const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
@@ -504,9 +505,10 @@ def generar_html_pasillo_interactivo(df):
 
             const isVisible = passesBayFilter && hasMatch;
             bay.classList.toggle('hidden', !isVisible);
-            if (isVisible) visibleBaysCount++;
+            if(isVisible) visibleBaysCount++;
           }});
 
+          // APLICAR CLASE "SINGLE-MODULE" PARA AUTO-COMPRESIÓN AL 100% DE LA PANTALLA
           const aisleContainer = document.getElementById('aisleContainer');
           if (visibleBaysCount === 1) {{
               aisleContainer.classList.add('single-module');
@@ -556,7 +558,7 @@ def generar_html_pasillo_interactivo(df):
           applyFilters();
         }});
 
-        /* ================= PANTALLA COMPLETA JS ================= */
+        /* PANTALLA COMPLETA JS */
         const fsBtn = document.getElementById('fullscreenBtn');
         fsBtn.addEventListener('click', () => {{
             if (!document.fullscreenElement) {{
@@ -626,177 +628,204 @@ def generar_html_pasillo_interactivo(df):
     </html>
     """
 
-# --- SECCIÓN DE CARGA ---
-archivo_excel = st.file_uploader("📥 Cargar Base de Datos del Planograma (Excel o XLSB)", type=["xlsx", "xls", "xlsb"])
+# --- CARGA AUTOMÁTICA DESDE LA NUBE ---
 
-if archivo_excel is not None:
+@st.cache_data(ttl=14400) # Memoria caché que se reinicia cada 4 horas (14400 segundos)
+def cargar_datos_nube(url):
     try:
-        motor = "pyxlsb" if archivo_excel.name.endswith(".xlsb") else None
-        
         try:
-            df = pd.read_excel(archivo_excel, sheet_name="MATRIZ", skiprows=5, usecols="C:AB", engine=motor)
+            dataframe = pd.read_excel(url, sheet_name="MATRIZ", skiprows=5, usecols="C:AB")
         except Exception:
-            df = pd.read_excel(archivo_excel, skiprows=5, usecols="C:AB", engine=motor)
+            dataframe = pd.read_excel(url, skiprows=5, usecols="C:AB")
 
-        df.columns = [str(c).strip() for c in df.columns]
+        dataframe.columns = [str(c).strip() for c in dataframe.columns]
         
-        if "Bandeja" in df.columns and "EAN" in df.columns:
-            df = df.dropna(subset=["Bandeja", "EAN"], how="all")
-
-        st.success(f"✅ Archivo cargado correctamente. Se procesaron {len(df)} SKUs.")
-        
-        tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard y Reporte Excel"])
-        
-        with tab1:
-            st.markdown("##### Control de Vista")
-            mobile_preview = st.toggle("📱 Simular Vista Móvil (Celular)")
+        if "Bandeja" in dataframe.columns and "EAN" in dataframe.columns:
+            dataframe = dataframe.dropna(subset=["Bandeja", "EAN"], how="all")
             
-            html_pasillo = generar_html_pasillo_interactivo(df)
-            
-            if mobile_preview:
-                col1, col2, col3 = st.columns([1, 1, 1])
-                with col2:
-                    st.markdown("""
-                    <div style='
-                        border: 12px solid #1e293b; 
-                        border-radius: 36px; 
-                        padding: 0; 
-                        background: #000; 
-                        box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
-                        max-width: 400px; 
-                        margin: 0 auto;
-                        overflow: hidden;'>
-                    """, unsafe_allow_html=True)
-                    components.html(html_pasillo, height=850, scrolling=True)
-                    st.markdown("</div>", unsafe_allow_html=True)
-            else:
-                components.html(html_pasillo, height=1300, scrolling=True)
-            
-        with tab2:
-            st.markdown("### 📈 Desempeño por Módulo (Cuerpo)")
-            
-            df_chart = df.copy()
-            df_chart['Venta_Num'] = df_chart['Venta'].apply(safe_float)
-            df_chart['Part_Num'] = df_chart['% Part'].apply(safe_float)
-            
-            bandeja_str = df_chart.get('Bandeja', pd.Series(["1.1"]*len(df_chart))).astype(str)
-            df_chart['Modulo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
-            df_chart['Modulo_Ord'] = pd.to_numeric(df_chart['Modulo_Ord'], errors='coerce').fillna(1)
-            
-            ventas_mod = df_chart.groupby('Modulo_Ord').agg(
-                Venta_Total=('Venta_Num', 'sum'),
-                Part_Total=('Part_Num', 'sum'),
-                SKUs_Total=('COD REAL', 'count')
-            ).reset_index()
-            ventas_mod['Módulo'] = "Módulo " + ventas_mod['Modulo_Ord'].astype(int).astype(str)
-            
-            col_ord, _ = st.columns([1, 3])
-            with col_ord:
-                orden_grafico = st.selectbox("Ordenar Gráfico por:", 
-                    ["Módulo (Secuencial)", "Mayor a Menor Venta", "Menor a Mayor Venta", "Mayor Participación (%)"]
-                )
-                
-            if orden_grafico == "Mayor a Menor Venta":
-                ventas_mod = ventas_mod.sort_values('Venta_Total', ascending=False)
-            elif orden_grafico == "Menor a Mayor Venta":
-                ventas_mod = ventas_mod.sort_values('Venta_Total', ascending=True)
-            elif orden_grafico == "Mayor Participación (%)":
-                ventas_mod = ventas_mod.sort_values('Part_Total', ascending=False)
-            else:
-                ventas_mod = ventas_mod.sort_values('Modulo_Ord')
-
-            fig = make_subplots(specs=[[{"secondary_y": True}]])
-            
-            fig.add_trace(
-                go.Bar(
-                    x=ventas_mod['Módulo'], 
-                    y=ventas_mod['Venta_Total'],
-                    name="Venta Total",
-                    text=ventas_mod['Venta_Total'].apply(lambda x: f"S/ {x:,.2f}"),
-                    textposition='outside',
-                    marker_color="#3b82f6",
-                    hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>Cant. SKUs: %{customdata}<extra></extra>",
-                    customdata=ventas_mod['SKUs_Total']
-                ),
-                secondary_y=False
-            )
-
-            fig.add_trace(
-                go.Scatter(
-                    x=ventas_mod['Módulo'], 
-                    y=ventas_mod['Part_Total'],
-                    name="% Participación",
-                    mode="lines+markers+text",
-                    text=ventas_mod['Part_Total'].apply(lambda x: f"{x*100:,.2f}%" if x < 1 else f"{x:,.2f}%"),
-                    textposition='top center',
-                    marker=dict(color="#e11d48", size=8),
-                    line=dict(color="#e11d48", width=3),
-                    hovertemplate="<b>%{x}</b><br>Participación: %{text}<extra></extra>"
-                ),
-                secondary_y=True
-            )
-
-            fig.update_layout(
-                title_text="Análisis de Ventas vs Participación",
-                hovermode="x unified",
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                margin=dict(t=60, b=20, l=20, r=20)
-            )
-            fig.update_yaxes(title_text="Ventas (Monto)", secondary_y=False, showgrid=False)
-            fig.update_yaxes(title_text="% Participación", secondary_y=True, showgrid=False, showticklabels=False)
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
-            st.markdown("---")
-            st.markdown("### 📋 Reporte Detallado y Exportación")
-            
-            col_filt, col_btn = st.columns([2, 1])
-            with col_filt:
-                filtro_reporte = st.selectbox("Filtrar Tabla Resumen:", [
-                    "Todos los SKUs",
-                    "Bloqueados (Estado B)",
-                    "Sin Stock (Stock = 0)",
-                    "Stock Bajo (Stock 1 a 5)",
-                    "Top Ventas (TOP)",
-                    "Cobertura Alta (≥ 30)"
-                ])
-            
-            df_rep = df_chart.copy()
-            df_rep['Stock_Num'] = df_rep['Stock'].apply(safe_float)
-            df_rep['Cob_Num'] = df_rep['Cobertura'].apply(safe_float)
-            
-            if filtro_reporte == "Bloqueados (Estado B)":
-                df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
-            elif filtro_reporte == "Sin Stock (Stock = 0)":
-                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
-            elif filtro_reporte == "Stock Bajo (Stock 1 a 5)":
-                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
-            elif filtro_reporte == "Top Ventas (TOP)":
-                df_rep = df_rep[df_rep['TOPVENTAS'].astype(str).str.strip().str.upper() == 'TOP']
-            elif filtro_reporte == "Cobertura Alta (≥ 30)":
-                df_rep = df_rep[df_rep['Cob_Num'] >= 30]
-                
-            col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
-            cols_to_show = ['Bandeja', 'N°', 'COD REAL', 'EAN', col_desc, 'Marca', 'Stock', 'Cobertura', 'Venta', 'TOPVENTAS']
-            cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
-            
-            with col_btn:
-                st.write("") 
-                st.write("")
-                buffer = io.BytesIO()
-                with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                    df_rep[cols_to_show].to_excel(writer, index=False, sheet_name='Reporte')
-                
-                st.download_button(
-                    label="📥 Descargar a Excel (.xlsx)",
-                    data=buffer.getvalue(),
-                    file_name="reporte_planograma.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-                
-            st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True, height=800)
-        
+        hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
+        return dataframe, hora_lectura
     except Exception as e:
-        st.error(f"Error general en el proceso. Revisa el formato de la tabla: {e}")
+        return None, str(e)
+
+# Enlace extraído de OneDrive Empresarial configurado para descarga directa de lectura
+URL_ONEDRIVE = "https://cnco-my.sharepoint.com/:x:/g/personal/alfredo_huaracha_cencosud_com_pe/IQBXNUOe_jBZT4jygk27X7XeASkT2MeD7sNZF2Z1UybGSjU?download=1"
+
+# --- RENDERIZADO DEL ENCABEZADO ---
+col_sync1, col_sync2 = st.columns([1, 6])
+with col_sync1:
+    if st.button("🔄 Sincronizar Datos", type="primary", use_container_width=True):
+        st.cache_data.clear() # Borra el caché
+        st.rerun() # Reinicia la página inmediatamente
+
+with st.spinner("Sincronizando con la nube de Cencosud..."):
+    df, info_hora = cargar_datos_nube(URL_ONEDRIVE)
+
+if df is not None:
+    st.markdown(f"""
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 20px;">
+        <div>
+            <h1 style="margin: 0; font-size: 2.2rem; color: #fff;">📦 Planograma 2.0</h1>
+            <span style="color: #93c5fd; font-size: 0.9rem;">Análisis interactivo de pasillos sincronizado en tiempo real</span>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.95rem; color: #cbd5e1;">Desarrollado por <b>Alfredo HM</b></div>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Última actualización: {info_hora}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # --- SISTEMA DE PESTAÑAS ---
+    tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard y Reporte Excel"])
+    
+    with tab1:
+        st.markdown("##### Control de Vista")
+        mobile_preview = st.toggle("📱 Simular Vista Móvil (Celular)")
+        
+        html_pasillo = generar_html_pasillo_interactivo(df)
+        
+        if mobile_preview:
+            col1, col2, col3 = st.columns([1, 1, 1])
+            with col2:
+                st.markdown("""
+                <div style='
+                    border: 12px solid #1e293b; 
+                    border-radius: 36px; 
+                    padding: 0; 
+                    background: #000; 
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
+                    max-width: 400px; 
+                    margin: 0 auto;
+                    overflow: hidden;'>
+                """, unsafe_allow_html=True)
+                components.html(html_pasillo, height=850, scrolling=True)
+                st.markdown("</div>", unsafe_allow_html=True)
+        else:
+            components.html(html_pasillo, height=1300, scrolling=True)
+        
+    with tab2:
+        st.markdown("### 📈 Desempeño por Módulo (Cuerpo)")
+        
+        df_chart = df.copy()
+        df_chart['Venta_Num'] = df_chart['Venta'].apply(safe_float)
+        df_chart['Part_Num'] = df_chart['% Part'].apply(safe_float)
+        
+        bandeja_str = df_chart.get('Bandeja', pd.Series(["1.1"]*len(df_chart))).astype(str)
+        df_chart['Modulo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
+        df_chart['Modulo_Ord'] = pd.to_numeric(df_chart['Modulo_Ord'], errors='coerce').fillna(1)
+        
+        ventas_mod = df_chart.groupby('Modulo_Ord').agg(
+            Venta_Total=('Venta_Num', 'sum'),
+            Part_Total=('Part_Num', 'sum'),
+            SKUs_Total=('COD REAL', 'count')
+        ).reset_index()
+        ventas_mod['Módulo'] = "Módulo " + ventas_mod['Modulo_Ord'].astype(int).astype(str)
+        
+        col_ord, _ = st.columns([1, 3])
+        with col_ord:
+            orden_grafico = st.selectbox("Ordenar Gráfico por:", 
+                ["Módulo (Secuencial)", "Mayor a Menor Venta", "Menor a Mayor Venta", "Mayor Participación (%)"]
+            )
+            
+        if orden_grafico == "Mayor a Menor Venta":
+            ventas_mod = ventas_mod.sort_values('Venta_Total', ascending=False)
+        elif orden_grafico == "Menor a Mayor Venta":
+            ventas_mod = ventas_mod.sort_values('Venta_Total', ascending=True)
+        elif orden_grafico == "Mayor Participación (%)":
+            ventas_mod = ventas_mod.sort_values('Part_Total', ascending=False)
+        else:
+            ventas_mod = ventas_mod.sort_values('Modulo_Ord')
+
+        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        
+        fig.add_trace(
+            go.Bar(
+                x=ventas_mod['Módulo'], 
+                y=ventas_mod['Venta_Total'],
+                name="Venta Total",
+                text=ventas_mod['Venta_Total'].apply(lambda x: f"S/ {x:,.2f}"),
+                textposition='outside',
+                marker_color="#3b82f6",
+                hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>Cant. SKUs: %{customdata}<extra></extra>",
+                customdata=ventas_mod['SKUs_Total']
+            ),
+            secondary_y=False
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=ventas_mod['Módulo'], 
+                y=ventas_mod['Part_Total'],
+                name="% Participación",
+                mode="lines+markers+text",
+                text=ventas_mod['Part_Total'].apply(lambda x: f"{x*100:,.2f}%" if x < 1 else f"{x:,.2f}%"),
+                textposition='top center',
+                marker=dict(color="#e11d48", size=8),
+                line=dict(color="#e11d48", width=3),
+                hovertemplate="<b>%{x}</b><br>Participación: %{text}<extra></extra>"
+            ),
+            secondary_y=True
+        )
+
+        fig.update_layout(
+            title_text="Análisis de Ventas vs Participación",
+            hovermode="x unified",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            margin=dict(t=60, b=20, l=20, r=20)
+        )
+        fig.update_yaxes(title_text="Ventas (Monto)", secondary_y=False, showgrid=False)
+        fig.update_yaxes(title_text="% Participación", secondary_y=True, showgrid=False, showticklabels=False)
+        
+        st.plotly_chart(fig, use_container_width=True)
+        
+        st.markdown("---")
+        st.markdown("### 📋 Reporte Detallado y Exportación")
+        
+        col_filt, col_btn = st.columns([2, 1])
+        with col_filt:
+            filtro_reporte = st.selectbox("Filtrar Tabla Resumen:", [
+                "Todos los SKUs",
+                "Bloqueados (Estado B)",
+                "Sin Stock (Stock = 0)",
+                "Stock Bajo (Stock 1 a 5)",
+                "Top Ventas (TOP)",
+                "Cobertura Alta (≥ 30)"
+            ])
+        
+        df_rep = df_chart.copy()
+        df_rep['Stock_Num'] = df_rep['Stock'].apply(safe_float)
+        df_rep['Cob_Num'] = df_rep['Cobertura'].apply(safe_float)
+        
+        if filtro_reporte == "Bloqueados (Estado B)":
+            df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
+        elif filtro_reporte == "Sin Stock (Stock = 0)":
+            df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
+        elif filtro_reporte == "Stock Bajo (Stock 1 a 5)":
+            df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
+        elif filtro_reporte == "Top Ventas (TOP)":
+            df_rep = df_rep[df_rep['TOPVENTAS'].astype(str).str.strip().str.upper() == 'TOP']
+        elif filtro_reporte == "Cobertura Alta (≥ 30)":
+            df_rep = df_rep[df_rep['Cob_Num'] >= 30]
+            
+        col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
+        cols_to_show = ['Bandeja', 'N°', 'COD REAL', 'EAN', col_desc, 'Marca', 'Stock', 'Cobertura', 'Venta', 'TOPVENTAS']
+        cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
+        
+        with col_btn:
+            st.write("") 
+            st.write("")
+            buffer = io.BytesIO()
+            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                df_rep[cols_to_show].to_excel(writer, index=False, sheet_name='Reporte')
+            
+            st.download_button(
+                label="📥 Descargar a Excel (.xlsx)",
+                data=buffer.getvalue(),
+                file_name="reporte_planograma.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            
+        st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True, height=800)
+
 else:
-    st.info("👆 Por favor, sube tu Excel con la tabla maestra (hoja MATRIZ) para previsualizar el planograma.")
+    st.error(f"Error crítico al leer el archivo en la nube. Detalle técnico: {info_hora}")
