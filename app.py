@@ -10,7 +10,7 @@ st.set_page_config(
 )
 
 st.title("📦 Planograma 2.0")
-st.markdown("Carga tu base de datos en Excel (hoja MATRIZ) para generar la vista interactiva del pasillo.")
+st.markdown("Carga tu base de datos en Excel (hoja MATRIZ) para analizar y visualizar el pasillo.")
 st.markdown("---")
 
 # --- FUNCIONES DE APOYO Y LIMPIEZA ---
@@ -156,7 +156,6 @@ def generar_html_pasillo_interactivo(df):
         * {{ box-sizing: border-box; }}
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 12px; }}
         
-        /* PANEL DE FILTROS */
         .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }}
         .filter-group {{ display: flex; flex-direction: column; gap: 4px; }}
         .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
@@ -170,12 +169,10 @@ def generar_html_pasillo_interactivo(df):
         .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
         .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
         
-        /* TABLA DE RESUMEN (DASHBOARD) */
         .summary-wrapper {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }}
         .summary-table {{ width: 100%; border-collapse: collapse; text-align: center; }}
         .summary-table th {{ background: #1e3a8a; color: #93c5fd; padding: 10px; font-size: 0.75rem; text-transform: uppercase; font-weight: 800; border-bottom: 2px solid #3b82f6; }}
         .summary-table td {{ padding: 12px 10px; font-size: 1.3rem; font-weight: 900; color: #fff; }}
-        /* Colores para las celdas del resumen */
         .t-bloq {{ color: #FFC7CE !important; }}
         .t-sin {{ color: #F4B084 !important; }}
         .t-bajo {{ color: #FFFF99 !important; }}
@@ -183,7 +180,6 @@ def generar_html_pasillo_interactivo(df):
         .t-cob {{ color: #ef4444 !important; }}
         .t-top {{ color: #fbbf24 !important; }}
 
-        /* LEYENDA INTERACTIVA */
         .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; }}
         .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-bottom: 8px; display: block; }}
         .legend-chips {{ display: flex; flex-wrap: wrap; gap: 10px; }}
@@ -191,28 +187,25 @@ def generar_html_pasillo_interactivo(df):
         .legend-chip:hover {{ opacity: 1; transform: translateY(-2px); }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
 
-        /* SISTEMA DE NAVEGACIÓN Y CAROUSEL */
         .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; }}
         .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 45px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
         .nav-btn:hover {{ background: #3b82f6; }}
-        .nav-btn:active {{ transform: scale(0.95); }}
         .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
 
         .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; -ms-overflow-style: none; scrollbar-width: none; }}
         .aisle-container::-webkit-scrollbar {{ display: none; }}
         
-        .bay-column {{ flex: 0 0 460px; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; scroll-snap-align: center; }}
+        .bay-column {{ flex: 0 0 460px; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; scroll-snap-align: center; transition: all 0.3s; }}
         .bay-column.hidden {{ display: none !important; }}
         .bay-title {{ background: #1e3a8a; padding: 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; }}
         .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }}
         
-        .shelf-row {{ display: flex; flex-direction: column; background: #162238; border-radius: 4px; }}
+        .shelf-row {{ display: flex; flex-direction: column; background: #162238; border-radius: 4px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         .shelf-caras-count {{ background: rgba(0, 0, 0, 0.4); padding: 1px 6px; border-radius: 3px; color: #93c5fd; font-size: 0.65rem; }}
         .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px; min-height: 125px; overflow-x: auto; }}
         
-        /* TARJETAS INTERACTIVAS */
         .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 110px; position: relative; transition: all 0.2s; cursor: pointer; }}
         .sku-card.dimmed {{ opacity: 0.15; filter: grayscale(1); }}
         .sku-card.highlighted {{ box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); transform: scale(1.02); z-index: 5; border-color: #3b82f6 !important; }}
@@ -227,7 +220,6 @@ def generar_html_pasillo_interactivo(df):
         .sku-cap-val {{ font-size: 0.65rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; flex-shrink: 0; }}
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; }}
 
-        /* MODAL EMERGENTE */
         .modal-overlay {{ position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transform: translateY(20px); transition: transform 0.2s; border: 2px solid #3b82f6; }}
@@ -254,7 +246,6 @@ def generar_html_pasillo_interactivo(df):
           body {{ background-color: #fff !important; color: #000 !important; }}
           .filter-panel, .legend-panel, .modal-overlay, .nav-btn {{ display: none !important; }}
           
-          /* Tabla Resumen en B/N para impresión */
           .summary-wrapper {{ border: 2px solid #000 !important; margin-bottom: 20px; }}
           .summary-table th {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 2px solid #000 !important; }}
           .summary-table td {{ color: #000 !important; border-right: 1px solid #ccc; }}
@@ -291,7 +282,6 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
-      <!-- FILTROS -->
       <div class="filter-panel">
         <div class="filter-group">
           <span class="filter-label">🔍 Buscar Producto</span>
@@ -316,7 +306,6 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
-      <!-- TABLA RESUMEN DINÁMICA -->
       <div class="summary-wrapper">
         <table class="summary-table">
           <thead>
@@ -344,9 +333,8 @@ def generar_html_pasillo_interactivo(df):
         </table>
       </div>
 
-      <!-- LEYENDA INTERACTIVA -->
       <div class="legend-panel">
-        <span class="legend-title">📍 Leyenda Interactiva (Clic para resaltar en el pasillo)</span>
+        <span class="legend-title">📍 Leyenda Interactiva (Filtra bandejas y resalta productos)</span>
         <div class="legend-chips">
           <button class="legend-chip" data-filter="bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
           <button class="legend-chip" data-filter="sin-stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
@@ -357,7 +345,6 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
-      <!-- VISTA DEL PASILLO -->
       <div class="aisle-wrapper">
         <button class="nav-btn" id="btnPrev" title="Módulo Anterior">❮</button>
         <div class="aisle-container" id="aisleContainer">
@@ -389,9 +376,9 @@ def generar_html_pasillo_interactivo(df):
           let availableBays = new Set();
           let availableLevels = new Set();
 
-          // Variables para la Tabla de Resumen
           let cTot=0, cBloq=0, cSin=0, cBajo=0, cOk=0, cCob=0, cTop=0;
 
+          // 1. EVALUAR TARJETAS Y APLICAR ESTILOS (Y SUMAR TABLA)
           document.querySelectorAll('.sku-card').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
@@ -408,12 +395,13 @@ def generar_html_pasillo_interactivo(df):
              const matchBay = (selectedBay === 'ALL' || bay === selectedBay);
              const matchLevel = (selectedLevel === 'ALL' || level === selectedLevel);
 
+             const passesStandard = matchSearch && matchBrand && matchBay && matchLevel;
+
              if(matchSearch && matchBay && matchLevel) availableBrands.add(brand);
              if(matchSearch && matchBrand && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchBay) availableLevels.add(level);
 
-             // Llenar tabla resumen si pasa los filtros estandar (sin importar la leyenda)
-             if(matchSearch && matchBrand && matchBay && matchLevel) {{
+             if(passesStandard) {{
                  cTot++;
                  if(cat === 'bloqueado') cBloq++;
                  if(cat === 'sin-stock') cSin++;
@@ -422,9 +410,34 @@ def generar_html_pasillo_interactivo(df):
                  if(cobVal >= 30) cCob++;
                  if(isTop) cTop++;
              }}
+
+             let passesLegend = true;
+             if (currentLegendFilter) {{
+                 if (currentLegendFilter === 'cob-alta') passesLegend = (cobVal >= 30);
+                 else if (currentLegendFilter === 'top-ventas') passesLegend = isTop;
+                 else passesLegend = (cat === currentLegendFilter);
+             }}
+
+             // Estilos de visualización de la tarjeta
+             if (matchBrand && matchSearch) {{
+                 if (currentLegendFilter) {{
+                     if (passesLegend) {{
+                         card.classList.remove('dimmed');
+                         card.classList.add('highlighted');
+                     }} else {{
+                         card.classList.add('dimmed');
+                         card.classList.remove('highlighted');
+                     }}
+                 }} else {{
+                     card.classList.remove('dimmed');
+                     card.classList.toggle('highlighted', (query !== '' || selectedBrand !== 'ALL'));
+                 }}
+             }} else {{
+                 card.classList.add('dimmed');
+                 card.classList.remove('highlighted');
+             }}
           }});
 
-          // Actualizar HTML de la Tabla
           document.getElementById('t-total').textContent = cTot;
           document.getElementById('t-bloq').textContent = cBloq;
           document.getElementById('t-sin').textContent = cSin;
@@ -433,86 +446,48 @@ def generar_html_pasillo_interactivo(df):
           document.getElementById('t-cob').textContent = cCob;
           document.getElementById('t-top').textContent = cTop;
 
-          // Reconstruir selects en cascada
+          // 2. RECONSTRUIR CASCADAS
           if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
           if (selectedBay !== 'ALL' && !availableBays.has(selectedBay)) selectedBay = 'ALL';
           if (selectedLevel !== 'ALL' && !availableLevels.has(selectedLevel)) selectedLevel = 'ALL';
 
           brandSelect.innerHTML = '';
-          allBrands.forEach(opt => {{
-              if(opt.val === 'ALL' || availableBrands.has(opt.val)) {{
-                  brandSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBrand));
-              }}
-          }});
+          allBrands.forEach(opt => {{ if(opt.val === 'ALL' || availableBrands.has(opt.val)) brandSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBrand)); }});
 
           baySelect.innerHTML = '';
-          allBays.forEach(opt => {{
-              if(opt.val === 'ALL' || availableBays.has(opt.val)) {{
-                  baySelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBay));
-              }}
-          }});
+          allBays.forEach(opt => {{ if(opt.val === 'ALL' || availableBays.has(opt.val)) baySelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBay)); }});
 
           levelSelect.innerHTML = '';
-          allLevels.forEach(opt => {{
-              if(opt.val === 'ALL' || availableLevels.has(opt.val)) {{
-                  levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel));
-              }}
-          }});
+          allLevels.forEach(opt => {{ if(opt.val === 'ALL' || availableLevels.has(opt.val)) levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel)); }});
 
-          // Ocultar Contenedores Vacíos
-          document.querySelectorAll('.bay-column').forEach(bay => {{
-            const bayNum = bay.getAttribute('data-module');
-            bay.classList.toggle('hidden', !(selectedBay === 'ALL' || selectedBay === bayNum));
-          }});
-
+          // 3. OCULTAR BANDEJAS VACÍAS (Considera Filtros Estandar + Leyenda)
           document.querySelectorAll('.shelf-row').forEach(shelf => {{
             const shelfLevel = shelf.getAttribute('data-level');
-            shelf.classList.toggle('hidden', !(selectedLevel === 'ALL' || selectedLevel === shelfLevel));
+            const passesLevelFilter = (selectedLevel === 'ALL' || selectedLevel === shelfLevel);
+            
+            // Revisa si alguna tarjeta en esta bandeja sobrevive a los filtros de leyenda y búsqueda
+            const hasVisibleCards = Array.from(shelf.querySelectorAll('.sku-card')).some(card => {{
+                if (currentLegendFilter) return card.classList.contains('highlighted');
+                return !card.classList.contains('dimmed');
+            }});
+
+            shelf.classList.toggle('hidden', !(passesLevelFilter && hasVisibleCards));
           }});
 
-          // APLICAR LEYENDA Y BÚSQUEDA A LAS TARJETAS
-          document.querySelectorAll('.sku-card').forEach(card => {{
-            const brand = card.getAttribute('data-brand') || '';
-            const name = (card.getAttribute('data-name') || '').toLowerCase();
-            const ean = card.getAttribute('data-ean') || '';
-            const cat = card.getAttribute('data-cat') || '';
-            const isTop = card.getAttribute('data-top') === 'TOP';
-            const cobVal = parseFloat(card.getAttribute('data-cob')) || 0;
-
-            const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
-            const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
-            const passesStandard = matchBrand && matchSearch;
+          // 4. OCULTAR MÓDULOS VACÍOS
+          document.querySelectorAll('.bay-column').forEach(bay => {{
+            const bayNum = bay.getAttribute('data-module');
+            const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
             
-            let passesLegend = true;
-            if (currentLegendFilter) {{
-                if (currentLegendFilter === 'cob-alta') passesLegend = (cobVal >= 30);
-                else if (currentLegendFilter === 'top-ventas') passesLegend = isTop;
-                else passesLegend = (cat === currentLegendFilter);
-            }}
+            // Revisa si el módulo tiene al menos una bandeja visible
+            const hasVisibleShelves = Array.from(bay.querySelectorAll('.shelf-row')).some(shelf => !shelf.classList.contains('hidden'));
 
-            if (passesStandard) {{
-                if (currentLegendFilter) {{
-                    if (passesLegend) {{
-                        card.classList.remove('dimmed');
-                        card.classList.add('highlighted');
-                    }} else {{
-                        card.classList.add('dimmed');
-                        card.classList.remove('highlighted');
-                    }}
-                }} else {{
-                    card.classList.remove('dimmed');
-                    card.classList.toggle('highlighted', (query !== '' || selectedBrand !== 'ALL'));
-                }}
-            }} else {{
-                card.classList.add('dimmed');
-                card.classList.remove('highlighted');
-            }}
+            bay.classList.toggle('hidden', !(passesBayFilter && hasVisibleShelves));
           }});
           
           updateScrollButtons();
         }}
 
-        /* EVENTOS DE LEYENDA */
         document.querySelectorAll('.legend-chip').forEach(chip => {{
             chip.addEventListener('click', () => {{
                 const filter = chip.getAttribute('data-filter');
@@ -542,14 +517,10 @@ def generar_html_pasillo_interactivo(df):
           baySelect.innerHTML = ''; allBays.forEach(o => baySelect.add(new Option(o.text, o.val)));
           levelSelect.innerHTML = ''; allLevels.forEach(o => levelSelect.add(new Option(o.text, o.val)));
           
-          brandSelect.value = 'ALL';
-          baySelect.value = 'ALL';
-          levelSelect.value = 'ALL';
-          
+          brandSelect.value = 'ALL'; baySelect.value = 'ALL'; levelSelect.value = 'ALL';
           applyFilters();
         }});
 
-        /* MODAL */
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
 
@@ -564,7 +535,6 @@ def generar_html_pasillo_interactivo(df):
                 document.getElementById('m-venta').textContent = card.getAttribute('data-venta');
                 document.getElementById('m-part').textContent = card.getAttribute('data-part');
                 document.getElementById('m-top').textContent = card.getAttribute('data-top');
-                
                 modal.classList.add('active');
             }});
         }});
@@ -572,7 +542,6 @@ def generar_html_pasillo_interactivo(df):
         closeBtn.addEventListener('click', () => modal.classList.remove('active'));
         window.addEventListener('click', (e) => {{ if(e.target === modal) modal.classList.remove('active'); }});
 
-        /* CAROUSEL BOTONES */
         const container = document.getElementById('aisleContainer');
         const btnPrev = document.getElementById('btnPrev');
         const btnNext = document.getElementById('btnNext');
@@ -584,23 +553,17 @@ def generar_html_pasillo_interactivo(df):
 
         btnPrev.addEventListener('click', () => {{
             const visibleModule = container.querySelector('.bay-column:not(.hidden)');
-            if(visibleModule) {{
-                const moduleWidth = visibleModule.offsetWidth + 16;
-                container.scrollBy({{ left: -moduleWidth, behavior: 'smooth' }});
-            }}
+            if(visibleModule) container.scrollBy({{ left: -(visibleModule.offsetWidth + 16), behavior: 'smooth' }});
         }});
 
         btnNext.addEventListener('click', () => {{
             const visibleModule = container.querySelector('.bay-column:not(.hidden)');
-            if(visibleModule) {{
-                const moduleWidth = visibleModule.offsetWidth + 16;
-                container.scrollBy({{ left: moduleWidth, behavior: 'smooth' }});
-            }}
+            if(visibleModule) container.scrollBy({{ left: (visibleModule.offsetWidth + 16), behavior: 'smooth' }});
         }});
 
         container.addEventListener('scroll', updateScrollButtons);
         window.addEventListener('resize', updateScrollButtons);
-        setTimeout(applyFilters, 100); // Llama a los filtros al iniciar para llenar la tabla
+        setTimeout(applyFilters, 100);
       </script>
     </body>
     </html>
@@ -625,9 +588,67 @@ if archivo_excel is not None:
 
         st.success(f"✅ Archivo cargado correctamente. Se procesaron {len(df)} SKUs.")
         
-        st.markdown("### Vista Gráfica Interactiva")
-        html_pasillo = generar_html_pasillo_interactivo(df)
-        components.html(html_pasillo, height=1500, scrolling=True)
+        # --- CREACIÓN DE PESTAÑAS (TABS) NATIVAS DE STREAMLIT ---
+        tab1, tab2 = st.tabs(["🛒 Vista Interactiva", "📊 Dashboard y Reportes"])
+        
+        with tab1:
+            html_pasillo = generar_html_pasillo_interactivo(df)
+            components.html(html_pasillo, height=1500, scrolling=True)
+            
+        with tab2:
+            st.markdown("### 📈 Ventas por Módulo (Cuerpo)")
+            st.markdown("Identifica rápidamente qué módulo genera más ingresos.")
+            
+            # Preparar datos para el gráfico
+            df_chart = df.copy()
+            df_chart['Venta_Num'] = df_chart['Venta'].apply(safe_float)
+            
+            # Extraer Módulo para agrupar
+            bandeja_str = df_chart.get('Bandeja', pd.Series(["1.1"]*len(df_chart))).astype(str)
+            df_chart['Modulo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
+            df_chart['Modulo_Ord'] = pd.to_numeric(df_chart['Modulo_Ord'], errors='coerce').fillna(1)
+            
+            ventas_mod = df_chart.groupby('Modulo_Ord')['Venta_Num'].sum().reset_index()
+            ventas_mod['Módulo'] = "Módulo " + ventas_mod['Modulo_Ord'].astype(int).astype(str)
+            ventas_mod = ventas_mod.sort_values('Modulo_Ord')
+            
+            # Gráfico Nativo
+            st.bar_chart(ventas_mod.set_index('Módulo')['Venta_Num'], color="#3b82f6")
+            
+            st.markdown("---")
+            st.markdown("### 📋 Reporte Detallado de SKUs")
+            
+            # Selector de filtro para la tabla
+            filtro_reporte = st.selectbox("Selecciona la categoría a visualizar:", [
+                "Todos los SKUs",
+                "Bloqueados (Estado B)",
+                "Sin Stock (Stock = 0)",
+                "Stock Bajo (Stock 1 a 5)",
+                "Top Ventas (TOP)",
+                "Cobertura Alta (≥ 30)"
+            ])
+            
+            df_rep = df_chart.copy()
+            df_rep['Stock_Num'] = df_rep['Stock'].apply(safe_float)
+            df_rep['Cob_Num'] = df_rep['Cobertura'].apply(safe_float)
+            
+            if filtro_reporte == "Bloqueados (Estado B)":
+                df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
+            elif filtro_reporte == "Sin Stock (Stock = 0)":
+                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
+            elif filtro_reporte == "Stock Bajo (Stock 1 a 5)":
+                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
+            elif filtro_reporte == "Top Ventas (TOP)":
+                df_rep = df_rep[df_rep['TOPVENTAS'].astype(str).str.strip().str.upper() == 'TOP']
+            elif filtro_reporte == "Cobertura Alta (≥ 30)":
+                df_rep = df_rep[df_rep['Cob_Num'] >= 30]
+                
+            # Identificar si la columna descripción se llama 'Descripción' o 'Nombre'
+            col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
+            cols_to_show = ['Bandeja', 'N°', 'COD REAL', 'EAN', col_desc, 'Marca', 'Stock', 'Cobertura', 'Venta', 'TOPVENTAS']
+            cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
+            
+            st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True)
         
     except Exception as e:
         st.error(f"Error general en el proceso. Revisa el formato de la tabla: {e}")
