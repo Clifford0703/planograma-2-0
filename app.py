@@ -55,13 +55,13 @@ def clean_sku(val):
 def obtener_estado_y_color(estado, stock_val):
     estado = str(estado).strip().upper()
     if estado == "B": 
-        return "#FFC7CE", "#9C0006", "bloqueado"
+        return "#FFC7CE", "#9C0006", "Bloqueado"
     elif estado == "A":
-        if stock_val <= 0: return "#F4B084", "#833C0C", "sin-stock"
-        elif stock_val <= 5: return "#FFFF99", "#8A5A00", "stock-bajo"
-        else: return "#C6EFCE", "#006100", "stock-ok"
+        if stock_val <= 0: return "#F4B084", "#833C0C", "Sin Stock"
+        elif stock_val <= 5: return "#FFFF99", "#8A5A00", "Stock Bajo"
+        else: return "#C6EFCE", "#006100", "Stock OK"
     else: 
-        return "#D9D9D9", "#000000", "desconocido"
+        return "#D9D9D9", "#000000", "Desconocido"
 
 def obtener_alerta_css(estado, stock_val):
     estado = str(estado).strip().upper()
@@ -285,7 +285,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
         .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 15px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        /* CORRECCIÓN SCROLL: justify-content: flex-start y padding balanceado para que el primer SKU no se corte */
+        /* CORRECCIÓN SCROLL Y ALINEACIÓN DE PRODUCTOS */
         .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px 12px; min-height: 125px; overflow-x: auto; padding-bottom: 8px; align-items: flex-end; justify-content: flex-start; }}
         .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); z-index: 1; }}
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
@@ -449,10 +449,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
         <div class="legend-panel">
           <span class="legend-title">📍 Leyenda Interactiva</span>
           <div class="legend-chips">
-            <button class="legend-chip" data-filter="bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
-            <button class="legend-chip" data-filter="sin-stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
-            <button class="legend-chip" data-filter="stock-bajo" style="--bg: #FFFF99; --tc: #8A5A00;">Stock 1 a 5</button>
-            <button class="legend-chip" data-filter="stock-ok" style="--bg: #C6EFCE; --tc: #006100;">Stock > 5</button>
+            <button class="legend-chip" data-filter="Bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
+            <button class="legend-chip" data-filter="Sin Stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
+            <button class="legend-chip" data-filter="Stock Bajo" style="--bg: #FFFF99; --tc: #8A5A00;">Stock 1 a 5</button>
+            <button class="legend-chip" data-filter="Stock OK" style="--bg: #C6EFCE; --tc: #006100;">Stock > 5</button>
             <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 2px solid #ef4444;">Cobertura Alta</button>
             <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 2px solid #FFC000;">★ TOP VENTAS</button>
           </div>
@@ -587,7 +587,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
              if (currentLegendFilter) {{
                  if (currentLegendFilter === 'cob-alta') passesLegend = (cobVal >= 30);
                  else if (currentLegendFilter === 'top-ventas') passesLegend = isTop;
-                 else passesLegend = (cat.toLowerCase().replace(' ','-') === currentLegendFilter);
+                 else passesLegend = (cat === currentLegendFilter);
              }}
 
              if (matchBrand && matchCat && matchSearch) {{
