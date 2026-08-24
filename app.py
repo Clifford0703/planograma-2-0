@@ -13,14 +13,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- FORZAR ANCHO MÁXIMO Y AJUSTAR MÁRGENES ---
+# --- FORZAR ANCHO MÁXIMO (CERO MÁRGENES) ---
 st.markdown("""
     <style>
         .block-container {
             padding-left: 1rem !important;
             padding-right: 1rem !important;
-            padding-top: 1.5rem !important;
-            padding-bottom: 1rem !important;
+            padding-top: 2rem !important;
             max-width: 100% !important;
         }
     </style>
@@ -178,38 +177,46 @@ def generar_html_pasillo_interactivo(df):
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb:hover {{ background: #2563eb; }}
 
-        /* 1. KPIs (Tarjetas de Resumen Dinámicas) */
-        .kpi-container {{ display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center; }}
-        .kpi-card {{ flex: 1; min-width: 120px; background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 14px 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }}
-        .kpi-title {{ font-size: 0.65rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }}
-        .kpi-val {{ font-size: 1.8rem; font-weight: 900; line-height: 1; display: block; }}
-        
-        /* 2. PANELES SUPERIORES (Filtros) */
         .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }}
         .filter-group {{ display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }}
         .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
         .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 6px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; outline: none; width: 100%; min-width: 140px; }}
         .filter-select option {{ background: #ffffff; color: #0f172a; }}
         .filter-select option:disabled {{ color: #94a3b8; font-style: italic; }}
-        .btn-group {{ display: flex; gap: 8px; margin-left: auto; }}
-        .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
-        .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
+        .btn-group {{ display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }}
         
-        /* 3. LEYENDA INTERACTIVA */
-        .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }}
-        .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-right: 8px; }}
-        .legend-chips {{ display: flex; flex-wrap: wrap; gap: 8px; }}
-        .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; box-shadow: 0 2px 4px rgba(0,0,0,0.2); outline: none; }}
+        /* BOTONES DE ACCIÓN */
+        .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
+        .filter-btn-reset:hover {{ background: #dc2626; }}
+        .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
+        .filter-btn-print:hover {{ background: #059669; }}
+        .filter-btn-fs {{ background: #8b5cf6; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
+        .filter-btn-fs:hover {{ background: #7c3aed; }}
+        
+        .summary-wrapper {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }}
+        .summary-table {{ width: 100%; border-collapse: collapse; text-align: center; }}
+        .summary-table th {{ background: #1e3a8a; color: #93c5fd; padding: 10px; font-size: 0.75rem; text-transform: uppercase; font-weight: 800; border-bottom: 2px solid #3b82f6; }}
+        .summary-table td {{ padding: 12px 10px; font-size: 1.3rem; font-weight: 900; color: #fff; }}
+        .t-bloq {{ color: #FFC7CE !important; }}
+        .t-sin {{ color: #F4B084 !important; }}
+        .t-bajo {{ color: #FFFF99 !important; }}
+        .t-ok {{ color: #C6EFCE !important; }}
+        .t-cob {{ color: #ef4444 !important; }}
+        .t-top {{ color: #fbbf24 !important; }}
+        
+        .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; }}
+        .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-bottom: 8px; display: block; }}
+        .legend-chips {{ display: flex; flex-wrap: wrap; gap: 10px; }}
+        .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.75rem; padding: 6px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.8; box-shadow: 0 2px 4px rgba(0,0,0,0.2); outline: none; }}
         .legend-chip:hover {{ opacity: 1; transform: translateY(-2px); }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
-        /* 4. PASILLO PRINCIPAL (AUTO-AJUSTABLE) */
         .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; }}
         .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
         .nav-btn:hover {{ background: #3b82f6; }}
         .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
         
-        .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; }}
+        .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; touch-action: pan-x pan-y pinch-zoom; }}
         
         .bay-column {{ flex: 1 0 480px; max-width: 100%; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; scroll-snap-align: center; transition: all 0.3s; }}
         .bay-column.hidden {{ display: none !important; }}
@@ -236,7 +243,16 @@ def generar_html_pasillo_interactivo(df):
         .sku-cap-val {{ font-size: 0.65rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; flex-shrink: 0; }}
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; }}
         
-        /* MODAL EMERGENTE */
+        .aisle-container.single-module {{ justify-content: center; }}
+        .aisle-container.single-module .bay-column {{ flex: 1 1 100%; max-width: 100%; min-width: unset; }}
+        .aisle-container.single-module .shelf-products {{ overflow-x: hidden; justify-content: center; gap: 2px; }}
+        .aisle-container.single-module .sku-card {{ min-width: 40px !important; padding: 4px; }}
+        .aisle-container.single-module .sku-name-text {{ font-size: 0.60rem; -webkit-line-clamp: 4; }}
+        .aisle-container.single-module .sku-pos,
+        .aisle-container.single-module .sku-caras-tag {{ font-size: 0.5rem; padding: 1px 2px; }}
+        .aisle-container.single-module .sku-bottom-bar {{ flex-direction: column; align-items: center; gap: 1px; font-size: 0.55rem; }}
+        .aisle-container.single-module .sku-ean-code {{ max-width: 100%; }}
+        
         .modal-overlay {{ position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transform: translateY(20px); transition: transform 0.2s; border: 2px solid #3b82f6; }}
@@ -248,27 +264,26 @@ def generar_html_pasillo_interactivo(df):
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
         @media (max-width: 768px) {{
-            .kpi-card {{ flex: 1 1 30%; min-width: 30%; padding: 8px 4px; }}
-            .kpi-val {{ font-size: 1.2rem; }}
-            .kpi-title {{ font-size: 0.55rem; }}
-            
             .filter-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
-            .btn-group {{ justify-content: space-between; width: 100%; margin-top: 4px; }}
-            .legend-panel {{ justify-content: center; }}
+            .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
+            .legend-chips {{ justify-content: center; }}
+            .summary-table th, .summary-table td {{ padding: 6px 4px; font-size: 0.65rem; }}
+            .summary-table td {{ font-size: 1rem; }}
             
             .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
             .aisle-wrapper {{ gap: 4px; }}
-            .bay-column {{ flex: 1 0 100%; max-width: 100%; margin-right: 0; }}
+            .bay-column {{ flex: 0 0 100%; max-width: 100%; margin-right: 0; }}
             .sku-card {{ min-width: 80px; }}
+            .aisle-container.single-module .bay-column {{ flex: 1 0 100%; }}
         }}
 
         @media print {{
           @page {{ size: landscape; margin: 5mm; }}
           body {{ background-color: #fff !important; color: #000 !important; overflow: visible !important; }}
           .filter-panel, .legend-panel, .modal-overlay, .nav-btn {{ display: none !important; }}
-          .kpi-container {{ display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; }}
-          .kpi-card {{ border: 1px solid #000 !important; background: #fff !important; padding: 5px; min-width: 100px; box-shadow: none !important; }}
-          .kpi-title, .kpi-val {{ color: #000 !important; }}
+          .summary-wrapper {{ border: 2px solid #000 !important; margin-bottom: 20px; }}
+          .summary-table th {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 2px solid #000 !important; }}
+          .summary-table td {{ color: #000 !important; border-right: 1px solid #ccc; }}
           .aisle-wrapper {{ display: block; }}
           .aisle-container {{ display: block; border: none !important; background: #fff !important; padding: 0; overflow: visible !important; }}
           .bay-column {{ background: #fff !important; border: 2px solid #000 !important; width: 100% !important; margin-bottom: 20px; page-break-inside: avoid; }}
@@ -301,39 +316,6 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
-      <!-- KPIs RESUMEN -->
-      <div class="kpi-container">
-        <div class="kpi-card" style="border-bottom: 4px solid #3b82f6;">
-          <span class="kpi-title">Total SKUs</span>
-          <span class="kpi-val" id="t-total" style="color: #fff;">0</span>
-        </div>
-        <div class="kpi-card" style="border-bottom: 4px solid #FFC7CE;">
-          <span class="kpi-title">Bloqueados</span>
-          <span class="kpi-val" id="t-bloq" style="color: #FFC7CE;">0</span>
-        </div>
-        <div class="kpi-card" style="border-bottom: 4px solid #F4B084;">
-          <span class="kpi-title">Sin Stock (0)</span>
-          <span class="kpi-val" id="t-sin" style="color: #F4B084;">0</span>
-        </div>
-        <div class="kpi-card" style="border-bottom: 4px solid #FFFF99;">
-          <span class="kpi-title">Stock Bajo (1-5)</span>
-          <span class="kpi-val" id="t-bajo" style="color: #FFFF99;">0</span>
-        </div>
-        <div class="kpi-card" style="border-bottom: 4px solid #C6EFCE;">
-          <span class="kpi-title">Stock OK (>5)</span>
-          <span class="kpi-val" id="t-ok" style="color: #C6EFCE;">0</span>
-        </div>
-        <div class="kpi-card" style="border-bottom: 4px solid #ef4444;">
-          <span class="kpi-title">Cob. Alta (≥30)</span>
-          <span class="kpi-val" id="t-cob" style="color: #ef4444;">0</span>
-        </div>
-        <div class="kpi-card" style="border-bottom: 4px solid #fbbf24;">
-          <span class="kpi-title">★ Top Ventas</span>
-          <span class="kpi-val" id="t-top" style="color: #fbbf24;">0</span>
-        </div>
-      </div>
-
-      <!-- FILTROS -->
       <div class="filter-panel">
         <div class="filter-group">
           <span class="filter-label">🔍 Buscar Producto</span>
@@ -354,13 +336,40 @@ def generar_html_pasillo_interactivo(df):
         
         <div class="btn-group">
           <button id="resetBtn" class="filter-btn-reset">Restablecer</button>
+          <button type="button" id="fullscreenBtn" class="filter-btn-fs" title="Ver Mueble Completo">🔲 Pantalla Completa</button>
           <button type="button" class="filter-btn-print" onclick="window.print()">🖨️ Imprimir B/N</button>
         </div>
       </div>
 
-      <!-- LEYENDA -->
+      <div class="summary-wrapper">
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Total SKUs</th>
+              <th>Bloqueados</th>
+              <th>Sin Stock (0)</th>
+              <th>Stock Bajo (1-5)</th>
+              <th>Stock OK (>5)</th>
+              <th>Cobert. Alta (≥30)</th>
+              <th>★ Top Ventas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="t-total">0</td>
+              <td id="t-bloq" class="t-bloq">0</td>
+              <td id="t-sin" class="t-sin">0</td>
+              <td id="t-bajo" class="t-bajo">0</td>
+              <td id="t-ok" class="t-ok">0</td>
+              <td id="t-cob" class="t-cob">0</td>
+              <td id="t-top" class="t-top">0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <div class="legend-panel">
-        <span class="legend-title">📍 Leyenda Interactiva (Clic para resaltar)</span>
+        <span class="legend-title">📍 Leyenda Interactiva (Resalta productos sin desarmar el mueble)</span>
         <div class="legend-chips">
           <button class="legend-chip" data-filter="bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
           <button class="legend-chip" data-filter="sin-stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
@@ -371,7 +380,6 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
-      <!-- PASILLO -->
       <div class="aisle-wrapper">
         <button class="nav-btn" id="btnPrev" title="Módulo Anterior">❮</button>
         <div class="aisle-container" id="aisleContainer">
@@ -404,6 +412,7 @@ def generar_html_pasillo_interactivo(df):
           let availableLevels = new Set();
 
           let cTot=0, cBloq=0, cSin=0, cBajo=0, cOk=0, cCob=0, cTop=0;
+          let visibleBaysCount = 0;
 
           document.querySelectorAll('.sku-card').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
@@ -484,7 +493,6 @@ def generar_html_pasillo_interactivo(df):
           levelSelect.innerHTML = '';
           allLevels.forEach(opt => {{ if(opt.val === 'ALL' || availableLevels.has(opt.val)) levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel)); }});
 
-          // OCULTAMIENTO INTELIGENTE DE MÓDULOS 
           document.querySelectorAll('.bay-column').forEach(bay => {{
             const bayNum = bay.getAttribute('data-module');
             const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
@@ -494,8 +502,17 @@ def generar_html_pasillo_interactivo(df):
                 return !card.classList.contains('dimmed');
             }});
 
-            bay.classList.toggle('hidden', !(passesBayFilter && hasMatch));
+            const isVisible = passesBayFilter && hasMatch;
+            bay.classList.toggle('hidden', !isVisible);
+            if (isVisible) visibleBaysCount++;
           }});
+
+          const aisleContainer = document.getElementById('aisleContainer');
+          if (visibleBaysCount === 1) {{
+              aisleContainer.classList.add('single-module');
+          }} else {{
+              aisleContainer.classList.remove('single-module');
+          }}
 
           document.querySelectorAll('.shelf-row').forEach(shelf => {{
             const shelfLevel = shelf.getAttribute('data-level');
@@ -537,6 +554,28 @@ def generar_html_pasillo_interactivo(df):
           
           brandSelect.value = 'ALL'; baySelect.value = 'ALL'; levelSelect.value = 'ALL';
           applyFilters();
+        }});
+
+        /* ================= PANTALLA COMPLETA JS ================= */
+        const fsBtn = document.getElementById('fullscreenBtn');
+        fsBtn.addEventListener('click', () => {{
+            if (!document.fullscreenElement) {{
+                document.documentElement.requestFullscreen().catch(err => {{
+                    console.log("Error al intentar pantalla completa: " + err.message);
+                }});
+            }} else {{
+                if (document.exitFullscreen) {{
+                    document.exitFullscreen();
+                }}
+            }}
+        }});
+        
+        document.addEventListener('fullscreenchange', () => {{
+            if (!document.fullscreenElement) {{
+                fsBtn.innerHTML = '🔲 Pantalla Completa';
+            }} else {{
+                fsBtn.innerHTML = '✖ Salir Pantalla Completa';
+            }}
         }});
 
         const modal = document.getElementById('productModal');
