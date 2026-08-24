@@ -122,8 +122,10 @@ def generar_html_pasillo_interactivo(df):
                 venta_val = safe_float(it.get("Venta", 0))
                 part_val = safe_float(it.get("% Part", 0))
                 
-                area_val = str(it.get("Area", "S/A")).replace('"', '&quot;')
                 dept_val = str(it.get("Departamento", "S/D")).replace('"', '&quot;')
+                sec_val = str(it.get("Sección", "S/S")).replace('"', '&quot;')
+                catjer_val = str(it.get("Categoría", "S/C")).replace('"', '&quot;')
+                ga_val = str(it.get("Grupo de artículo", "S/G")).replace('"', '&quot;')
                 
                 part_fmt = format_pct(part_val)
                 bg_color, text_color, cat_leyenda = obtener_estado_y_color(estado, stock_val)
@@ -139,7 +141,8 @@ def generar_html_pasillo_interactivo(df):
                 <div class="sku-card" style="flex: {caras}; background-color: {bg_color}; {border_style}" 
                      data-brand="{marca}" data-name="{nombre}" data-ean="{ean}" data-top="{top_ventas}"
                      data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_fmt}" data-part="{part_fmt}" 
-                     data-cod="{cod_real}" data-cat="{cat_leyenda}" data-area="{area_val}" data-dept="{dept_val}">
+                     data-cod="{cod_real}" data-cat="{cat_leyenda}" 
+                     data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}">
                   <div class="sku-pos">{pos}</div>
                   <div class="sku-caras-tag">{caras} C</div>
                   <div class="sku-details">
@@ -259,7 +262,7 @@ def generar_html_pasillo_interactivo(df):
         .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transform: translateY(20px); transition: transform 0.2s; border: 2px solid #3b82f6; }}
         .modal-overlay.active .modal-content {{ transform: translateY(0); }}
         .modal-close {{ position: absolute; top: 10px; right: 15px; font-size: 1.8rem; cursor: pointer; color: #94a3b8; font-weight: bold; line-height: 1; }}
-        .m-row {{ border-bottom: 1px solid #334155; padding: 8px 0; display: flex; justify-content: space-between; font-size: 0.85rem; }}
+        .m-row {{ border-bottom: 1px solid #334155; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
@@ -287,8 +290,10 @@ def generar_html_pasillo_interactivo(df):
           <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod"></span></div>
           <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
           <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
-          <div class="m-row"><span class="m-label">Área:</span><span class="m-val" id="m-area" style="color: #cbd5e1;"></span></div>
           <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept" style="color: #cbd5e1;"></span></div>
+          <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec" style="color: #cbd5e1;"></span></div>
+          <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer" style="color: #cbd5e1;"></span></div>
+          <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga" style="color: #cbd5e1;"></span></div>
           <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
           <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
           <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
@@ -526,8 +531,10 @@ def generar_html_pasillo_interactivo(df):
                 document.getElementById('m-cod').textContent = card.getAttribute('data-cod');
                 document.getElementById('m-ean').textContent = card.getAttribute('data-ean');
                 document.getElementById('m-brand').textContent = card.getAttribute('data-brand');
-                document.getElementById('m-area').textContent = card.getAttribute('data-area');
                 document.getElementById('m-dept').textContent = card.getAttribute('data-dept');
+                document.getElementById('m-sec').textContent = card.getAttribute('data-sec');
+                document.getElementById('m-catjer').textContent = card.getAttribute('data-catjer');
+                document.getElementById('m-ga').textContent = card.getAttribute('data-ga');
                 document.getElementById('m-stock').textContent = card.getAttribute('data-stock');
                 document.getElementById('m-cob').textContent = card.getAttribute('data-cob');
                 document.getElementById('m-venta').textContent = card.getAttribute('data-venta');
@@ -565,32 +572,43 @@ def generar_html_pasillo_interactivo(df):
 # --- LÓGICA DE CARGA HÍBRIDA (NUBE + MANUAL) ---
 
 @st.cache_data(ttl=14400)
-def cargar_datos_nube(url):
+def cargar_datos_nube(url_matriz, url_jerarquia):
     try:
+        # Carga MATRIZ y DATA_AUX
         try:
-            df_matriz = pd.read_excel(url, sheet_name="MATRIZ", skiprows=5, usecols="C:AB")
+            df_matriz = pd.read_excel(url_matriz, sheet_name="MATRIZ", skiprows=5, usecols="C:AB")
         except Exception:
-            df_matriz = pd.read_excel(url, skiprows=5, usecols="C:AB")
+            df_matriz = pd.read_excel(url_matriz, skiprows=5, usecols="C:AB")
             
         try:
-            df_aux = pd.read_excel(url, sheet_name="DATA_AUX", skiprows=5)
+            df_aux = pd.read_excel(url_matriz, sheet_name="DATA_AUX", skiprows=5)
         except Exception:
             df_aux = pd.DataFrame()
 
         df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
-        
         if "Bandeja" in df_matriz.columns and "EAN" in df_matriz.columns:
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
             
+        # Carga Archivo Jerarquía (Saltando las 2 primeras filas)
+        try:
+            df_jer = pd.read_excel(url_jerarquia, skiprows=2)
+            if 'CodGA' not in df_jer.columns:
+                 df_jer = pd.read_excel(url_jerarquia)
+        except Exception:
+            df_jer = pd.DataFrame()
+            
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_matriz, df_aux, hora_lectura, None
+        return df_matriz, df_aux, df_jer, hora_lectura, None
     except Exception as e:
-        return None, None, None, str(e)
+        return None, None, None, None, str(e)
 
+# ⚠️ ENLACES A LA NUBE (Actualizados)
 URL_NUBE = "https://drive.google.com/uc?export=download&id=1QFqktucaF983WXcjupQI-jpeEZzWxtX_"
+URL_JERARQUIA = "https://drive.google.com/uc?export=download&id=1JI4Ef0138lwI-fJsQmX5lz-fqXvemZQD"
 
 df_raw = None
 df_aux_raw = None
+df_jer_raw = None
 info_hora = None
 error_nube = None
 
@@ -600,14 +618,15 @@ with col_sync1:
         st.cache_data.clear()
         st.rerun()
 
-with st.spinner("Sincronizando base de datos central..."):
-    df_nube, df_aux_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE)
+with st.spinner("Sincronizando base de datos central y jerarquías..."):
+    df_nube, df_aux_nube, df_jer_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE, URL_JERARQUIA)
 
 if df_nube is not None:
     df_raw = df_nube
     df_aux_raw = df_aux_nube
+    df_jer_raw = df_jer_nube
 else:
-    st.warning("⚠️ No se pudo conectar a Google Drive. Puedes subir el archivo manualmente para continuar.")
+    st.warning("⚠️ No se pudo conectar a la Nube. Puedes subir el archivo MATRIZ manualmente.")
     archivo_manual = st.file_uploader("📥 Subir archivo Excel del Planograma (.xlsx, .xlsb)", type=["xlsx", "xls", "xlsb"])
     if archivo_manual:
         motor = "pyxlsb" if archivo_manual.name.endswith(".xlsb") else None
@@ -621,6 +640,8 @@ else:
                 df_aux_raw = pd.read_excel(archivo_manual, sheet_name="DATA_AUX", skiprows=5, engine=motor)
             except Exception:
                 df_aux_raw = pd.DataFrame()
+                
+            df_jer_raw = pd.DataFrame()
             
             df_raw.columns = [str(c).strip() for c in df_raw.columns]
             if "Bandeja" in df_raw.columns and "EAN" in df_raw.columns:
@@ -632,12 +653,17 @@ else:
 
 if df_raw is not None:
     
+    # ---------------------------------------------------------
+    # 🔗 TRIPLE CRUCE MAESTRO DE TABLAS (FORMATO TEXTO)
+    # ---------------------------------------------------------
     df_base = df_raw.copy()
     df_base['COD_REAL_Str'] = df_base['COD REAL'].apply(clean_sku)
     
+    # 1. Extraer Monto Margen y Grupo de A (Desde DATA_AUX)
     if df_aux_raw is not None and not df_aux_raw.empty:
         df_aux_raw.columns = [str(c).strip() for c in df_aux_raw.columns]
         
+        # Margen
         if 'Monto Margen' in df_aux_raw.columns:
             cols_material = [c for c in df_aux_raw.columns if 'Material' in c]
             if cols_material:
@@ -646,34 +672,61 @@ if df_raw is not None:
                 df_margen['Mat_Ventas_Str'] = df_margen[col_mat_ventas].apply(clean_sku)
                 df_margen = df_margen[df_margen['Mat_Ventas_Str'] != ""]
                 df_margen = df_margen.drop_duplicates(subset=['Mat_Ventas_Str'])
-                
                 df_base = df_base.merge(df_margen[['Mat_Ventas_Str', 'Monto Margen']], left_on='COD_REAL_Str', right_on='Mat_Ventas_Str', how='left')
                 df_base.drop(columns=['Mat_Ventas_Str'], inplace=True, errors='ignore')
         
-        df_base['Monto Margen'] = df_base.get('Monto Margen', 0.0).fillna(0.0)
-        
-        if 'Denomin. Á' in df_aux_raw.columns and 'Denomin. D' in df_aux_raw.columns:
+        # Grupo de A
+        if 'Grupo de A' in df_aux_raw.columns:
             cols_material = [c for c in df_aux_raw.columns if 'Material' in c]
             if cols_material:
                 col_mat_barras = cols_material[-1] 
-                df_barras = df_aux_raw[[col_mat_barras, 'Denomin. Á', 'Denomin. D']].copy()
+                df_barras = df_aux_raw[[col_mat_barras, 'Grupo de A']].copy()
                 df_barras['Mat_Barras_Str'] = df_barras[col_mat_barras].apply(clean_sku)
-                df_barras = df_barras[df_barras['Mat_Barras_Str'] != ""]
+                df_barras['Grupo_A_Str'] = df_barras['Grupo de A'].apply(clean_sku)
                 df_barras = df_barras.drop_duplicates(subset=['Mat_Barras_Str'])
-                df_barras = df_barras.rename(columns={'Denomin. Á': 'Area', 'Denomin. D': 'Departamento'})
-                
-                df_base = df_base.merge(df_barras[['Mat_Barras_Str', 'Area', 'Departamento']], left_on='COD_REAL_Str', right_on='Mat_Barras_Str', how='left')
+                df_base = df_base.merge(df_barras[['Mat_Barras_Str', 'Grupo_A_Str']], left_on='COD_REAL_Str', right_on='Mat_Barras_Str', how='left')
                 df_base.drop(columns=['Mat_Barras_Str'], inplace=True, errors='ignore')
-                
-        df_base['Area'] = df_base.get('Area', 'S/A').fillna('S/A')
-        df_base['Departamento'] = df_base.get('Departamento', 'S/D').fillna('S/D')
-        
+        else:
+            df_base['Grupo_A_Str'] = ""
     else:
-        df_base['Monto Margen'] = 0.0
-        df_base['Area'] = 'S/A'
-        df_base['Departamento'] = 'S/D'
+        df_base['Grupo_A_Str'] = ""
         
-    df_base.drop(columns=['COD_REAL_Str'], inplace=True, errors='ignore')
+    df_base['Monto Margen'] = df_base.get('Monto Margen', 0.0).fillna(0.0)
+
+    # 2. Extraer Ramas desde el Archivo de Jerarquía Externa
+    columnas_jerarquia = ['Departamento', 'Sección', 'Categoría', 'Grupo de artículo']
+    
+    if df_jer_raw is not None and not df_jer_raw.empty:
+        df_jer_raw.columns = [str(c).strip() for c in df_jer_raw.columns]
+        if 'CodGA' in df_jer_raw.columns:
+            df_jer_raw['CodGA_Str'] = df_jer_raw['CodGA'].apply(clean_sku)
+            
+            rename_dict = {
+                'DEPARTAMENTO (2)': 'Departamento',
+                'SECCIÓN (3)': 'Sección',
+                'CATEGORIA (4)': 'Categoría',
+                'GRUPO ARTICULO (6)': 'Grupo de artículo'
+            }
+            
+            cols_to_keep = ['CodGA_Str']
+            for old_name, new_name in rename_dict.items():
+                if old_name in df_jer_raw.columns:
+                    df_jer_raw.rename(columns={old_name: new_name}, inplace=True)
+                    cols_to_keep.append(new_name)
+                    
+            df_jer_unique = df_jer_raw[cols_to_keep].drop_duplicates(subset=['CodGA_Str'])
+            df_base = df_base.merge(df_jer_unique, left_on='Grupo_A_Str', right_on='CodGA_Str', how='left')
+            
+            for col in columnas_jerarquia:
+                if col not in df_base.columns: df_base[col] = 'S/D'
+                else: df_base[col] = df_base[col].fillna('S/D')
+        else:
+            for col in columnas_jerarquia: df_base[col] = 'S/D'
+    else:
+        for col in columnas_jerarquia: df_base[col] = 'S/D'
+        
+    df_base.drop(columns=['COD_REAL_Str', 'Grupo_A_Str', 'CodGA_Str'], inplace=True, errors='ignore')
+    # ---------------------------------------------------------
 
     st.markdown(f"""
     <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 20px;">
@@ -688,7 +741,6 @@ if df_raw is not None:
     </div>
     """, unsafe_allow_html=True)
     
-    # Pre-cálculos Globales para todo el Dashboard
     df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(safe_float)
     df_base['Part_Num'] = df_base['% Part'].apply(safe_float)
@@ -741,11 +793,6 @@ if df_raw is not None:
             components.html(html_pasillo, height=1300, scrolling=True)
             
     with tab2:
-        # ==========================================
-        # 📊 EXECUTIVE DASHBOARD REDISEÑADO
-        # ==========================================
-        
-        # 1. KPIs Financieros Globales (Cinta Superior)
         st.markdown("### 💼 Resumen Ejecutivo")
         
         ventas_globales = df_unicos['Venta_Num'].sum()
@@ -770,8 +817,6 @@ if df_raw is not None:
         """, unsafe_allow_html=True)
         
         st.markdown("---")
-        
-        # 2. Layout de Columnas 70% / 30%
         col_graf_izq, col_graf_der = st.columns([7, 3])
         
         with col_graf_izq:
@@ -805,7 +850,6 @@ if df_raw is not None:
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             
-            # Texto BLANCO y nítido para las barras
             fig.add_trace(
                 go.Bar(
                     x=ventas_mod['Módulo'], 
@@ -849,20 +893,22 @@ if df_raw is not None:
         with col_graf_der:
             st.markdown("##### 🍩 Distribución de Ventas")
             
-            vista_anillo = st.selectbox("Analizar por:", ["Area", "Departamento", "Marca"], label_visibility="collapsed")
+            vista_anillo = st.selectbox("Analizar por:", 
+                ["Departamento", "Sección", "Categoría", "Grupo de artículo", "Marca"], 
+                label_visibility="collapsed"
+            )
             
-            # Agrupamos solo SKUs únicos para evitar duplicar ventas de productos en varias bandejas
             df_pie = df_unicos.groupby(vista_anillo)['Venta_Num'].sum().reset_index()
             df_pie = df_pie[df_pie['Venta_Num'] > 0].sort_values(by='Venta_Num', ascending=False)
             
-            # Gráfico de Anillo Moderno
             fig_pie = go.Figure(data=[go.Pie(
                 labels=df_pie[vista_anillo], 
                 values=df_pie['Venta_Num'], 
-                hole=0.55,
+                hole=0.45,
                 textinfo='label+percent',
                 textposition='inside',
-                insidetextorientation='radial',
+                insidetextorientation='horizontal',
+                textfont=dict(size=15, color='#ffffff', family='Arial Black'),
                 marker=dict(colors=['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'], 
                             line=dict(color='#0f172a', width=2))
             )])
@@ -874,6 +920,7 @@ if df_raw is not None:
                 margin=dict(t=10, b=10, l=10, r=10),
                 annotations=[dict(text=f'<b>S/ {ventas_globales/1000:,.0f}K</b>', x=0.5, y=0.5, font_size=20, showarrow=False, font_color='#ffffff')]
             )
+            fig_pie.update_traces(hovertemplate="<b>%{label}</b><br>Ventas: S/ %{value:,.2f}<br>Participación: %{percent}<extra></extra>")
             
             st.plotly_chart(fig_pie, use_container_width=True)
             
@@ -905,7 +952,7 @@ if df_raw is not None:
             df_rep = df_rep[df_rep['Cob_Num'] >= 30]
             
         col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
-        cols_to_show = ['Bandeja', 'N°', 'COD REAL', 'EAN', col_desc, 'Area', 'Departamento', 'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen', 'TOPVENTAS']
+        cols_to_show = ['Bandeja', 'N°', 'COD REAL', 'EAN', col_desc, 'Departamento', 'Sección', 'Categoría', 'Grupo de artículo', 'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen', 'TOPVENTAS']
         cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
         
         with col_btn:
