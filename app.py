@@ -602,7 +602,7 @@ def cargar_datos_nube(url_matriz, url_jerarquia):
     except Exception as e:
         return None, None, None, None, str(e)
 
-# ⚠️ ENLACES A LA NUBE (Actualizados)
+# ⚠️ ENLACES A GOOGLE DRIVE CONFIGURADOS
 URL_NUBE = "https://drive.google.com/uc?export=download&id=1QFqktucaF983WXcjupQI-jpeEZzWxtX_"
 URL_JERARQUIA = "https://drive.google.com/uc?export=download&id=1JI4Ef0138lwI-fJsQmX5lz-fqXvemZQD"
 
@@ -938,7 +938,10 @@ if df_raw is not None:
                 "Cobertura Alta (≥ 30)"
             ])
         
+        # --- Solución al KeyError: Definimos Stock_Num y Cob_Num explícitamente ---
         df_rep = df_base.copy()
+        df_rep['Stock_Num'] = df_rep['Stock'].apply(safe_float)
+        df_rep['Cob_Num'] = df_rep['Cobertura'].apply(safe_float)
         
         if filtro_reporte == "Bloqueados (Estado B)":
             df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
