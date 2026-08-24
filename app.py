@@ -4,6 +4,7 @@ import streamlit.components.v1 as components
 import io
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.express as px
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -18,15 +19,15 @@ st.markdown("""
         .block-container {
             padding-left: 1.5rem !important;
             padding-right: 1.5rem !important;
-            padding-top: 1.5rem !important;
+            padding-top: 0.5rem !important;
             max-width: 100% !important;
         }
         
         /* Estilos para Tarjetas Financieras */
         .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; }
-        .fin-kpi-card { flex: 1; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
-        .fin-kpi-title { font-size: 0.85rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
-        .fin-kpi-val { font-size: 2.2rem; font-weight: 900; color: #ffffff; line-height: 1; }
+        .fin-kpi-card { flex: 1; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 18px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
+        .fin-kpi-title { font-size: 0.80rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
+        .fin-kpi-val { font-size: 2.0rem; font-weight: 900; color: #ffffff; line-height: 1; }
         .fin-kpi-card.green-theme { border-left-color: #10b981; }
         .fin-kpi-card.purple-theme { border-left-color: #8b5cf6; }
     </style>
@@ -46,7 +47,6 @@ def format_pct(val):
     return f"{val*100:.2f}%" if val < 1 else f"{val:.2f}%"
 
 def clean_sku(val):
-    """Fuerza cualquier valor a texto puro, eliminando decimales ocultos de Excel (.0)"""
     if pd.isna(val): return ""
     s = str(val).strip()
     if s.endswith('.0'):
@@ -83,6 +83,7 @@ def generar_html_pasillo_interactivo(df):
 
     cuerpos = {}
     todas_marcas = sorted(list(df["Marca"].dropna().unique())) if "Marca" in df.columns else []
+    todas_categorias = sorted(list(df["Categoría"].dropna().unique())) if "Categoría" in df.columns else []
     todos_niveles = sorted(list(df["Nivel_Ord"].dropna().unique()), reverse=True)
 
     for _, r in df.iterrows():
@@ -97,6 +98,11 @@ def generar_html_pasillo_interactivo(df):
         cuerpo_num = cuerpo_nombre.replace("Cuerpo ", "").strip()
         niveles_ordenados = sorted(niveles_dict.keys(), reverse=True)
         html_niveles = ""
+        
+        # Obtener la categoría más común de este cuerpo para el subtítulo
+        todos_items_cuerpo = [it for sublist in niveles_dict.values() for it in sublist]
+        cats_cuerpo = [str(it.get('Categoría', '')) for it in todos_items_cuerpo if str(it.get('Categoría', '')) not in ['', 'S/C', 'nan']]
+        cat_predominante = max(set(cats_cuerpo), key=cats_cuerpo.count) if cats_cuerpo else ""
 
         for b_nombre in niveles_ordenados:
             items = niveles_dict[b_nombre]
@@ -167,9 +173,14 @@ def generar_html_pasillo_interactivo(df):
             </div>
             """
 
+        subtitulo_cat = f'<div class="bay-subcat">{cat_predominante}</div>' if cat_predominante else ''
+
         html_cuerpos += f"""
         <div class="bay-column" data-module="{cuerpo_num}">
-          <div class="bay-title">{cuerpo_nombre.upper()}</div>
+          <div class="bay-title">
+            <span>{cuerpo_nombre.upper()}</span>
+            {subtitulo_cat}
+          </div>
           <div class="bay-shelves">
             {html_niveles}
           </div>
@@ -177,6 +188,7 @@ def generar_html_pasillo_interactivo(df):
         """
 
     options_marcas = "".join([f'<option value="{m}">{m}</option>' for m in todas_marcas])
+    options_categorias = "".join([f'<option value="{c}">{c}</option>' for c in todas_categorias if c not in ['S/C', 'nan', '']])
     options_cuerpos = "".join([f'<option value="{k.replace("Cuerpo ", "")}">{k}</option>' for k in cuerpos.keys()])
     options_niveles = "".join([f'<option value="{int(lvl)}">Nivel {int(lvl)}</option>' for lvl in todos_niveles])
 
@@ -200,10 +212,10 @@ def generar_html_pasillo_interactivo(df):
         .kpi-title {{ font-size: 0.65rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; margin-bottom: 6px; display: block; letter-spacing: 0.5px; }}
         .kpi-val {{ font-size: 1.8rem; font-weight: 900; line-height: 1; display: block; }}
         
-        .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }}
+        .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }}
         .filter-group {{ display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }}
         .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
-        .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 6px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; outline: none; width: 100%; min-width: 140px; }}
+        .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 6px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; outline: none; width: 100%; min-width: 130px; }}
         .btn-group {{ display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }}
         
         .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
@@ -225,7 +237,9 @@ def generar_html_pasillo_interactivo(df):
         .bay-column {{ flex: 1 0 480px; max-width: 100%; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; scroll-snap-align: center; transition: all 0.3s; }}
         .bay-column.hidden {{ display: none !important; }}
         
-        .bay-title {{ background: #1e3a8a; padding: 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; }}
+        .bay-title {{ background: #1e3a8a; padding: 6px 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; }}
+        .bay-subcat {{ font-size: 0.68rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
+        
         .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }}
         .shelf-row {{ display: flex; flex-direction: column; background: #162238; border-radius: 4px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
@@ -266,18 +280,30 @@ def generar_html_pasillo_interactivo(df):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        @media (max-width: 768px) {{
-            .kpi-card {{ flex: 1 1 30%; min-width: 30%; padding: 8px 4px; }}
-            .kpi-val {{ font-size: 1.2rem; }}
-            .kpi-title {{ font-size: 0.55rem; }}
-            .filter-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
-            .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
-            .legend-chips {{ justify-content: center; }}
-            .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
-            .aisle-wrapper {{ gap: 4px; }}
-            .bay-column {{ flex: 0 0 100%; max-width: 100%; margin-right: 0; }}
-            .sku-card {{ min-width: 80px; }}
-            .aisle-container.single-module .bay-column {{ flex: 1 0 100%; }}
+        /* --- REGLAS DE IMPRESIÓN A4 VERTICAL POR CUERPO --- */
+        @media print {{
+          @page {{ size: A4 portrait; margin: 8mm; }}
+          body {{ background-color: #fff !important; color: #000 !important; margin: 0; padding: 0; font-size: 9pt; }}
+          .filter-panel, .legend-panel, .modal-overlay, .nav-btn, .kpi-container {{ display: none !important; }}
+          .aisle-wrapper {{ display: block !important; width: 100% !important; }}
+          .aisle-container {{ display: block !important; background: transparent !important; border: none !important; padding: 0 !important; overflow: visible !important; }}
+          .bay-column {{ background: #fff !important; border: 2px solid #000 !important; width: 100% !important; max-width: 100% !important; page-break-inside: avoid; margin-bottom: 0 !important; }}
+          .bay-column.hidden {{ display: none !important; }}
+          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 2px solid #000 !important; padding: 4px !important; font-size: 11pt !important; }}
+          .bay-subcat {{ color: #334155 !important; font-size: 9pt !important; }}
+          .bay-shelves {{ padding: 6px !important; gap: 8px !important; }}
+          .shelf-row {{ background: #fff !important; border: 1px solid #000 !important; page-break-inside: avoid; margin-bottom: 4px !important; }}
+          .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 4px solid #000 !important; font-size: 8pt !important; padding: 2px 4px !important; }}
+          .shelf-caras-count {{ background: #e2e8f0 !important; color: #000 !important; }}
+          .shelf-products {{ min-height: 80px !important; padding: 4px !important; gap: 2px !important; overflow: hidden !important; }}
+          .sku-card {{ background: #fff !important; border: 1px solid #000 !important; color: #000 !important; padding: 3px !important; min-width: 45px !important; }}
+          .sku-card[data-top="TOP"] {{ border: 3px double #000 !important; }}
+          .sku-pos, .sku-caras-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-size: 6pt !important; width: 12px; height: 12px; }}
+          .sku-brand-text {{ font-size: 6.5pt !important; color: #000 !important; }}
+          .sku-name-text {{ font-size: 6.5pt !important; color: #000 !important; -webkit-line-clamp: 3 !important; line-height: 1.1 !important; }}
+          .sku-bottom-bar {{ border-top: 1px dashed #000 !important; font-size: 6pt !important; margin-top: 2px !important; padding-top: 1px !important; }}
+          .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 6pt !important; }}
+          .shelf-bottom-rail {{ background: #000 !important; height: 4px !important; }}
         }}
       </style>
     </head>
@@ -315,10 +341,12 @@ def generar_html_pasillo_interactivo(df):
       <div class="filter-panel">
         <div class="filter-group"><span class="filter-label">🔍 Buscar Producto</span><input type="text" id="searchInput" class="filter-input" placeholder="Nombre o EAN..."></div>
         <div class="filter-group"><span class="filter-label">🏷️ Marca</span><select id="brandSelect" class="filter-select"><option value="ALL">Todas</option>{options_marcas}</select></div>
+        <div class="filter-group"><span class="filter-label">📂 Categoría</span><select id="catSelect" class="filter-select"><option value="ALL">Todas</option>{options_categorias}</select></div>
         <div class="filter-group"><span class="filter-label">📦 Cuerpo</span><select id="baySelect" class="filter-select"><option value="ALL">Todos</option>{options_cuerpos}</select></div>
         <div class="filter-group"><span class="filter-label">📶 Nivel</span><select id="levelSelect" class="filter-select"><option value="ALL">Todos</option>{options_niveles}</select></div>
         <div class="btn-group">
           <button id="resetBtn" class="filter-btn-reset">Restablecer</button>
+          <button type="button" id="printBayBtn" class="filter-btn-print" title="Imprime el cuerpo visible en una hoja A4 vertical">🖨️ Imprimir Cuerpo (A4)</button>
           <button type="button" id="fullscreenBtn" class="filter-btn-fs" title="Ver Mueble Completo">🔲 Pantalla Completa</button>
         </div>
       </div>
@@ -346,22 +374,27 @@ def generar_html_pasillo_interactivo(df):
       <script>
         const searchInput = document.getElementById('searchInput');
         const brandSelect = document.getElementById('brandSelect');
+        const catSelect = document.getElementById('catSelect');
         const baySelect = document.getElementById('baySelect');
         const levelSelect = document.getElementById('levelSelect');
         const resetBtn = document.getElementById('resetBtn');
+        const printBayBtn = document.getElementById('printBayBtn');
 
         let currentLegendFilter = null;
         const allBrands = Array.from(brandSelect.options).map(o => ({{val: o.value, text: o.text}}));
+        const allCats = Array.from(catSelect.options).map(o => ({{val: o.value, text: o.text}}));
         const allBays = Array.from(baySelect.options).map(o => ({{val: o.value, text: o.text}}));
         const allLevels = Array.from(levelSelect.options).map(o => ({{val: o.value, text: o.text}}));
 
         function applyFilters() {{
           const query = searchInput.value.toLowerCase().trim();
           let selectedBrand = brandSelect.value;
+          let selectedCat = catSelect.value;
           let selectedBay = baySelect.value;
           let selectedLevel = levelSelect.value;
 
           let availableBrands = new Set();
+          let availableCats = new Set();
           let availableBays = new Set();
           let availableLevels = new Set();
           
@@ -377,6 +410,7 @@ def generar_html_pasillo_interactivo(df):
 
           document.querySelectorAll('.sku-card').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
+             const catjer = card.getAttribute('data-catjer') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
              const level = card.closest('.shelf-row').getAttribute('data-level');
              const name = (card.getAttribute('data-name') || '').toLowerCase();
@@ -388,14 +422,16 @@ def generar_html_pasillo_interactivo(df):
 
              const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
              const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
+             const matchCat = (selectedCat === 'ALL' || catjer === selectedCat);
              const matchBay = (selectedBay === 'ALL' || bay === selectedBay);
              const matchLevel = (selectedLevel === 'ALL' || level === selectedLevel);
 
-             const passesStandard = matchSearch && matchBrand && matchBay && matchLevel;
+             const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
-             if(matchSearch && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchLevel) availableBays.add(bay);
-             if(matchSearch && matchBrand && matchBay) availableLevels.add(level);
+             if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
+             if(matchSearch && matchBrand && matchBay && matchLevel && catjer) availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
+             if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
              if(passesStandard) {{
                  setTot.add(cod);
@@ -414,7 +450,7 @@ def generar_html_pasillo_interactivo(df):
                  else passesLegend = (cat === currentLegendFilter);
              }}
 
-             if (matchBrand && matchSearch) {{
+             if (matchBrand && matchCat && matchSearch) {{
                  if (currentLegendFilter) {{
                      if (passesLegend) {{
                          card.classList.remove('dimmed');
@@ -425,7 +461,7 @@ def generar_html_pasillo_interactivo(df):
                      }}
                  }} else {{
                      card.classList.remove('dimmed');
-                     card.classList.toggle('highlighted', (query !== '' || selectedBrand !== 'ALL'));
+                     card.classList.toggle('highlighted', (query !== '' || selectedBrand !== 'ALL' || selectedCat !== 'ALL'));
                  }}
              }} else {{
                  card.classList.add('dimmed');
@@ -442,11 +478,15 @@ def generar_html_pasillo_interactivo(df):
           document.getElementById('t-top').textContent = setTop.size;
 
           if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
+          if (selectedCat !== 'ALL' && !availableCats.has(selectedCat)) selectedCat = 'ALL';
           if (selectedBay !== 'ALL' && !availableBays.has(selectedBay)) selectedBay = 'ALL';
           if (selectedLevel !== 'ALL' && !availableLevels.has(selectedLevel)) selectedLevel = 'ALL';
 
           brandSelect.innerHTML = '';
           allBrands.forEach(opt => {{ if(opt.val === 'ALL' || availableBrands.has(opt.val)) brandSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBrand)); }});
+
+          catSelect.innerHTML = '';
+          allCats.forEach(opt => {{ if(opt.val === 'ALL' || availableCats.has(opt.val)) catSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedCat)); }});
 
           baySelect.innerHTML = '';
           allBays.forEach(opt => {{ if(opt.val === 'ALL' || availableBays.has(opt.val)) baySelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBay)); }});
@@ -480,6 +520,19 @@ def generar_html_pasillo_interactivo(df):
           updateScrollButtons();
         }}
 
+        printBayBtn.addEventListener('click', () => {{
+            let currentBay = baySelect.value;
+            if (currentBay === 'ALL') {{
+                const firstVisible = document.querySelector('.bay-column:not(.hidden)');
+                if (firstVisible) {{
+                    const bayId = firstVisible.getAttribute('data-module');
+                    baySelect.value = bayId;
+                    applyFilters();
+                }}
+            }}
+            window.print();
+        }});
+
         document.querySelectorAll('.legend-chip').forEach(chip => {{
             chip.addEventListener('click', () => {{
                 const filter = chip.getAttribute('data-filter');
@@ -497,6 +550,7 @@ def generar_html_pasillo_interactivo(df):
 
         searchInput.addEventListener('input', applyFilters);
         brandSelect.addEventListener('change', applyFilters);
+        catSelect.addEventListener('change', applyFilters);
         baySelect.addEventListener('change', applyFilters);
         levelSelect.addEventListener('change', applyFilters);
         
@@ -504,9 +558,10 @@ def generar_html_pasillo_interactivo(df):
           searchInput.value = ''; currentLegendFilter = null;
           document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
           brandSelect.innerHTML = ''; allBrands.forEach(o => brandSelect.add(new Option(o.text, o.val)));
+          catSelect.innerHTML = ''; allCats.forEach(o => catSelect.add(new Option(o.text, o.val)));
           baySelect.innerHTML = ''; allBays.forEach(o => baySelect.add(new Option(o.text, o.val)));
           levelSelect.innerHTML = ''; allLevels.forEach(o => levelSelect.add(new Option(o.text, o.val)));
-          brandSelect.value = 'ALL'; baySelect.value = 'ALL'; levelSelect.value = 'ALL';
+          brandSelect.value = 'ALL'; catSelect.value = 'ALL'; baySelect.value = 'ALL'; levelSelect.value = 'ALL';
           applyFilters();
         }});
 
@@ -609,8 +664,9 @@ df_jer_raw = None
 info_hora = None
 error_nube = None
 
-col_sync1, col_sync2 = st.columns([1, 6])
-with col_sync1:
+# --- HEADER CON BOTÓN DE SINCRONIZACIÓN EXPANDIDO ---
+col_head1, col_head2 = st.columns([2.5, 7.5])
+with col_head1:
     if st.button("🔄 Sincronizar Datos", type="primary", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
@@ -723,17 +779,17 @@ if df_raw is not None:
         for col in columnas_jerarquia: df_base[col] = 'S/D'
         
     df_base.drop(columns=['COD_REAL_Str', 'Grupo_A_Str', 'CodGA_Str'], inplace=True, errors='ignore')
-    # ---------------------------------------------------------
 
+    # Encabezado Corporativo
     st.markdown(f"""
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px; margin-bottom: 16px; margin-top: 5px;">
         <div>
-            <h1 style="margin: 0; font-size: 2.2rem; color: #fff;">📦 Planograma 2.0</h1>
-            <span style="color: #93c5fd; font-size: 0.9rem;">Análisis interactivo de pasillos en tiempo real</span>
+            <h1 style="margin: 0; font-size: 2.1rem; color: #fff;">📦 Planograma 2.0</h1>
+            <span style="color: #93c5fd; font-size: 0.88rem;">Análisis interactivo de pasillos y rentabilidad de tienda</span>
         </div>
         <div style="text-align: right;">
-            <div style="font-size: 0.95rem; color: #cbd5e1;">Desarrollado por <b>Alfredo HM</b></div>
-            <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px;">Última actualización: {info_hora}</div>
+            <div style="font-size: 0.92rem; color: #cbd5e1;">Desarrollado por <b>Alfredo HM</b></div>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 3px;">Última actualización: {info_hora}</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -741,7 +797,10 @@ if df_raw is not None:
     df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(safe_float)
     df_base['Part_Num'] = df_base['% Part'].apply(safe_float)
+    df_base['Stock_Num'] = df_base['Stock'].apply(safe_float)
+    df_base['Cob_Num'] = df_base['Cobertura'].apply(safe_float)
     
+    # Base única de SKUs
     df_unicos = df_base.drop_duplicates(subset=['COD REAL']).copy()
     df_unicos = df_unicos[df_unicos['COD REAL'].notna()]
     
@@ -765,113 +824,131 @@ if df_raw is not None:
         df_base['TOPVENTAS'] = df_base['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top else "NO")
 
         st.markdown("---")
-        st.markdown("##### Control de Vista")
-        mobile_preview = st.toggle("📱 Simular Vista Móvil (Celular)")
         
+        # Renderizado directo sin iframe simulador
         html_pasillo = generar_html_pasillo_interactivo(df_base)
-        
-        if mobile_preview:
-            col1, col2, col3 = st.columns([1, 1, 1])
-            with col2:
-                st.markdown("""
-                <div style='
-                    border: 12px solid #1e293b; 
-                    border-radius: 36px; 
-                    padding: 0; 
-                    background: #000; 
-                    box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
-                    max-width: 400px; 
-                    margin: 0 auto;
-                    overflow: hidden;'>
-                """, unsafe_allow_html=True)
-                components.html(html_pasillo, height=850, scrolling=True)
-                st.markdown("</div>", unsafe_allow_html=True)
-        else:
-            components.html(html_pasillo, height=1300, scrolling=True)
+        components.html(html_pasillo, height=1350, scrolling=True)
             
     with tab2:
+        # ==========================================
+        # 💼 EXECUTIVE DASHBOARD REDISEÑADO
+        # ==========================================
         st.markdown("### 💼 Resumen Ejecutivo")
         
         ventas_globales = df_unicos['Venta_Num'].sum()
         margen_global = df_unicos['Margen_Num'].sum()
         margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
+        total_skus_activos = len(df_unicos)
         
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card">
-                    <span class="fin-kpi-title">Ventas Totales</span>
+                    <span class="fin-kpi-title">Ventas Totales (Acumuladas)</span>
                     <span class="fin-kpi-val">S/ {ventas_globales:,.2f}</span>
                 </div>
                 <div class="fin-kpi-card green-theme">
-                    <span class="fin-kpi-title">Margen Total</span>
+                    <span class="fin-kpi-title">Margen Total (Acumulado)</span>
                     <span class="fin-kpi-val">S/ {margen_global:,.2f}</span>
                 </div>
                 <div class="fin-kpi-card purple-theme">
                     <span class="fin-kpi-title">Margen Global (%)</span>
                     <span class="fin-kpi-val">{margen_pct_global*100:.1f}%</span>
                 </div>
+                <div class="fin-kpi-card">
+                    <span class="fin-kpi-title">SKUs Únicos en Mueble</span>
+                    <span class="fin-kpi-val">{total_skus_activos}</span>
+                </div>
             </div>
         """, unsafe_allow_html=True)
         
         st.markdown("---")
-        col_graf_izq, col_graf_der = st.columns([7, 3])
+        
+        # Filtro de Segmentación de Categoría para Dashboard
+        cats_disponibles = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
+        col_seg_cat, _ = st.columns([2, 2])
+        with col_seg_cat:
+            cat_seleccionada = st.selectbox("🎯 Filtrar Dashboard por Categoría:", ["Todas las Categorías"] + cats_disponibles)
+        
+        df_dash_base = df_base.copy()
+        if cat_seleccionada != "Todas las Categorías":
+            df_dash_base = df_dash_base[df_dash_base['Categoría'] == cat_seleccionada]
+            
+        df_dash_unicos = df_dash_base.drop_duplicates(subset=['COD REAL']).copy()
+
+        col_graf_izq, col_graf_der = st.columns([6.5, 3.5])
         
         with col_graf_izq:
             st.markdown("##### 📈 Ventas y Rentabilidad por Cuerpo")
             
-            df_chart = df_base.copy()
-            bandeja_str = df_chart.get('Bandeja', pd.Series(["1.1"]*len(df_chart))).astype(str)
-            df_chart['Cuerpo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
-            df_chart['Cuerpo_Ord'] = pd.to_numeric(df_chart['Cuerpo_Ord'], errors='coerce').fillna(1)
+            bandeja_str = df_dash_base.get('Bandeja', pd.Series(["1.1"]*len(df_dash_base))).astype(str)
+            df_dash_base['Cuerpo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
+            df_dash_base['Cuerpo_Ord'] = pd.to_numeric(df_dash_base['Cuerpo_Ord'], errors='coerce').fillna(1)
             
-            ventas_mod = df_chart.groupby('Cuerpo_Ord').agg(
+            # Cálculo exacto por SKU único asignado a cada cuerpo (sin duplicar ventas por bandeja)
+            df_sku_cuerpo = df_dash_base.drop_duplicates(subset=['COD REAL', 'Cuerpo_Ord']).copy()
+            
+            # Obtener categoría principal por cuerpo
+            cat_por_cuerpo = df_sku_cuerpo.groupby('Cuerpo_Ord')['Categoría'].agg(
+                lambda x: max(set([str(i) for i in x if str(i) not in ['S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['S/C', 'nan', '']]) > 0 else ""
+            ).to_dict()
+            
+            ventas_cuerpo = df_sku_cuerpo.groupby('Cuerpo_Ord').agg(
                 Venta_Total=('Venta_Num', 'sum'),
                 Margen_Total=('Margen_Num', 'sum'),
                 SKUs_Total=('COD REAL', 'count')
             ).reset_index()
             
-            ventas_mod['Cuerpo'] = "Cuerpo " + ventas_mod['Cuerpo_Ord'].astype(int).astype(str)
-            ventas_mod['Margen_Pct'] = ventas_mod.apply(
+            # Etiqueta con Categoría integrada debajo de Cuerpo
+            def crear_etiqueta_eje(c_num):
+                cat_nombre = cat_por_cuerpo.get(c_num, "")
+                if cat_nombre and len(cat_nombre) > 18:
+                    cat_nombre = cat_nombre[:16] + ".."
+                return f"Cuerpo {int(c_num)}<br><sub>{cat_nombre}</sub>" if cat_nombre else f"Cuerpo {int(c_num)}"
+
+            ventas_cuerpo['Cuerpo_Label'] = ventas_cuerpo['Cuerpo_Ord'].apply(crear_etiqueta_eje)
+            ventas_cuerpo['Margen_Pct'] = ventas_cuerpo.apply(
                 lambda row: row['Margen_Total'] / row['Venta_Total'] if row['Venta_Total'] > 0 else 0, 
                 axis=1
             )
             
-            orden_grafico = st.selectbox("Ordenar Gráfico por:", 
-                ["Cuerpo (Secuencial)", "Mayor a Menor Venta", "Mayor Margen (%)"],
-                label_visibility="collapsed"
-            )
+            col_ord, _ = st.columns([1.5, 2.5])
+            with col_ord:
+                orden_grafico = st.selectbox("Ordenar por:", 
+                    ["Cuerpo (Secuencial)", "Mayor a Menor Venta", "Mayor Margen (%)"],
+                    label_visibility="collapsed"
+                )
             
-            if orden_grafico == "Mayor a Menor Venta": ventas_mod = ventas_mod.sort_values('Venta_Total', ascending=False)
-            elif orden_grafico == "Mayor Margen (%)": ventas_mod = ventas_mod.sort_values('Margen_Pct', ascending=False)
-            else: ventas_mod = ventas_mod.sort_values('Cuerpo_Ord')
+            if orden_grafico == "Mayor a Menor Venta": ventas_cuerpo = ventas_cuerpo.sort_values('Venta_Total', ascending=False)
+            elif orden_grafico == "Mayor Margen (%)": ventas_cuerpo = ventas_cuerpo.sort_values('Margen_Pct', ascending=False)
+            else: ventas_cuerpo = ventas_cuerpo.sort_values('Cuerpo_Ord')
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             
             fig.add_trace(
                 go.Bar(
-                    x=ventas_mod['Cuerpo'], 
-                    y=ventas_mod['Venta_Total'],
+                    x=ventas_cuerpo['Cuerpo_Label'], 
+                    y=ventas_cuerpo['Venta_Total'],
                     name="Ventas Totales (S/)",
-                    text=ventas_mod['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
+                    text=ventas_cuerpo['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
                     textposition='auto',
-                    textfont=dict(color='#ffffff', size=12, weight='bold'),
+                    textfont=dict(color='#ffffff', size=11, weight='bold'),
                     marker=dict(color='rgba(59, 130, 246, 0.75)', line=dict(color='#3b82f6', width=2)),
-                    hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>Cant. SKUs: %{customdata}<extra></extra>",
-                    customdata=ventas_mod['SKUs_Total']
+                    hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata}<extra></extra>",
+                    customdata=ventas_cuerpo['SKUs_Total']
                 ), secondary_y=False
             )
 
             fig.add_trace(
                 go.Scatter(
-                    x=ventas_mod['Cuerpo'], 
-                    y=ventas_mod['Margen_Pct'],
+                    x=ventas_cuerpo['Cuerpo_Label'], 
+                    y=ventas_cuerpo['Margen_Pct'],
                     name="Margen %",
                     mode="lines+markers+text",
-                    text=ventas_mod['Margen_Pct'].apply(lambda x: f"{x*100:,.1f}%"),
+                    text=ventas_cuerpo['Margen_Pct'].apply(lambda x: f"{x*100:,.1f}%"),
                     textposition='top center',
-                    textfont=dict(color='#10b981', size=13, weight='bold'),
-                    marker=dict(color="#10b981", size=10, symbol='circle', line=dict(color='#ffffff', width=2)),
-                    line=dict(color="#10b981", width=4, shape='spline'),
+                    textfont=dict(color='#10b981', size=12, weight='bold'),
+                    marker=dict(color="#10b981", size=9, symbol='circle', line=dict(color='#ffffff', width=2)),
+                    line=dict(color="#10b981", width=3.5, shape='spline'),
                     hovertemplate="<b>%{x}</b><br>Margen: %{text}<extra></extra>"
                 ), secondary_y=True
             )
@@ -880,8 +957,8 @@ if df_raw is not None:
                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
                 legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color='#cbd5e1')),
-                margin=dict(t=10, b=20, l=10, r=10),
-                xaxis=dict(showgrid=False, color='#cbd5e1', tickfont=dict(size=12, weight='bold')),
+                margin=dict(t=10, b=30, l=10, r=10),
+                xaxis=dict(showgrid=False, color='#cbd5e1', tickfont=dict(size=11, weight='bold')),
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor='rgba(255,255,255,0.1)', color='#cbd5e1', zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color='#10b981', zeroline=False)
             )
@@ -891,22 +968,24 @@ if df_raw is not None:
             st.markdown("##### 🍩 Distribución de Ventas")
             
             vista_anillo = st.selectbox("Analizar por:", 
-                ["Departamento", "Sección", "Categoría", "Grupo de artículo", "Marca"], 
+                ["Categoría", "Departamento", "Sección", "Grupo de artículo", "Marca"], 
                 label_visibility="collapsed"
             )
             
-            df_pie = df_unicos.groupby(vista_anillo)['Venta_Num'].sum().reset_index()
+            df_pie = df_dash_unicos.groupby(vista_anillo)['Venta_Num'].sum().reset_index()
             df_pie = df_pie[df_pie['Venta_Num'] > 0].sort_values(by='Venta_Num', ascending=False)
+            
+            ventas_dash_total = df_dash_unicos['Venta_Num'].sum()
             
             fig_pie = go.Figure(data=[go.Pie(
                 labels=df_pie[vista_anillo], 
                 values=df_pie['Venta_Num'], 
-                hole=0.45,
+                hole=0.48,
                 textinfo='label+percent',
                 textposition='inside',
                 insidetextorientation='horizontal',
-                textfont=dict(size=15, color='#ffffff', family='Arial Black'),
-                marker=dict(colors=['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'], 
+                textfont=dict(size=13, color='#ffffff', family='Arial Black'),
+                marker=dict(colors=['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#14b8a6'], 
                             line=dict(color='#0f172a', width=2))
             )])
             
@@ -915,14 +994,48 @@ if df_raw is not None:
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 margin=dict(t=10, b=10, l=10, r=10),
-                annotations=[dict(text=f'<b>S/ {ventas_globales/1000:,.0f}K</b>', x=0.5, y=0.5, font_size=20, showarrow=False, font_color='#ffffff')]
+                annotations=[dict(text=f'<b>S/ {ventas_dash_total/1000:,.1f}K</b>', x=0.5, y=0.5, font_size=18, showarrow=False, font_color='#ffffff')]
             )
             fig_pie.update_traces(hovertemplate="<b>%{label}</b><br>Ventas: S/ %{value:,.2f}<br>Participación: %{percent}<extra></extra>")
             
             st.plotly_chart(fig_pie, use_container_width=True)
+
+        # ==========================================
+        # 🎯 GRÁFICO EXTRA: MATRIZ ESTRATÉGICA DE SKUs (BCG RETAIL)
+        # ==========================================
+        st.markdown("---")
+        st.markdown("##### 🎯 Cuadrante Estratégico de SKUs: Ventas vs Margen %")
+        
+        df_scatter = df_dash_unicos.copy()
+        df_scatter['Margen_Pct_SKU'] = df_scatter.apply(
+            lambda r: (r['Margen_Num'] / r['Venta_Num']) if r['Venta_Num'] > 0 else 0, axis=1
+        )
+        col_desc = 'Descripción' if 'Descripción' in df_scatter.columns else 'Nombre'
+        df_scatter['Producto'] = df_scatter[col_desc]
+        
+        fig_scatter = px.scatter(
+            df_scatter,
+            x='Venta_Num',
+            y='Margen_Pct_SKU',
+            size='Stock_Num',
+            color='TOPVENTAS',
+            color_discrete_map={'TOP': '#fbbf24', 'NO': '#3b82f6'},
+            hover_name='Producto',
+            hover_data={'COD REAL': True, 'Stock_Num': True, 'Cobertura': True, 'Categoría': True, 'Margen_Pct_SKU': ':.2%'},
+            labels={'Venta_Num': 'Ventas Netas (S/)', 'Margen_Pct_SKU': 'Margen (%)', 'Stock_Num': 'Stock'}
+        )
+        
+        fig_scatter.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+            xaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor='rgba(255,255,255,0.08)', color='#cbd5e1'),
+            yaxis=dict(title="Margen Real (%)", showgrid=True, gridcolor='rgba(255,255,255,0.08)', color='#cbd5e1', tickformat=".1%"),
+            legend=dict(title="Clasificación", orientation="h", y=1.05, x=1, font=dict(color='#cbd5e1')),
+            margin=dict(t=20, b=20, l=10, r=10)
+        )
+        st.plotly_chart(fig_scatter, use_container_width=True)
             
         st.markdown("---")
-        st.markdown("### 📋 Reporte Detallado y Exportación")
+        st.markdown("### 📋 Reporte Detallado y Exportación (SKUs Únicos)")
         
         col_filt, col_btn = st.columns([2, 1])
         with col_filt:
@@ -935,10 +1048,8 @@ if df_raw is not None:
                 "Cobertura Alta (≥ 30)"
             ])
         
-        # --- TABLA DEDUPLICADA (1 FILA POR SKU CON UBICACIONES AGRUPADAS) ---
+        # Mapeo de Ubicaciones múltiples por SKU
         df_agrupado = df_base.copy()
-        
-        # Convertimos la bandeja en formato legible: Cuerpo X - Nivel Y
         def formatear_ubicacion(val):
             val_str = str(val).strip()
             if '.' in val_str:
@@ -947,18 +1058,12 @@ if df_raw is not None:
             return f"Cuerpo {val_str}"
 
         df_agrupado['Ubic_Txt'] = df_agrupado['Bandeja'].apply(formatear_ubicacion)
-        
-        # Mapeamos las ubicaciones únicas concatenadas por SKU
         ubicaciones_map = df_agrupado.groupby('COD REAL')['Ubic_Txt'].apply(
             lambda x: ", ".join(sorted(list(set(x.dropna()))))
         ).to_dict()
 
         df_rep = df_unicos.copy()
         df_rep['Ubicación(es)'] = df_rep['COD REAL'].map(ubicaciones_map)
-        
-        # Variables numéricas protegidas para filtrado
-        df_rep['Stock_Num'] = df_rep['Stock'].apply(safe_float)
-        df_rep['Cob_Num'] = df_rep['Cobertura'].apply(safe_float)
         
         if filtro_reporte == "Bloqueados (Estado B)":
             df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
