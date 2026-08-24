@@ -4,6 +4,7 @@ import streamlit.components.v1 as components
 import io
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.express as px
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -116,7 +117,6 @@ def generar_html_pasillo_interactivo(df):
                 caras = int(caras_val) if caras_val.isdigit() and int(caras_val) > 0 else 1
                 
                 link_foto = str(it.get("Links de fotos", ""))
-                # Forzar HTTPS y foto por defecto
                 if link_foto in ['nan', '', 'None']:
                     link_foto = "https://via.placeholder.com/60x150.png/0f172a/94a3b8?text=Sin+Foto"
                 else:
@@ -138,7 +138,6 @@ def generar_html_pasillo_interactivo(df):
                 stock_fmt = f"{stock_val:.2f}"
                 cob_fmt = f"{cob_val:.2f}"
                 
-                # Multiplicador visual de Caras (Facings)
                 img_tags = "".join([f'<img src="{link_foto}" alt="{marca}">' for _ in range(caras)])
 
                 cards_html += f"""
@@ -235,7 +234,6 @@ def generar_html_pasillo_interactivo(df):
         .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
         .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
         
-        /* Contenedor del planograma: Scroll X e Y encapsulado */
         .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; align-items: stretch; }}
         
         .bay-column {{ flex: 0 0 100%; width: 100%; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; height: max-content; scroll-snap-align: start; padding-bottom: 20px; }}
@@ -246,13 +244,11 @@ def generar_html_pasillo_interactivo(df):
         
         .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 25px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }}
         
-        /* --- ESTILOS REALOGRAMA --- */
         .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 15px; }}
         .shelf-row.hidden {{ display: none !important; }}
         
         .shelf-products {{ display: flex; flex-direction: row; align-items: flex-end; justify-content: center; gap: 2px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }}
         
-        /* La base de la repisa (Dorada/Amarilla) */
         .shelf-base {{ height: 12px; background: linear-gradient(180deg, #fde047 0%, #ca8a04 100%); border-radius: 2px; box-shadow: 0 4px 6px rgba(0,0,0,0.6); display: flex; justify-content: center; position: relative; z-index: 5; margin-top: -2px; border-top: 1px solid #fef08a; border-bottom: 2px solid #854d0e; }}
         .shelf-name-tag {{ position: absolute; top: 10px; background: rgba(0,0,0,0.7); color: #fef08a; font-size: 0.55rem; padding: 1px 6px; border-radius: 0 0 4px 4px; font-weight: 800; letter-spacing: 0.5px; }}
         
@@ -264,21 +260,17 @@ def generar_html_pasillo_interactivo(df):
         .sku-images-wrapper img {{ height: 95px; width: auto; max-width: 60px; object-fit: contain; filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.5)); transition: transform 0.2s; }}
         .sku-group:hover .sku-images-wrapper img {{ transform: translateY(-4px); filter: drop-shadow(4px 8px 8px rgba(0,0,0,0.7)); }}
         
-        /* Fleje digital estilo retail */
         .sku-fleje {{ background: #ffffff; color: #000; border: 1px solid #64748b; font-size: 0.50rem; display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; z-index: 15; box-shadow: 0 2px 4px rgba(0,0,0,0.5); width: max-content; padding: 1px 2px; }}
         .fleje-ean {{ font-weight: 600; font-family: monospace; letter-spacing: -0.5px; }}
         .fleje-caras {{ font-weight: 900; background: #e2e8f0; width: 100%; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 1px; color: #1e293b; }}
         
-        /* FILTROS CSS (ALERTAS) */
         .alerta-bloqueado .sku-images-wrapper img {{ filter: grayscale(100%) opacity(0.4) drop-shadow(0 0 2px #fff); }}
         .alerta-sinstock .sku-images-wrapper img {{ filter: drop-shadow(0 0 10px #ef4444) drop-shadow(0 0 5px #ef4444); }}
         .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 8px #f59e0b); }}
         
-        /* TOP VENTAS DINÁMICO */
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -15px; right: -5px; font-size: 1.1rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); z-index: 30; animation: float 2s ease-in-out infinite; }}
         @keyframes float {{ 0% {{transform: translateY(0px);}} 50% {{transform: translateY(-4px);}} 100% {{transform: translateY(0px);}} }}
         
-        /* TARJETA MODAL */
         .modal-overlay {{ position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 99999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.9); border: 2px solid #3b82f6; }}
@@ -287,7 +279,6 @@ def generar_html_pasillo_interactivo(df):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* --- IMPRESIÓN A4 VERTICAL PERFECTO PANTALLA COMPLETA --- */
         @media print {{
           @page {{ size: A4 portrait; margin: 5mm; }}
           body, html, .main-container {{ background-color: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; height: 100% !important; overflow: hidden !important; }}
@@ -318,7 +309,6 @@ def generar_html_pasillo_interactivo(df):
           .top-badge::after {{ font-size: 14pt !important; top: -15px !important; filter: none !important; }}
         }}
 
-        /* 📱 FIX RESPONSIVO PARA MÓVILES */
         @media (max-width: 768px) {{
             .kpi-container {{ flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-bottom: 8px; }}
             .kpi-card {{ flex: 0 0 140px; }}
@@ -497,11 +487,11 @@ def generar_html_pasillo_interactivo(df):
              const cod = card.getAttribute('data-cod');
              
              const isTop = topNSkusSet.has(cod);
-             if(isTop) {
+             if(isTop) {{
                  card.classList.add('is-top');
-             } else {
+             }} else {{
                  card.classList.remove('is-top');
-             }
+             }}
 
              const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
              const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
@@ -754,7 +744,6 @@ df_fotos_raw = None
 info_hora = None
 error_nube = None
 
-# --- HEADER COMPACTO CON ST.EMPTY PARA LA HORA ---
 col_head1, col_head2, col_head3 = st.columns([5, 1.5, 4.5])
 
 with col_head1:
@@ -775,7 +764,6 @@ st.markdown("<div style='border-bottom: 2px solid #1e3a8a; padding-bottom: 5px; 
 with st.spinner("Sincronizando base de datos central, jerarquías e imágenes..."):
     df_nube, df_aux_nube, df_jer_nube, df_fotos_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE, URL_JERARQUIA, URL_FOTOS)
 
-# Llenamos la hora una vez que ya descargó la data
 header_time_placeholder.markdown(f"""
     <div style="text-align: right; margin-top: 5px;">
         <div style="font-size: 0.92rem; color: #cbd5e1;">Desarrollado por <b>Alfredo HM</b></div>
@@ -815,13 +803,9 @@ else:
 
 if df_raw is not None:
     
-    # ---------------------------------------------------------
-    # 🔗 CUÁDRUPLE CRUCE MAESTRO DE TABLAS
-    # ---------------------------------------------------------
     df_base = df_raw.copy()
     df_base['COD_REAL_Str'] = df_base['COD REAL'].apply(clean_sku)
     
-    # 1. DATA_AUX (Margen y Grupo A)
     if df_aux_raw is not None and not df_aux_raw.empty:
         df_aux_raw.columns = [str(c).strip() for c in df_aux_raw.columns]
         
@@ -853,7 +837,6 @@ if df_raw is not None:
         
     df_base['Monto Margen'] = df_base.get('Monto Margen', 0.0).fillna(0.0)
 
-    # 2. JERARQUÍA
     columnas_jerarquia = ['Departamento', 'Sección', 'Categoría', 'Grupo de artículo']
     if df_jer_raw is not None and not df_jer_raw.empty:
         df_jer_raw.columns = [str(c).strip() for c in df_jer_raw.columns]
@@ -884,7 +867,6 @@ if df_raw is not None:
     else:
         for col in columnas_jerarquia: df_base[col] = 'S/D'
         
-    # 3. FOTOS
     if df_fotos_raw is not None and not df_fotos_raw.empty:
         df_fotos_raw.columns = [str(c).strip() for c in df_fotos_raw.columns]
         if '_SKUReferenceCode' in df_fotos_raw.columns and 'Links de fotos' in df_fotos_raw.columns:
@@ -898,7 +880,6 @@ if df_raw is not None:
         
     df_base.drop(columns=['COD_REAL_Str', 'Grupo_A_Str', 'CodGA_Str', '_SKUReferenceCode'], inplace=True, errors='ignore')
 
-    # Tratamiento numérico de variables
     df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(safe_float)
     df_base['Part_Num'] = df_base['% Part'].apply(safe_float)
