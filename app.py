@@ -4,6 +4,7 @@ import streamlit.components.v1 as components
 import io
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.express as px
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -18,7 +19,8 @@ st.markdown("""
         .block-container {
             padding-left: 1.5rem !important;
             padding-right: 1.5rem !important;
-            padding-top: 1rem !important;
+            /* Aumentamos el padding top para que no se corte el título con el menú de Streamlit */
+            padding-top: 3.5rem !important; 
             max-width: 100% !important;
         }
         
@@ -194,7 +196,6 @@ def generar_html_pasillo_interactivo(df):
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
       <style>
         * {{ box-sizing: border-box; }}
-        /* HTML BASE CERO SCROLL EXTERNO */
         body, html {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 0; height: 100vh; overflow: hidden; }}
         
         .main-container {{ padding: 12px; height: 100%; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }}
@@ -225,22 +226,20 @@ def generar_html_pasillo_interactivo(df):
         .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
-        /* Contenedor central (Se expande hacia abajo según necesidad) */
         .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; flex-grow: 1; min-height: 500px; }}
         .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
         .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
         
-        /* Contenedor de cuerpos (hace scroll horizontal solamente) */
         .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; align-items: stretch; }}
         
-        .bay-column {{ flex: 0 0 500px; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; height: 100%; }}
+        /* 🚨 CUERPOS A PANTALLA COMPLETA 100% WIDTH 🚨 */
+        .bay-column {{ flex: 0 0 100%; width: 100%; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; height: max-content; scroll-snap-align: start; }}
         .bay-column.hidden {{ display: none !important; }}
         
         .bay-title {{ background: #1e3a8a; padding: 6px 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
         .bay-subcat {{ font-size: 0.68rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
         
-        /* SCROLL VERTICAL ÚNICO DENTRO DEL MUEBLE */
-        .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }}
+        .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; overflow: visible; }}
         .shelf-row {{ display: flex; flex-direction: column; background: #162238; border-radius: 4px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
@@ -269,23 +268,6 @@ def generar_html_pasillo_interactivo(df):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* --- ADAPTACIÓN RESPONSIVA CELULARES --- */
-        @media (max-width: 768px) {{
-            .kpi-container {{ flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-bottom: 8px; }}
-            .kpi-card {{ flex: 0 0 140px; }}
-            .legend-chips {{ flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; }}
-            .legend-chip {{ flex: 0 0 auto; }}
-            
-            .filter-panel, .top-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
-            .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
-            .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
-            .aisle-wrapper {{ height: calc(100vh - 120px); min-height: 400px; }}
-            
-            /* Tarjeta de cuerpo completa en vista móvil (Swipe) */
-            .bay-column {{ flex: 0 0 88vw !important; min-width: 300px; margin-right: 5px; height: 100%; }}
-            .sku-card {{ min-width: 80px; }}
-        }}
-
         /* --- IMPRESIÓN A4 VERTICAL PERFECTO PANTALLA COMPLETA --- */
         @media print {{
           @page {{ size: A4 portrait; margin: 5mm; }}
@@ -297,26 +279,26 @@ def generar_html_pasillo_interactivo(df):
           .aisle-container {{ display: block !important; width: 100% !important; height: 100% !important; background: transparent !important; border: none !important; padding: 0 !important; overflow: visible !important; }}
           
           /* Ajuste Cuerpo A4 Completo */
-          .bay-column {{ background: #fff !important; border: 3px solid #000 !important; width: 100% !important; height: 98vh !important; max-width: 100% !important; page-break-inside: avoid; margin: 0 !important; display: flex !important; flex-direction: column !important; }}
+          .bay-column {{ background: #fff !important; border: 3px solid #000 !important; width: 195mm !important; height: 280mm !important; max-width: 100% !important; page-break-inside: avoid; margin: 0 auto !important; display: flex !important; flex-direction: column !important; }}
           .bay-column.hidden {{ display: none !important; }}
-          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding: 10px !important; font-size: 20pt !important; display: block; text-align: center; }}
-          .bay-subcat {{ color: #334155 !important; font-size: 14pt !important; display: block; }}
+          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding: 8px !important; font-size: 18pt !important; display: block; text-align: center; }}
+          .bay-subcat {{ color: #334155 !important; font-size: 12pt !important; display: block; }}
           
           .bay-shelves {{ padding: 10px !important; gap: 15px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; justify-content: space-evenly !important; overflow: visible !important; height: 100% !important; }}
           .shelf-row {{ background: #fff !important; border: 2px solid #000 !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; height: 100% !important; }}
-          .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 5px solid #000 !important; font-size: 14pt !important; padding: 4px 8px !important; font-weight: 900 !important; }}
-          .shelf-caras-count {{ background: #e2e8f0 !important; color: #000 !important; font-size: 12pt !important; }}
+          .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 5px solid #000 !important; font-size: 12pt !important; padding: 4px 8px !important; font-weight: 900 !important; }}
+          .shelf-caras-count {{ background: #e2e8f0 !important; color: #000 !important; font-size: 10pt !important; }}
           
           .shelf-products {{ flex-grow: 1 !important; padding: 6px !important; gap: 4px !important; display: flex !important; align-items: stretch !important; overflow: visible !important; height: 100% !important; }}
           .sku-card {{ background: #fff !important; border: 2px solid #000 !important; color: #000 !important; padding: 4px !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; flex-basis: 0 !important; flex-grow: 1 !important; min-width: unset !important; }}
           .sku-card[data-top="TOP"] {{ border: 4px double #000 !important; }}
           
-          .sku-pos, .sku-caras-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-size: 11pt !important; width: auto !important; height: auto !important; padding: 2px 4px !important; font-weight: bold !important; }}
+          .sku-pos, .sku-caras-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-size: 9pt !important; width: auto !important; height: auto !important; padding: 2px 4px !important; font-weight: bold !important; }}
           .sku-details {{ margin-top: 15px !important; }}
-          .sku-brand-text {{ font-size: 12pt !important; color: #000 !important; display: block; font-weight: 900 !important; text-transform: uppercase !important; }}
-          .sku-name-text {{ font-size: 13pt !important; color: #000 !important; -webkit-line-clamp: 4 !important; line-height: 1.2 !important; font-weight: 800 !important; }}
+          .sku-brand-text {{ font-size: 10pt !important; color: #000 !important; display: block; font-weight: bold !important; }}
+          .sku-name-text {{ font-size: 11pt !important; color: #000 !important; -webkit-line-clamp: 4 !important; line-height: 1.2 !important; font-weight: bold !important; }}
           .sku-bottom-bar {{ border-top: 2px dashed #000 !important; margin-top: auto !important; padding-top: 4px !important; }}
-          .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 11pt !important; font-weight: bold !important; }}
+          .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 9pt !important; }}
           .shelf-bottom-rail {{ display: none !important; }}
         }}
       </style>
@@ -342,7 +324,7 @@ def generar_html_pasillo_interactivo(df):
           </div>
         </div>
 
-        <div class="top-panel">
+        <div class="top-panel" style="background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; flex-shrink: 0;">
           <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 1.2rem;">🏆</span>
               <label style="color: #93c5fd; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; margin: 0;">Resaltar TOP Ventas:</label>
@@ -730,15 +712,15 @@ df_jer_raw = None
 info_hora = None
 error_nube = None
 
-# --- HEADER CON TÍTULO Y BOTÓN COMPACTO AL LADO ---
-col_head1, col_head2, col_head3 = st.columns([5, 2.5, 4.5])
+# --- HEADER COMPACTO Y FUNCIONAL ---
+col_head1, col_head2, col_head3 = st.columns([5, 1.5, 4.5])
 
 with col_head1:
     st.markdown("<h1 style='margin: 0; padding: 0; font-size: 2.1rem; color: #fff;'>📦 Planograma 2.0</h1>", unsafe_allow_html=True)
     
 with col_head2:
-    st.markdown("<div style='margin-top: 10px;'>", unsafe_allow_html=True)
-    if st.button("🔄 Actualizar Data", use_container_width=True):
+    st.markdown("<div style='margin-top: 5px;'>", unsafe_allow_html=True)
+    if st.button("🔄 Actualizar", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
@@ -855,7 +837,8 @@ if df_raw is not None:
         for col in columnas_jerarquia: df_base[col] = 'S/D'
         
     df_base.drop(columns=['COD_REAL_Str', 'Grupo_A_Str', 'CodGA_Str'], inplace=True, errors='ignore')
-    
+
+    # Tratamiento numérico de variables
     df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(safe_float)
     df_base['Part_Num'] = df_base['% Part'].apply(safe_float)
@@ -872,9 +855,10 @@ if df_raw is not None:
     tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard Analítico Financiero"])
     
     with tab1:
+        # Altura inmensa (2200px) para que el Iframe de Streamlit no genere un scroll vertical propio.
+        # Todo el scroll lo gestionará el HTML interno.
         html_pasillo = generar_html_pasillo_interactivo(df_base)
-        # Altura fija suficiente, y el CSS interno controla que el SCROLL sea solo el de la caja de cuerpos
-        components.html(html_pasillo, height=800, scrolling=False)
+        components.html(html_pasillo, height=2200, scrolling=False)
             
     with tab2:
         top_n_fijo = 30
@@ -1008,6 +992,7 @@ if df_raw is not None:
                 yaxis2=dict(title="Margen (%)", showgrid=False, color='#10b981', zeroline=False)
             )
             
+            # Bloquear gráfico estático (Sin Zoom ni Botones)
             fig.update_xaxes(fixedrange=True)
             fig.update_yaxes(fixedrange=True)
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
@@ -1093,10 +1078,14 @@ if df_raw is not None:
             
             fig_fs = go.Figure()
             
+            # Etiquetas reincorporadas según petición
             fig_fs.add_trace(go.Bar(
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Espacio'],
                 name=f"% Espacio ({'Caras' if metrica_espacio == 'Caras (Facings)' else 'Unid. Bandeja'})",
+                text=df_fs['Pct_Espacio'].apply(lambda x: f"{x*100:.1f}%"),
+                textposition='auto',
+                textfont=dict(color='#ffffff', size=11, weight='bold'),
                 marker=dict(color='rgba(59, 130, 246, 0.85)', line=dict(color='#3b82f6', width=2)),
                 hovertemplate="<b>%{x}</b><br>% Espacio: %{y:.1%}<br>Total Físico: %{customdata:,.0f}<extra></extra>",
                 customdata=df_fs['Espacio_Total']
@@ -1106,6 +1095,9 @@ if df_raw is not None:
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Ventas'],
                 name="% Ventas (Monto S/)",
+                text=df_fs['Pct_Ventas'].apply(lambda x: f"{x*100:.1f}%"),
+                textposition='auto',
+                textfont=dict(color='#ffffff', size=11, weight='bold'),
                 marker=dict(color='rgba(16, 185, 129, 0.85)', line=dict(color='#10b981', width=2)),
                 hovertemplate="<b>%{x}</b><br>% Ventas: %{y:.1%}<br>Ventas S/: %{customdata:,.2f}<extra></extra>",
                 customdata=df_fs['Ventas_Total']
@@ -1115,6 +1107,9 @@ if df_raw is not None:
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Margen'],
                 name="% Margen (Ganancia S/)",
+                text=df_fs['Pct_Margen'].apply(lambda x: f"{x*100:.1f}%"),
+                textposition='auto',
+                textfont=dict(color='#ffffff', size=11, weight='bold'),
                 marker=dict(color='rgba(245, 158, 11, 0.85)', line=dict(color='#f59e0b', width=2)),
                 hovertemplate="<b>%{x}</b><br>% Margen: %{y:.1%}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
                 customdata=df_fs['Margen_Total']
@@ -1163,7 +1158,6 @@ if df_raw is not None:
                 "Bloqueados (Estado B)",
                 "Sin Stock (Stock = 0)",
                 "Stock Bajo (Stock 1 a 5)",
-                "Top Ventas (TOP)",
                 "Cobertura Alta (≥ 30)"
             ], label_visibility="collapsed")
         
@@ -1191,8 +1185,6 @@ if df_raw is not None:
                 df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
             elif filtro_reporte == "Stock Bajo (Stock 1 a 5)":
                 df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
-            elif filtro_reporte == "Top Ventas (TOP)":
-                df_rep = df_rep[df_rep['TOPVENTAS'].astype(str).str.strip().str.upper() == 'TOP']
             elif filtro_reporte == "Cobertura Alta (≥ 30)":
                 df_rep = df_rep[df_rep['Cob_Num'] >= 30]
                 
@@ -1204,6 +1196,7 @@ if df_raw is not None:
             ]
             cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
 
+            # Botón claro y explícito como pediste (El método de la foto solía dar error en navegadores)
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                 df_rep[cols_to_show].to_excel(writer, index=False, sheet_name='Reporte_SKUs')
             st.download_button(
