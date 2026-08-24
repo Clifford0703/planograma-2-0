@@ -21,6 +21,14 @@ st.markdown("""
             padding-top: 1.5rem !important;
             max-width: 100% !important;
         }
+        
+        /* Estilos para Tarjetas Financieras */
+        .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; }
+        .fin-kpi-card { flex: 1; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
+        .fin-kpi-title { font-size: 0.85rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
+        .fin-kpi-val { font-size: 2.2rem; font-weight: 900; color: #ffffff; line-height: 1; }
+        .fin-kpi-card.green-theme { border-left-color: #10b981; }
+        .fin-kpi-card.purple-theme { border-left-color: #8b5cf6; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -680,7 +688,15 @@ if df_raw is not None:
     </div>
     """, unsafe_allow_html=True)
     
-    tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard y Reporte Excel"])
+    # Pre-cálculos Globales para todo el Dashboard
+    df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
+    df_base['Margen_Num'] = df_base['Monto Margen'].apply(safe_float)
+    df_base['Part_Num'] = df_base['% Part'].apply(safe_float)
+    
+    df_unicos = df_base.drop_duplicates(subset=['COD REAL']).copy()
+    df_unicos = df_unicos[df_unicos['COD REAL'].notna()]
+    
+    tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard Analítico Financiero"])
     
     with tab1:
         st.markdown("### ⚙️ Segmentación Dinámica de Ventas")
@@ -689,16 +705,9 @@ if df_raw is not None:
         with col_cfg1:
             top_n = st.number_input("🏆 Resaltar TOP Ventas (Cantidad de SKUs):", min_value=1, max_value=200, value=30, step=1)
         
-        df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
-        df_base['Part_Num'] = df_base['% Part'].apply(safe_float)
-        
-        df_unicos = df_base.drop_duplicates(subset=['COD REAL']).copy()
-        df_unicos = df_unicos[df_unicos['COD REAL'].notna()]
-        
-        df_unicos = df_unicos.sort_values(by='Venta_Num', ascending=False)
-        
-        skus_top = df_unicos.head(top_n)['COD REAL'].astype(str).str.strip().tolist()
-        part_acumulada = df_unicos.head(top_n)['Part_Num'].sum()
+        df_top_calc = df_unicos.sort_values(by='Venta_Num', ascending=False)
+        skus_top = df_top_calc.head(top_n)['COD REAL'].astype(str).str.strip().tolist()
+        part_acumulada = df_top_calc.head(top_n)['Part_Num'].sum()
         
         with col_cfg2:
             st.write("") 
@@ -732,107 +741,142 @@ if df_raw is not None:
             components.html(html_pasillo, height=1300, scrolling=True)
             
     with tab2:
-        st.markdown("### 📈 Análisis Financiero: Ventas vs Margen por Módulo")
+        # ==========================================
+        # 📊 EXECUTIVE DASHBOARD REDISEÑADO
+        # ==========================================
         
-        df_chart = df_base.copy()
-        df_chart['Margen_Num'] = df_chart['Monto Margen'].apply(safe_float)
+        # 1. KPIs Financieros Globales (Cinta Superior)
+        st.markdown("### 💼 Resumen Ejecutivo")
         
-        bandeja_str = df_chart.get('Bandeja', pd.Series(["1.1"]*len(df_chart))).astype(str)
-        df_chart['Modulo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
-        df_chart['Modulo_Ord'] = pd.to_numeric(df_chart['Modulo_Ord'], errors='coerce').fillna(1)
+        ventas_globales = df_unicos['Venta_Num'].sum()
+        margen_global = df_unicos['Margen_Num'].sum()
+        margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
         
-        ventas_mod = df_chart.groupby('Modulo_Ord').agg(
-            Venta_Total=('Venta_Num', 'sum'),
-            Margen_Total=('Margen_Num', 'sum'),
-            SKUs_Total=('COD REAL', 'count')
-        ).reset_index()
+        st.markdown(f"""
+            <div class="fin-kpi-container">
+                <div class="fin-kpi-card">
+                    <span class="fin-kpi-title">Ventas Totales</span>
+                    <span class="fin-kpi-val">S/ {ventas_globales:,.2f}</span>
+                </div>
+                <div class="fin-kpi-card green-theme">
+                    <span class="fin-kpi-title">Margen Total</span>
+                    <span class="fin-kpi-val">S/ {margen_global:,.2f}</span>
+                </div>
+                <div class="fin-kpi-card purple-theme">
+                    <span class="fin-kpi-title">Margen Global (%)</span>
+                    <span class="fin-kpi-val">{margen_pct_global*100:.1f}%</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
         
-        ventas_mod['Módulo'] = "Módulo " + ventas_mod['Modulo_Ord'].astype(int).astype(str)
+        st.markdown("---")
         
-        ventas_mod['Margen_Pct'] = ventas_mod.apply(
-            lambda row: row['Margen_Total'] / row['Venta_Total'] if row['Venta_Total'] > 0 else 0, 
-            axis=1
-        )
+        # 2. Layout de Columnas 70% / 30%
+        col_graf_izq, col_graf_der = st.columns([7, 3])
         
-        col_ord, _ = st.columns([1, 3])
-        with col_ord:
-            orden_grafico = st.selectbox("Ordenar Gráfico por:", 
-                ["Módulo (Secuencial)", "Mayor a Menor Venta", "Menor a Mayor Venta", "Mayor Margen (%)"]
+        with col_graf_izq:
+            st.markdown("##### 📈 Ventas y Rentabilidad por Módulo")
+            
+            df_chart = df_base.copy()
+            bandeja_str = df_chart.get('Bandeja', pd.Series(["1.1"]*len(df_chart))).astype(str)
+            df_chart['Modulo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
+            df_chart['Modulo_Ord'] = pd.to_numeric(df_chart['Modulo_Ord'], errors='coerce').fillna(1)
+            
+            ventas_mod = df_chart.groupby('Modulo_Ord').agg(
+                Venta_Total=('Venta_Num', 'sum'),
+                Margen_Total=('Margen_Num', 'sum'),
+                SKUs_Total=('COD REAL', 'count')
+            ).reset_index()
+            
+            ventas_mod['Módulo'] = "Módulo " + ventas_mod['Modulo_Ord'].astype(int).astype(str)
+            ventas_mod['Margen_Pct'] = ventas_mod.apply(
+                lambda row: row['Margen_Total'] / row['Venta_Total'] if row['Venta_Total'] > 0 else 0, 
+                axis=1
             )
             
-        if orden_grafico == "Mayor a Menor Venta":
-            ventas_mod = ventas_mod.sort_values('Venta_Total', ascending=False)
-        elif orden_grafico == "Menor a Mayor Venta":
-            ventas_mod = ventas_mod.sort_values('Venta_Total', ascending=True)
-        elif orden_grafico == "Mayor Margen (%)":
-            ventas_mod = ventas_mod.sort_values('Margen_Pct', ascending=False)
-        else:
-            ventas_mod = ventas_mod.sort_values('Modulo_Ord')
-
-        fig = make_subplots(specs=[[{"secondary_y": True}]])
-        
-        fig.add_trace(
-            go.Bar(
-                x=ventas_mod['Módulo'], 
-                y=ventas_mod['Venta_Total'],
-                name="Ventas Totales (S/)",
-                text=ventas_mod['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
-                textposition='auto',
-                marker=dict(
-                    color='rgba(59, 130, 246, 0.7)',
-                    line=dict(color='#3b82f6', width=2)
-                ),
-                hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>Cant. SKUs: %{customdata}<extra></extra>",
-                customdata=ventas_mod['SKUs_Total']
-            ),
-            secondary_y=False
-        )
-
-        fig.add_trace(
-            go.Scatter(
-                x=ventas_mod['Módulo'], 
-                y=ventas_mod['Margen_Pct'],
-                name="Margen %",
-                mode="lines+markers+text",
-                text=ventas_mod['Margen_Pct'].apply(lambda x: f"{x*100:,.1f}%"),
-                textposition='top center',
-                textfont=dict(color='#10b981', size=13, weight='bold'),
-                marker=dict(
-                    color="#10b981", 
-                    size=10, 
-                    symbol='circle', 
-                    line=dict(color='#ffffff', width=2)
-                ),
-                line=dict(color="#10b981", width=4, shape='spline'),
-                hovertemplate="<b>%{x}</b><br>Margen: %{text}<extra></extra>"
-            ),
-            secondary_y=True
-        )
-
-        fig.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            hovermode="x unified",
-            legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color='#cbd5e1')),
-            margin=dict(t=50, b=20, l=20, r=20),
-            xaxis=dict(showgrid=False, color='#cbd5e1', tickfont=dict(size=12, weight='bold')),
-            yaxis=dict(
-                title="Ventas (S/)", 
-                showgrid=True, 
-                gridcolor='rgba(255,255,255,0.1)', 
-                color='#cbd5e1', 
-                zeroline=False
-            ),
-            yaxis2=dict(
-                title="Margen (%)", 
-                showgrid=False, 
-                color='#10b981', 
-                zeroline=False
+            orden_grafico = st.selectbox("Ordenar Gráfico por:", 
+                ["Módulo (Secuencial)", "Mayor a Menor Venta", "Mayor Margen (%)"],
+                label_visibility="collapsed"
             )
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
+            
+            if orden_grafico == "Mayor a Menor Venta": ventas_mod = ventas_mod.sort_values('Venta_Total', ascending=False)
+            elif orden_grafico == "Mayor Margen (%)": ventas_mod = ventas_mod.sort_values('Margen_Pct', ascending=False)
+            else: ventas_mod = ventas_mod.sort_values('Modulo_Ord')
+
+            fig = make_subplots(specs=[[{"secondary_y": True}]])
+            
+            # Texto BLANCO y nítido para las barras
+            fig.add_trace(
+                go.Bar(
+                    x=ventas_mod['Módulo'], 
+                    y=ventas_mod['Venta_Total'],
+                    name="Ventas Totales (S/)",
+                    text=ventas_mod['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
+                    textposition='auto',
+                    textfont=dict(color='#ffffff', size=12, weight='bold'),
+                    marker=dict(color='rgba(59, 130, 246, 0.75)', line=dict(color='#3b82f6', width=2)),
+                    hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>Cant. SKUs: %{customdata}<extra></extra>",
+                    customdata=ventas_mod['SKUs_Total']
+                ), secondary_y=False
+            )
+
+            fig.add_trace(
+                go.Scatter(
+                    x=ventas_mod['Módulo'], 
+                    y=ventas_mod['Margen_Pct'],
+                    name="Margen %",
+                    mode="lines+markers+text",
+                    text=ventas_mod['Margen_Pct'].apply(lambda x: f"{x*100:,.1f}%"),
+                    textposition='top center',
+                    textfont=dict(color='#10b981', size=13, weight='bold'),
+                    marker=dict(color="#10b981", size=10, symbol='circle', line=dict(color='#ffffff', width=2)),
+                    line=dict(color="#10b981", width=4, shape='spline'),
+                    hovertemplate="<b>%{x}</b><br>Margen: %{text}<extra></extra>"
+                ), secondary_y=True
+            )
+
+            fig.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                hovermode="x unified",
+                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color='#cbd5e1')),
+                margin=dict(t=10, b=20, l=10, r=10),
+                xaxis=dict(showgrid=False, color='#cbd5e1', tickfont=dict(size=12, weight='bold')),
+                yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor='rgba(255,255,255,0.1)', color='#cbd5e1', zeroline=False),
+                yaxis2=dict(title="Margen (%)", showgrid=False, color='#10b981', zeroline=False)
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            
+        with col_graf_der:
+            st.markdown("##### 🍩 Distribución de Ventas")
+            
+            vista_anillo = st.selectbox("Analizar por:", ["Area", "Departamento", "Marca"], label_visibility="collapsed")
+            
+            # Agrupamos solo SKUs únicos para evitar duplicar ventas de productos en varias bandejas
+            df_pie = df_unicos.groupby(vista_anillo)['Venta_Num'].sum().reset_index()
+            df_pie = df_pie[df_pie['Venta_Num'] > 0].sort_values(by='Venta_Num', ascending=False)
+            
+            # Gráfico de Anillo Moderno
+            fig_pie = go.Figure(data=[go.Pie(
+                labels=df_pie[vista_anillo], 
+                values=df_pie['Venta_Num'], 
+                hole=0.55,
+                textinfo='label+percent',
+                textposition='inside',
+                insidetextorientation='radial',
+                marker=dict(colors=['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'], 
+                            line=dict(color='#0f172a', width=2))
+            )])
+            
+            fig_pie.update_layout(
+                showlegend=False,
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                margin=dict(t=10, b=10, l=10, r=10),
+                annotations=[dict(text=f'<b>S/ {ventas_globales/1000:,.0f}K</b>', x=0.5, y=0.5, font_size=20, showarrow=False, font_color='#ffffff')]
+            )
+            
+            st.plotly_chart(fig_pie, use_container_width=True)
+            
         st.markdown("---")
         st.markdown("### 📋 Reporte Detallado y Exportación")
         
