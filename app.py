@@ -23,7 +23,6 @@ st.markdown("""
             max-width: 100% !important;
         }
         
-        /* Estilos para Tarjetas Financieras */
         .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; }
         .fin-kpi-card { flex: 1; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 18px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
         .fin-kpi-title { font-size: 0.80rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
@@ -118,7 +117,6 @@ def generar_html_pasillo_interactivo(df):
                 nombre = str(it.get("Descripción", it.get("Nombre", "")))
                 marca = str(it.get("Marca", "S/M"))
                 estado = str(it.get("Estado", ""))
-                top_ventas = str(it.get("TOPVENTAS", "")).strip().upper()
                 caras_val = str(it.get("Caras", "1"))
                 caras = caras_val if caras_val.isdigit() and int(caras_val) > 0 else "1"
 
@@ -134,8 +132,6 @@ def generar_html_pasillo_interactivo(df):
                 
                 part_fmt = format_pct(part_val)
                 bg_color, text_color, cat_leyenda = obtener_estado_y_color(estado, stock_val)
-                es_top = top_ventas == "TOP"
-                border_style = "border: 3px solid #FFC000;" if es_top else "border: 1px solid #7f7f7f;"
                 estilo_cobertura = "color: red; font-weight: bold;" if cob_val >= 30 else ""
                 
                 stock_fmt = f"{stock_val:.2f}"
@@ -143,9 +139,9 @@ def generar_html_pasillo_interactivo(df):
                 venta_fmt = f"{venta_val:.2f}"
 
                 cards_html += f"""
-                <div class="sku-card" style="flex: {caras}; background-color: {bg_color}; {border_style}" 
-                     data-brand="{marca}" data-name="{nombre}" data-ean="{ean}" data-top="{top_ventas}"
-                     data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_fmt}" data-part="{part_fmt}" 
+                <div class="sku-card" style="flex: {caras}; background-color: {bg_color}; border: 1px solid #7f7f7f;" 
+                     data-brand="{marca}" data-name="{nombre}" data-ean="{ean}"
+                     data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_val}" data-part="{part_fmt}" 
                      data-cod="{cod_real}" data-cat="{cat_leyenda}" 
                      data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}">
                   <div class="sku-pos">{pos}</div>
@@ -283,13 +279,13 @@ def generar_html_pasillo_interactivo(df):
         @media print {{
           @page {{ size: A4 portrait; margin: 8mm; }}
           body {{ background-color: #fff !important; color: #000 !important; margin: 0; padding: 0; font-size: 9pt; }}
-          .filter-panel, .legend-panel, .modal-overlay, .nav-btn, .kpi-container {{ display: none !important; }}
+          .filter-panel, .legend-panel, .modal-overlay, .nav-btn, .kpi-container, .top-panel {{ display: none !important; }}
           .aisle-wrapper {{ display: block !important; width: 100% !important; }}
           .aisle-container {{ display: block !important; background: transparent !important; border: none !important; padding: 0 !important; overflow: visible !important; }}
           .bay-column {{ background: #fff !important; border: 2px solid #000 !important; width: 100% !important; max-width: 100% !important; page-break-inside: avoid; margin-bottom: 0 !important; }}
           .bay-column.hidden {{ display: none !important; }}
-          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 2px solid #000 !important; padding: 4px !important; font-size: 11pt !important; }}
-          .bay-subcat {{ color: #334155 !important; font-size: 9pt !important; }}
+          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 2px solid #000 !important; padding: 4px !important; font-size: 11pt !important; display: block; text-align: center; }}
+          .bay-subcat {{ color: #334155 !important; font-size: 9pt !important; display: block; }}
           .bay-shelves {{ padding: 6px !important; gap: 8px !important; }}
           .shelf-row {{ background: #fff !important; border: 1px solid #000 !important; page-break-inside: avoid; margin-bottom: 4px !important; }}
           .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 4px solid #000 !important; font-size: 8pt !important; padding: 2px 4px !important; }}
@@ -298,11 +294,25 @@ def generar_html_pasillo_interactivo(df):
           .sku-card {{ background: #fff !important; border: 1px solid #000 !important; color: #000 !important; padding: 3px !important; min-width: 45px !important; }}
           .sku-card[data-top="TOP"] {{ border: 3px double #000 !important; }}
           .sku-pos, .sku-caras-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-size: 6pt !important; width: 12px; height: 12px; }}
-          .sku-brand-text {{ font-size: 6.5pt !important; color: #000 !important; }}
+          .sku-brand-text {{ font-size: 6.5pt !important; color: #000 !important; display: block; }}
           .sku-name-text {{ font-size: 6.5pt !important; color: #000 !important; -webkit-line-clamp: 3 !important; line-height: 1.1 !important; }}
           .sku-bottom-bar {{ border-top: 1px dashed #000 !important; font-size: 6pt !important; margin-top: 2px !important; padding-top: 1px !important; }}
           .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 6pt !important; }}
           .shelf-bottom-rail {{ background: #000 !important; height: 4px !important; }}
+        }}
+
+        @media (max-width: 768px) {{
+            .kpi-card {{ flex: 1 1 30%; min-width: 30%; padding: 8px 4px; }}
+            .kpi-val {{ font-size: 1.2rem; }}
+            .kpi-title {{ font-size: 0.55rem; }}
+            .filter-panel, .top-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
+            .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
+            .legend-chips {{ justify-content: center; }}
+            .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
+            .aisle-wrapper {{ gap: 4px; }}
+            .bay-column {{ flex: 0 0 100%; max-width: 100%; margin-right: 0; }}
+            .sku-card {{ min-width: 80px; }}
+            .aisle-container.single-module .bay-column {{ flex: 1 0 100%; }}
         }}
       </style>
     </head>
@@ -322,8 +332,20 @@ def generar_html_pasillo_interactivo(df):
           <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
           <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
           <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
-          <div class="m-row"><span class="m-label">% Participación:</span><span class="m-val" id="m-part"></span></div>
-          <div class="m-row" style="border-bottom: none;"><span class="m-label">Top Ventas:</span><span class="m-val" id="m-top" style="color: #fbbf24; font-weight: 800;"></span></div>
+          <div class="m-row"><span class="m-label" style="color: #fbbf24; font-weight: 800;">¿Es TOP Ventas?:</span><span class="m-val" id="m-top" style="color: #fbbf24; font-weight: 800;"></span></div>
+        </div>
+      </div>
+
+      <!-- PANEL TOP DINÁMICO EN JS -->
+      <div class="top-panel" style="background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🏆</span>
+            <label style="color: #93c5fd; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; margin: 0;">Resaltar TOP Ventas:</label>
+            <input type="number" id="topNInput" value="30" min="1" max="500" style="background: #ffffff; border: 2px solid #3b82f6; border-radius: 4px; padding: 4px 8px; width: 70px; font-weight: bold; color: #0f172a; outline: none;">
+            <span style="color: #94a3b8; font-size: 0.8rem; font-weight: bold;">SKUs</span>
+        </div>
+        <div id="topNInfo" style="color: #cbd5e1; font-size: 0.85rem; background: rgba(59,130,246,0.1); padding: 8px 12px; border-radius: 4px; border-left: 4px solid #3b82f6; flex-grow: 1;">
+            💡 Calculando...
         </div>
       </div>
 
@@ -345,7 +367,7 @@ def generar_html_pasillo_interactivo(df):
         <div class="filter-group"><span class="filter-label">📶 Nivel</span><select id="levelSelect" class="filter-select"><option value="ALL">Todos</option>{options_niveles}</select></div>
         <div class="btn-group">
           <button id="resetBtn" class="filter-btn-reset">Restablecer</button>
-          <button type="button" id="printBayBtn" class="filter-btn-print" title="Imprime el cuerpo visible en una hoja A4 vertical">🖨️ Imprimir Cuerpo (A4)</button>
+          <button type="button" id="printBayBtn" class="filter-btn-print" title="Imprime el cuerpo visible en una hoja A4 vertical">🖨️ Imprimir Cuerpo</button>
           <button type="button" id="fullscreenBtn" class="filter-btn-fs" title="Ver Mueble Completo">🔲 Pantalla Completa</button>
         </div>
       </div>
@@ -378,6 +400,7 @@ def generar_html_pasillo_interactivo(df):
         const levelSelect = document.getElementById('levelSelect');
         const resetBtn = document.getElementById('resetBtn');
         const printBayBtn = document.getElementById('printBayBtn');
+        const topNInput = document.getElementById('topNInput');
 
         let currentLegendFilter = null;
         const allBrands = Array.from(brandSelect.options).map(o => ({{val: o.value, text: o.text}}));
@@ -391,20 +414,58 @@ def generar_html_pasillo_interactivo(df):
           let selectedCat = catSelect.value;
           let selectedBay = baySelect.value;
           let selectedLevel = levelSelect.value;
+          const topN = parseInt(topNInput.value) || 30;
 
+          // 1. Primer paso: Extraer ventas de SKUs únicos VISIBLES para calcular TOP
+          let visibleSkus = new Map();
+          let totalVentasFiltered = 0;
+
+          document.querySelectorAll('.sku-card').forEach(card => {{
+             const brand = card.getAttribute('data-brand') || '';
+             const catjer = card.getAttribute('data-catjer') || '';
+             const bay = card.closest('.bay-column').getAttribute('data-module');
+             const level = card.closest('.shelf-row').getAttribute('data-level');
+             const name = (card.getAttribute('data-name') || '').toLowerCase();
+             const ean = card.getAttribute('data-ean') || '';
+             const cod = card.getAttribute('data-cod');
+             const ventaStr = card.getAttribute('data-venta') || "0";
+             const venta = parseFloat(ventaStr.replace(/,/g, '')) || 0;
+
+             const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
+             const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
+             const matchCat = (selectedCat === 'ALL' || catjer === selectedCat);
+             const matchBay = (selectedBay === 'ALL' || bay === selectedBay);
+             const matchLevel = (selectedLevel === 'ALL' || level === selectedLevel);
+
+             if (matchSearch && matchBrand && matchCat && matchBay && matchLevel) {{
+                 if (!visibleSkus.has(cod)) {{
+                     visibleSkus.set(cod, venta);
+                     totalVentasFiltered += venta;
+                 }}
+             }}
+          }});
+
+          // 2. Ordenar y obtener los TOP N SKUs
+          let sortedSkus = Array.from(visibleSkus.entries()).sort((a, b) => b[1] - a[1]);
+          let topNSkusSet = new Set();
+          let topVentasSum = 0;
+
+          for (let i = 0; i < Math.min(topN, sortedSkus.length); i++) {{
+              topNSkusSet.add(sortedSkus[i][0]);
+              topVentasSum += sortedSkus[i][1];
+          }}
+
+          // 3. Actualizar texto de información %
+          let pct = totalVentasFiltered > 0 ? (topVentasSum / totalVentasFiltered) * 100 : 0;
+          document.getElementById('topNInfo').innerHTML = `💡 Has resaltado el <b>TOP ${topNSkusSet.size}</b> de esta vista. Concentran el <b style="color:#10b981; font-size:1rem;">${pct.toFixed(2)}%</b> de la venta mostrada (S/ ${totalVentasFiltered.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}).`;
+
+          // 4. Segundo paso: Aplicar estilos y sumar contadores finales
           let availableBrands = new Set();
           let availableCats = new Set();
           let availableBays = new Set();
           let availableLevels = new Set();
           
-          let setTot = new Set();
-          let setBloq = new Set();
-          let setSin = new Set();
-          let setBajo = new Set();
-          let setOk = new Set();
-          let setCob = new Set();
-          let setTop = new Set();
-          
+          let setTot = new Set(), setBloq = new Set(), setSin = new Set(), setBajo = new Set(), setOk = new Set(), setCob = new Set(), setTop = new Set();
           let visibleBaysCount = 0;
 
           document.querySelectorAll('.sku-card').forEach(card => {{
@@ -415,9 +476,13 @@ def generar_html_pasillo_interactivo(df):
              const name = (card.getAttribute('data-name') || '').toLowerCase();
              const ean = card.getAttribute('data-ean') || '';
              const cat = card.getAttribute('data-cat') || '';
-             const isTop = card.getAttribute('data-top') === 'TOP';
              const cobVal = parseFloat(card.getAttribute('data-cob')) || 0;
              const cod = card.getAttribute('data-cod');
+             
+             // Aquí aplicamos dinámicamente si es TOP según nuestro Set calculado
+             const isTop = topNSkusSet.has(cod);
+             card.setAttribute('data-top', isTop ? 'TOP' : 'NO');
+             card.style.border = isTop ? "3px solid #FFC000" : "1px solid #7f7f7f";
 
              const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
              const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
@@ -445,7 +510,7 @@ def generar_html_pasillo_interactivo(df):
              let passesLegend = true;
              if (currentLegendFilter) {{
                  if (currentLegendFilter === 'cob-alta') passesLegend = (cobVal >= 30);
-                 else if (currentLegendFilter === 'top-ventas') passesLegend = isTop;
+                 else if (currentLegendFilter === 'top-ventas') passesLegend = isTop; // Reacciona al TOP dinámico
                  else passesLegend = (cat === currentLegendFilter);
              }}
 
@@ -552,6 +617,7 @@ def generar_html_pasillo_interactivo(df):
         catSelect.addEventListener('change', applyFilters);
         baySelect.addEventListener('change', applyFilters);
         levelSelect.addEventListener('change', applyFilters);
+        topNInput.addEventListener('input', applyFilters);
         
         resetBtn.addEventListener('click', () => {{
           searchInput.value = ''; currentLegendFilter = null;
@@ -591,9 +657,14 @@ def generar_html_pasillo_interactivo(df):
                 document.getElementById('m-ga').textContent = card.getAttribute('data-ga');
                 document.getElementById('m-stock').textContent = card.getAttribute('data-stock');
                 document.getElementById('m-cob').textContent = card.getAttribute('data-cob');
-                document.getElementById('m-venta').textContent = card.getAttribute('data-venta');
-                document.getElementById('m-part').textContent = card.getAttribute('data-part');
-                document.getElementById('m-top').textContent = card.getAttribute('data-top');
+                
+                // Formatear venta para visualización en tarjeta
+                const ventaStr = card.getAttribute('data-venta') || "0";
+                const ventaVal = parseFloat(ventaStr.replace(/,/g, '')) || 0;
+                document.getElementById('m-venta').textContent = "S/ " + ventaVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+                
+                const topStatus = card.getAttribute('data-top');
+                document.getElementById('m-top').textContent = topStatus === 'TOP' ? '⭐ SÍ (Top Ventas)' : 'NO';
                 modal.classList.add('active');
             }});
         }});
@@ -664,9 +735,9 @@ info_hora = None
 error_nube = None
 
 # --- HEADER CON BOTÓN DE SINCRONIZACIÓN EXPANDIDO ---
-col_head1, col_head2 = st.columns([2.5, 7.5])
+col_head1, col_head2 = st.columns([10, 0.1])
 with col_head1:
-    if st.button("🔄 Sincronizar Datos", type="primary", use_container_width=True):
+    if st.button("🔄 Sincronizar Base de Datos (Drive) ☁️", type="primary", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
@@ -811,30 +882,29 @@ if df_raw is not None:
     tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard Analítico Financiero"])
     
     with tab1:
-        st.markdown("### ⚙️ Segmentación Dinámica de Ventas")
-        col_cfg1, col_cfg2 = st.columns([1, 3])
-        
-        with col_cfg1:
-            top_n = st.number_input("🏆 Resaltar TOP Ventas (Cantidad de SKUs):", min_value=1, max_value=200, value=30, step=1)
-        
-        df_top_calc = df_unicos.sort_values(by='Venta_Num', ascending=False)
-        skus_top = df_top_calc.head(top_n)['COD REAL'].astype(str).str.strip().tolist()
-        part_acumulada = df_top_calc.head(top_n)['Part_Num'].sum()
-        
-        with col_cfg2:
-            st.write("") 
-            st.info(f"💡 Has seleccionado el **TOP {top_n}**. Estos {top_n} productos concentran el **{part_acumulada*100:.2f}%** de la venta total de la categoría.")
-
-        df_base['TOPVENTAS'] = df_base['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top else "NO")
-
-        st.markdown("---")
-        
+        # El renderizado HTML ahora tiene el control total del TOP y Filtros
         html_pasillo = generar_html_pasillo_interactivo(df_base)
         components.html(html_pasillo, height=1350, scrolling=True)
             
     with tab2:
         # ==========================================
-        # 💼 EXECUTIVE DASHBOARD REDISEÑADO
+        # ⚙️ CONFIGURACIÓN DEL DASHBOARD PYTHON
+        # ==========================================
+        st.markdown("### ⚙️ Configuración del Dashboard")
+        col_cfg_dash1, col_cfg_dash2 = st.columns([1, 3])
+        with col_cfg_dash1:
+            top_n_dash = st.number_input("🏆 TOP Ventas a resaltar en Gráficos:", min_value=1, max_value=200, value=30, step=1, key="top_dash")
+            
+        # Calcular TOP a nivel global para Tab 2 (Scatter y Reporte)
+        df_top_calc_dash = df_unicos.sort_values(by='Venta_Num', ascending=False)
+        skus_top_dash = df_top_calc_dash.head(top_n_dash)['COD REAL'].astype(str).str.strip().tolist()
+        df_base['TOPVENTAS'] = df_base['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top_dash else "NO")
+        df_unicos['TOPVENTAS'] = df_unicos['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top_dash else "NO")
+        
+        st.markdown("---")
+        
+        # ==========================================
+        # 💼 EXECUTIVE DASHBOARD
         # ==========================================
         st.markdown("### 💼 Resumen Ejecutivo")
         
@@ -887,8 +957,10 @@ if df_raw is not None:
             df_dash_base['Cuerpo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
             df_dash_base['Cuerpo_Ord'] = pd.to_numeric(df_dash_base['Cuerpo_Ord'], errors='coerce').fillna(1)
             
+            # Cálculo exacto por SKU único asignado a cada cuerpo (sin duplicar ventas por bandeja)
             df_sku_cuerpo = df_dash_base.drop_duplicates(subset=['COD REAL', 'Cuerpo_Ord']).copy()
             
+            # Obtener categoría principal por cuerpo
             cat_por_cuerpo = df_sku_cuerpo.groupby('Cuerpo_Ord')['Categoría'].agg(
                 lambda x: max(set([str(i) for i in x if str(i) not in ['S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['S/C', 'nan', '']]) > 0 else ""
             ).to_dict()
@@ -899,6 +971,7 @@ if df_raw is not None:
                 SKUs_Total=('COD REAL', 'count')
             ).reset_index()
             
+            # Etiqueta con Categoría integrada debajo de Cuerpo
             def crear_etiqueta_eje(c_num):
                 cat_nombre = cat_por_cuerpo.get(c_num, "")
                 if cat_nombre and len(cat_nombre) > 18:
