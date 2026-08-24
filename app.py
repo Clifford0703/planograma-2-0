@@ -16,7 +16,6 @@ st.set_page_config(
 # --- FORZAR ANCHO MÁXIMO (CERO MÁRGENES) ---
 st.markdown("""
     <style>
-        /* Elimina el padding lateral predeterminado de Streamlit */
         .block-container {
             padding-left: 1rem !important;
             padding-right: 1rem !important;
@@ -207,14 +206,15 @@ def generar_html_pasillo_interactivo(df):
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
         .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; }}
-        .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 45px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
+        .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
         .nav-btn:hover {{ background: #3b82f6; }}
         .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
         
-        .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; }}
+        .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; touch-action: pan-x pan-y pinch-zoom; }}
         
         .bay-column {{ flex: 0 0 460px; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; scroll-snap-align: center; transition: all 0.3s; }}
         .bay-column.hidden {{ display: none !important; }}
+        
         .bay-title {{ background: #1e3a8a; padding: 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; }}
         .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }}
         .shelf-row {{ display: flex; flex-direction: column; background: #162238; border-radius: 4px; transition: all 0.3s; }}
@@ -247,15 +247,23 @@ def generar_html_pasillo_interactivo(df):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
+        /* ========================================= */
+        /* RESPONSIVE MÓVIL (Y MODO EMULADOR)        */
+        /* ========================================= */
         @media (max-width: 768px) {{
             .filter-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
             .btn-group {{ justify-content: space-between; width: 100%; margin-top: 4px; }}
-            .bay-column {{ flex: 0 0 85vw; }}
-            .nav-btn {{ width: 35px; font-size: 1.2rem; }}
-            .sku-card {{ min-width: 100px; }}
             .legend-chips {{ justify-content: center; }}
             .summary-table th, .summary-table td {{ padding: 6px 4px; font-size: 0.65rem; }}
             .summary-table td {{ font-size: 1rem; }}
+            
+            /* Flechas de navegación mucho más delgadas */
+            .nav-btn {{ width: 22px; font-size: 1.2rem; padding: 0; border-radius: 4px; border-width: 1px; }}
+            .aisle-wrapper {{ gap: 4px; }}
+            
+            /* El cuerpo ocupa todo el ancho disponible */
+            .bay-column {{ flex: 0 0 100%; max-width: 100%; margin-right: 0; }}
+            .sku-card {{ min-width: 90px; }}
         }}
 
         @media print {{
@@ -317,7 +325,7 @@ def generar_html_pasillo_interactivo(df):
         
         <div class="btn-group">
           <button id="resetBtn" class="filter-btn-reset">Restablecer</button>
-          <button type="button" class="filter-btn-print" onclick="window.print()">🖨️ Imprimir</button>
+          <button type="button" class="filter-btn-print" onclick="window.print()">🖨️ Imprimir B/N</button>
         </div>
       </div>
 
@@ -349,7 +357,7 @@ def generar_html_pasillo_interactivo(df):
       </div>
 
       <div class="legend-panel">
-        <span class="legend-title">📍 Leyenda Interactiva (Filtra módulos y resalta productos)</span>
+        <span class="legend-title">📍 Leyenda Interactiva (Resalta productos sin desarmar el mueble)</span>
         <div class="legend-chips">
           <button class="legend-chip" data-filter="bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
           <button class="legend-chip" data-filter="sin-stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
@@ -393,6 +401,7 @@ def generar_html_pasillo_interactivo(df):
 
           let cTot=0, cBloq=0, cSin=0, cBajo=0, cOk=0, cCob=0, cTop=0;
 
+          // EVALUAR TARJETAS Y APLICAR ESTILOS
           document.querySelectorAll('.sku-card').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
@@ -432,7 +441,6 @@ def generar_html_pasillo_interactivo(df):
                  else passesLegend = (cat === currentLegendFilter);
              }}
 
-             // Si pasa el filtro, evaluamos leyenda
              if (matchBrand && matchSearch) {{
                  if (currentLegendFilter) {{
                      if (passesLegend) {{
@@ -460,6 +468,7 @@ def generar_html_pasillo_interactivo(df):
           document.getElementById('t-cob').textContent = cCob;
           document.getElementById('t-top').textContent = cTop;
 
+          // RECONSTRUIR CASCADAS
           if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
           if (selectedBay !== 'ALL' && !availableBays.has(selectedBay)) selectedBay = 'ALL';
           if (selectedLevel !== 'ALL' && !availableLevels.has(selectedLevel)) selectedLevel = 'ALL';
@@ -478,7 +487,6 @@ def generar_html_pasillo_interactivo(df):
             const bayNum = bay.getAttribute('data-module');
             const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
             
-            // Un módulo es visible si tiene al menos una tarjeta resaltada o NO atenuada.
             const hasMatch = Array.from(bay.querySelectorAll('.sku-card')).some(card => {{
                 if (currentLegendFilter) return card.classList.contains('highlighted');
                 return !card.classList.contains('dimmed');
@@ -487,7 +495,7 @@ def generar_html_pasillo_interactivo(df):
             bay.classList.toggle('hidden', !(passesBayFilter && hasMatch));
           }});
 
-          // Restaurar todas las bandejas del módulo visible para no "desarmar" el mueble
+          // MANTENER BANDEJAS INTACTAS PARA LA ESTRUCTURA DEL MUEBLE
           document.querySelectorAll('.shelf-row').forEach(shelf => {{
             const shelfLevel = shelf.getAttribute('data-level');
             const passesLevelFilter = (selectedLevel === 'ALL' || selectedLevel === shelfLevel);
@@ -600,17 +608,27 @@ if archivo_excel is not None:
         tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard y Reporte Excel"])
         
         with tab1:
-            # BOTÓN EMULADOR DE CELULAR
             st.markdown("##### Control de Vista")
             mobile_preview = st.toggle("📱 Simular Vista Móvil (Celular)")
             
             html_pasillo = generar_html_pasillo_interactivo(df)
             
             if mobile_preview:
-                col1, col2, col3 = st.columns([1, 2, 1])
+                col1, col2, col3 = st.columns([1, 1, 1])
                 with col2:
-                    st.markdown("<div style='border: 14px solid #1e293b; border-radius: 40px; padding: 5px; background: #000; box-shadow: 0 20px 40px rgba(0,0,0,0.5);'>", unsafe_allow_html=True)
-                    components.html(html_pasillo, height=800, scrolling=True)
+                    st.markdown("""
+                    <div style='
+                        border: 12px solid #1e293b; 
+                        border-radius: 36px; 
+                        padding: 0; 
+                        background: #000; 
+                        box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
+                        max-width: 400px; 
+                        margin: 0 auto;
+                        overflow: hidden;'>
+                    """, unsafe_allow_html=True)
+                    # En la vista móvil el contenedor es estrecho (simulando 400px)
+                    components.html(html_pasillo, height=750, scrolling=True)
                     st.markdown("</div>", unsafe_allow_html=True)
             else:
                 components.html(html_pasillo, height=1300, scrolling=True)
