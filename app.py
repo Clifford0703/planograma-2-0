@@ -23,14 +23,17 @@ def safe_float(val, default=0.0):
     except (ValueError, TypeError):
         return default
 
-def obtener_color_estado_stock(estado, stock_val):
+def obtener_estado_y_color(estado, stock_val):
+    """Devuelve el Color de Fondo, Color de Texto y la Categoría para la Leyenda"""
     estado = str(estado).strip().upper()
-    if estado == "B": return "#FFC7CE", "#9C0006"
+    if estado == "B": 
+        return "#FFC7CE", "#9C0006", "bloqueado"
     elif estado == "A":
-        if stock_val <= 0: return "#F4B084", "#833C0C"
-        elif stock_val <= 5: return "#FFFF99", "#8A5A00"
-        else: return "#C6EFCE", "#006100"
-    else: return "#D9D9D9", "#000000"
+        if stock_val <= 0: return "#F4B084", "#833C0C", "sin-stock"
+        elif stock_val <= 5: return "#FFFF99", "#8A5A00", "stock-bajo"
+        else: return "#C6EFCE", "#006100", "stock-ok"
+    else: 
+        return "#D9D9D9", "#000000", "desconocido"
 
 # --- GENERADOR DEL PASILLO HTML COMPLETO ---
 def generar_html_pasillo_interactivo(df):
@@ -94,7 +97,7 @@ def generar_html_pasillo_interactivo(df):
                 
                 part_fmt = f"{part_val*100:.2f}%" if part_val < 1 else f"{part_val:.2f}%"
 
-                bg_color, text_color = obtener_color_estado_stock(estado, stock_val)
+                bg_color, text_color, cat_leyenda = obtener_estado_y_color(estado, stock_val)
                 es_top = top_ventas == "TOP"
                 border_style = "border: 3px solid #FFC000;" if es_top else "border: 1px solid #7f7f7f;"
                 estilo_cobertura = "color: red; font-weight: bold;" if cob_val >= 30 else ""
@@ -106,7 +109,7 @@ def generar_html_pasillo_interactivo(df):
                 cards_html += f"""
                 <div class="sku-card" style="flex: {caras}; background-color: {bg_color}; {border_style}" 
                      data-brand="{marca}" data-name="{nombre}" data-ean="{ean}" data-top="{top_ventas}"
-                     data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_fmt}" data-part="{part_fmt}" data-cod="{cod_real}">
+                     data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_fmt}" data-part="{part_fmt}" data-cod="{cod_real}" data-cat="{cat_leyenda}">
                   <div class="sku-pos">{pos}</div>
                   <div class="sku-caras-tag">{caras} C</div>
                   <div class="sku-details">
@@ -154,19 +157,29 @@ def generar_html_pasillo_interactivo(df):
         * {{ box-sizing: border-box; }}
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 12px; }}
         
-        .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }}
+        /* PANEL DE FILTROS - FONDO BLANCO LETRAS NEGRAS PARA EVITAR BUGS DE OS */
+        .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }}
         .filter-group {{ display: flex; flex-direction: column; gap: 4px; }}
         .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
-        .filter-select, .filter-input {{ background: #0b132b; border: 1px solid #3b82f6; color: #fff; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; outline: none; min-width: 140px; }}
-        .filter-input {{ min-width: 200px; }}
         
-        /* Selects Desactivados (Opciones Incompatibles) */
-        .filter-select option:disabled {{ color: #475569; font-style: italic; }}
+        .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 6px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; outline: none; min-width: 140px; }}
+        .filter-input {{ min-width: 200px; }}
+        .filter-select option {{ background: #ffffff; color: #0f172a; }}
+        .filter-select option:disabled {{ color: #94a3b8; font-style: italic; }}
         
         .btn-group {{ display: flex; gap: 8px; margin-left: auto; }}
-        .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }}
-        .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }}
+        .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
+        .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
         
+        /* LEYENDA INTERACTIVA */
+        .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; }}
+        .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-bottom: 8px; display: block; }}
+        .legend-chips {{ display: flex; flex-wrap: wrap; gap: 10px; }}
+        .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.75rem; padding: 6px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.8; box-shadow: 0 2px 4px rgba(0,0,0,0.2); outline: none; }}
+        .legend-chip:hover {{ opacity: 1; transform: translateY(-2px); }}
+        .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
+
+        /* SISTEMA DE NAVEGACIÓN Y CAROUSEL */
         .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; }}
         .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 45px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
         .nav-btn:hover {{ background: #3b82f6; }}
@@ -187,6 +200,7 @@ def generar_html_pasillo_interactivo(df):
         .shelf-caras-count {{ background: rgba(0, 0, 0, 0.4); padding: 1px 6px; border-radius: 3px; color: #93c5fd; font-size: 0.65rem; }}
         .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px; min-height: 125px; overflow-x: auto; }}
         
+        /* TARJETAS INTERACTIVAS */
         .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 110px; position: relative; transition: all 0.2s; cursor: pointer; }}
         .sku-card.dimmed {{ opacity: 0.15; filter: grayscale(1); }}
         .sku-card.highlighted {{ box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); transform: scale(1.02); z-index: 5; border-color: #3b82f6 !important; }}
@@ -201,6 +215,7 @@ def generar_html_pasillo_interactivo(df):
         .sku-cap-val {{ font-size: 0.65rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; flex-shrink: 0; }}
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; }}
 
+        /* MODAL EMERGENTE */
         .modal-overlay {{ position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transform: translateY(20px); transition: transform 0.2s; border: 2px solid #3b82f6; }}
@@ -217,12 +232,13 @@ def generar_html_pasillo_interactivo(df):
             .bay-column {{ flex: 0 0 85vw; }}
             .nav-btn {{ width: 35px; font-size: 1.2rem; }}
             .sku-card {{ min-width: 100px; }}
+            .legend-chips {{ justify-content: center; }}
         }}
 
         @media print {{
           @page {{ size: landscape; margin: 5mm; }}
           body {{ background-color: #fff !important; color: #000 !important; }}
-          .filter-panel, .modal-overlay, .nav-btn {{ display: none !important; }}
+          .filter-panel, .legend-panel, .modal-overlay, .nav-btn {{ display: none !important; }}
           .aisle-wrapper {{ display: block; }}
           .aisle-container {{ display: block; border: none !important; background: #fff !important; padding: 0; }}
           .bay-column {{ background: #fff !important; border: 2px solid #000 !important; width: 100% !important; margin-bottom: 20px; page-break-inside: avoid; }}
@@ -255,6 +271,7 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
+      <!-- FILTROS (ALTO CONTRASTE) -->
       <div class="filter-panel">
         <div class="filter-group">
           <span class="filter-label">🔍 Buscar Producto</span>
@@ -279,6 +296,20 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
+      <!-- LEYENDA INTERACTIVA -->
+      <div class="legend-panel">
+        <span class="legend-title">📍 Leyenda Interactiva (Clic para resaltar)</span>
+        <div class="legend-chips">
+          <button class="legend-chip" data-filter="bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
+          <button class="legend-chip" data-filter="sin-stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
+          <button class="legend-chip" data-filter="stock-bajo" style="--bg: #FFFF99; --tc: #8A5A00;">Stock 1 a 5</button>
+          <button class="legend-chip" data-filter="stock-ok" style="--bg: #C6EFCE; --tc: #006100;">Stock > 5</button>
+          <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 2px solid #ef4444;">Cobertura Alta</button>
+          <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 2px solid #FFC000;">★ TOP VENTAS</button>
+        </div>
+      </div>
+
+      <!-- VISTA DEL PASILLO -->
       <div class="aisle-wrapper">
         <button class="nav-btn" id="btnPrev" title="Módulo Anterior">❮</button>
         <div class="aisle-container" id="aisleContainer">
@@ -294,18 +325,22 @@ def generar_html_pasillo_interactivo(df):
         const levelSelect = document.getElementById('levelSelect');
         const resetBtn = document.getElementById('resetBtn');
 
+        let currentLegendFilter = null;
+
+        const allBrands = Array.from(brandSelect.options).map(o => ({{val: o.value, text: o.text}}));
+        const allBays = Array.from(baySelect.options).map(o => ({{val: o.value, text: o.text}}));
+        const allLevels = Array.from(levelSelect.options).map(o => ({{val: o.value, text: o.text}}));
+
         function applyFilters() {{
           const query = searchInput.value.toLowerCase().trim();
-          const selectedBrand = brandSelect.value;
-          const selectedBay = baySelect.value;
-          const selectedLevel = levelSelect.value;
+          let selectedBrand = brandSelect.value;
+          let selectedBay = baySelect.value;
+          let selectedLevel = levelSelect.value;
 
-          // CONJUNTOS PARA FILTROS EN CASCADA
           let availableBrands = new Set();
           let availableBays = new Set();
           let availableLevels = new Set();
 
-          // Analizar qué opciones son válidas basadas en las otras selecciones
           document.querySelectorAll('.sku-card').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
@@ -323,23 +358,31 @@ def generar_html_pasillo_interactivo(df):
              if(matchSearch && matchBrand && matchBay) availableLevels.add(level);
           }});
 
-          // Deshabilitar opciones no disponibles
-          Array.from(brandSelect.options).forEach(opt => {{ if(opt.value !== 'ALL') opt.disabled = !availableBrands.has(opt.value); }});
-          Array.from(baySelect.options).forEach(opt => {{ if(opt.value !== 'ALL') opt.disabled = !availableBays.has(opt.value); }});
-          Array.from(levelSelect.options).forEach(opt => {{ if(opt.value !== 'ALL') opt.disabled = !availableLevels.has(opt.value); }});
+          if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
+          if (selectedBay !== 'ALL' && !availableBays.has(selectedBay)) selectedBay = 'ALL';
+          if (selectedLevel !== 'ALL' && !availableLevels.has(selectedLevel)) selectedLevel = 'ALL';
 
-          // Auto-Restablecer si la selección actual quedó deshabilitada por otro filtro
-          let needReapply = false;
-          if(brandSelect.options[brandSelect.selectedIndex].disabled) {{ brandSelect.value = 'ALL'; needReapply = true; }}
-          if(baySelect.options[baySelect.selectedIndex].disabled) {{ baySelect.value = 'ALL'; needReapply = true; }}
-          if(levelSelect.options[levelSelect.selectedIndex].disabled) {{ levelSelect.value = 'ALL'; needReapply = true; }}
+          brandSelect.innerHTML = '';
+          allBrands.forEach(opt => {{
+              if(opt.val === 'ALL' || availableBrands.has(opt.val)) {{
+                  brandSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBrand));
+              }}
+          }});
 
-          if(needReapply) {{
-              applyFilters();
-              return;
-          }}
+          baySelect.innerHTML = '';
+          allBays.forEach(opt => {{
+              if(opt.val === 'ALL' || availableBays.has(opt.val)) {{
+                  baySelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBay));
+              }}
+          }});
 
-          // APLICAR VISIBILIDAD DOM
+          levelSelect.innerHTML = '';
+          allLevels.forEach(opt => {{
+              if(opt.val === 'ALL' || availableLevels.has(opt.val)) {{
+                  levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel));
+              }}
+          }});
+
           document.querySelectorAll('.bay-column').forEach(bay => {{
             const bayNum = bay.getAttribute('data-module');
             bay.classList.toggle('hidden', !(selectedBay === 'ALL' || selectedBay === bayNum));
@@ -350,24 +393,64 @@ def generar_html_pasillo_interactivo(df):
             shelf.classList.toggle('hidden', !(selectedLevel === 'ALL' || selectedLevel === shelfLevel));
           }});
 
+          // APLICAR LEYENDA Y BÚSQUEDA
           document.querySelectorAll('.sku-card').forEach(card => {{
             const brand = card.getAttribute('data-brand') || '';
             const name = (card.getAttribute('data-name') || '').toLowerCase();
             const ean = card.getAttribute('data-ean') || '';
+            const cat = card.getAttribute('data-cat') || '';
+            const isTop = card.getAttribute('data-top') === 'TOP';
+            const cobVal = parseFloat(card.getAttribute('data-cob')) || 0;
 
             const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
             const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
+            
+            const passesStandard = matchBrand && matchSearch;
+            
+            let passesLegend = true;
+            if (currentLegendFilter) {{
+                if (currentLegendFilter === 'cob-alta') passesLegend = (cobVal >= 30);
+                else if (currentLegendFilter === 'top-ventas') passesLegend = isTop;
+                else passesLegend = (cat === currentLegendFilter);
+            }}
 
-            if (matchBrand && matchSearch) {{
-              card.classList.remove('dimmed');
-              card.classList.toggle('highlighted', (query !== '' || selectedBrand !== 'ALL'));
+            if (passesStandard) {{
+                if (currentLegendFilter) {{
+                    if (passesLegend) {{
+                        card.classList.remove('dimmed');
+                        card.classList.add('highlighted');
+                    }} else {{
+                        card.classList.add('dimmed');
+                        card.classList.remove('highlighted');
+                    }}
+                }} else {{
+                    card.classList.remove('dimmed');
+                    card.classList.toggle('highlighted', (query !== '' || selectedBrand !== 'ALL'));
+                }}
             }} else {{
-              card.classList.add('dimmed');
-              card.classList.remove('highlighted');
+                card.classList.add('dimmed');
+                card.classList.remove('highlighted');
             }}
           }});
+          
           updateScrollButtons();
         }}
+
+        /* EVENTOS DE LEYENDA */
+        document.querySelectorAll('.legend-chip').forEach(chip => {{
+            chip.addEventListener('click', () => {{
+                const filter = chip.getAttribute('data-filter');
+                if (currentLegendFilter === filter) {{
+                    currentLegendFilter = null;
+                    chip.classList.remove('active');
+                }} else {{
+                    document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
+                    currentLegendFilter = filter;
+                    chip.classList.add('active');
+                }}
+                applyFilters();
+            }});
+        }});
 
         searchInput.addEventListener('input', applyFilters);
         brandSelect.addEventListener('change', applyFilters);
@@ -376,9 +459,17 @@ def generar_html_pasillo_interactivo(df):
         
         resetBtn.addEventListener('click', () => {{
           searchInput.value = '';
+          currentLegendFilter = null;
+          document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
+          
+          brandSelect.innerHTML = ''; allBrands.forEach(o => brandSelect.add(new Option(o.text, o.val)));
+          baySelect.innerHTML = ''; allBays.forEach(o => baySelect.add(new Option(o.text, o.val)));
+          levelSelect.innerHTML = ''; allLevels.forEach(o => levelSelect.add(new Option(o.text, o.val)));
+          
           brandSelect.value = 'ALL';
           baySelect.value = 'ALL';
           levelSelect.value = 'ALL';
+          
           applyFilters();
         }});
 
