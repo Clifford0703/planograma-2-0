@@ -792,11 +792,17 @@ if df_raw is not None:
     </div>
     """, unsafe_allow_html=True)
     
+    # Tratamiento numérico de variables
     df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(safe_float)
     df_base['Part_Num'] = df_base['% Part'].apply(safe_float)
     df_base['Stock_Num'] = df_base['Stock'].apply(safe_float)
     df_base['Cob_Num'] = df_base['Cobertura'].apply(safe_float)
+    df_base['Caras_Num'] = df_base['Caras'].apply(lambda x: safe_float(x, default=1.0))
+    
+    # Campo Total Unid en Bandeja
+    col_unid_bandeja = 'Total Unid en Bandeja' if 'Total Unid en Bandeja' in df_base.columns else ('Total_Unidades' if 'Total_Unidades' in df_base.columns else 'Stock')
+    df_base['Unid_Bandeja_Num'] = df_base[col_unid_bandeja].apply(safe_float)
     
     # Base única de SKUs
     df_unicos = df_base.drop_duplicates(subset=['COD REAL']).copy()
@@ -995,7 +1001,125 @@ if df_raw is not None:
             st.plotly_chart(fig_pie, use_container_width=True)
 
         # ==========================================
-        # 🎯 GRÁFICO EXTRA SEGURO: CUADRANTE ESTRATÉGICO
+        # ⚖️ ANÁLISIS FAIR SHARE (ESPACIO VS RENDIMIENTO)
+        # ==========================================
+        st.markdown("---")
+        st.markdown("### ⚖️ Análisis Fair Share: Participación de Espacio vs Rendimiento Financiero")
+        
+        col_fs_dim, col_fs_met = st.columns([2, 2])
+        with col_fs_dim:
+            dim_fs = st.selectbox(
+                "Segmentar Fair Share por:", 
+                ["Categoría", "Sección", "Departamento", "Grupo de artículo", "Marca"],
+                key="fs_dim_select"
+            )
+        with col_fs_met:
+            metrica_espacio = st.radio(
+                "Métrica de Espacio Físico a Comparar:",
+                ["Caras (Facings)", "Total Unidades en Bandeja"],
+                horizontal=True,
+                key="fs_met_radio"
+            )
+
+        col_espacio_elegida = 'Caras_Num' if metrica_espacio == "Caras (Facings)" else 'Unid_Bandeja_Num'
+        
+        # Agrupación por dimensión
+        df_fs = df_dash_base.groupby(dim_fs).agg(
+            Espacio_Total=(col_espacio_elegida, 'sum'),
+            Ventas_Total=('Venta_Num', 'sum'),
+            Margen_Total=('Margen_Num', 'sum')
+        ).reset_index()
+        
+        # Filtrar valores sin nombre o vacíos
+        df_fs = df_fs[~df_fs[dim_fs].isin(['S/D', 'S/C', 'S/S', 'S/G', 'nan', ''])].copy()
+        
+        total_espacio_sum = df_fs['Espacio_Total'].sum()
+        total_ventas_sum = df_fs['Ventas_Total'].sum()
+        total_margen_sum = df_fs['Margen_Total'].sum()
+        
+        if total_espacio_sum > 0 and total_ventas_sum > 0:
+            df_fs['Pct_Espacio'] = df_fs['Espacio_Total'] / total_espacio_sum
+            df_fs['Pct_Ventas'] = df_fs['Ventas_Total'] / total_ventas_sum
+            df_fs['Pct_Margen'] = df_fs['Margen_Total'] / total_margen_sum if total_margen_sum > 0 else 0.0
+            df_fs['Brecha_Share'] = df_fs['Pct_Ventas'] - df_fs['Pct_Espacio'] # Positivo = Subdimensionado, Negativo = Sobredimensionado
+            
+            df_fs = df_fs.sort_values(by='Pct_Ventas', ascending=False)
+            
+            fig_fs = go.Figure()
+            
+            # Barra de Espacio (Azul)
+            fig_fs.add_trace(go.Bar(
+                x=df_fs[dim_fs],
+                y=df_fs['Pct_Espacio'],
+                name=f"% Espacio ({'Caras' if metrica_espacio == 'Caras (Facings)' else 'Unid. Bandeja'})",
+                text=df_fs['Pct_Espacio'].apply(lambda x: f"{x*100:.1f}%"),
+                textposition='auto',
+                textfont=dict(color='#ffffff', size=11, weight='bold'),
+                marker=dict(color='rgba(59, 130, 246, 0.85)', line=dict(color='#3b82f6', width=2)),
+                hovertemplate="<b>%{x}</b><br>% Espacio: %{text}<br>Total Físico: %{customdata:,.0f}<extra></extra>",
+                customdata=df_fs['Espacio_Total']
+            ))
+            
+            # Barra de Ventas (Verde Esmeralda)
+            fig_fs.add_trace(go.Bar(
+                x=df_fs[dim_fs],
+                y=df_fs['Pct_Ventas'],
+                name="% Ventas (Monto S/)",
+                text=df_fs['Pct_Ventas'].apply(lambda x: f"{x*100:.1f}%"),
+                textposition='auto',
+                textfont=dict(color='#ffffff', size=11, weight='bold'),
+                marker=dict(color='rgba(16, 185, 129, 0.85)', line=dict(color='#10b981', width=2)),
+                hovertemplate="<b>%{x}</b><br>% Ventas: %{text}<br>Ventas S/: %{customdata:,.2f}<extra></extra>",
+                customdata=df_fs['Ventas_Total']
+            ))
+
+            # Barra de Margen (Ámbar)
+            fig_fs.add_trace(go.Bar(
+                x=df_fs[dim_fs],
+                y=df_fs['Pct_Margen'],
+                name="% Margen (Ganancia S/)",
+                text=df_fs['Pct_Margen'].apply(lambda x: f"{x*100:.1f}%"),
+                textposition='auto',
+                textfont=dict(color='#ffffff', size=11, weight='bold'),
+                marker=dict(color='rgba(245, 158, 11, 0.85)', line=dict(color='#f59e0b', width=2)),
+                hovertemplate="<b>%{x}</b><br>% Margen: %{text}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
+                customdata=df_fs['Margen_Total']
+            ))
+            
+            fig_fs.update_layout(
+                barmode='group',
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                hovermode="x unified",
+                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color='#cbd5e1')),
+                margin=dict(t=20, b=40, l=10, r=10),
+                xaxis=dict(showgrid=False, color='#cbd5e1', tickfont=dict(size=11, weight='bold')),
+                yaxis=dict(title="Participación Relativa (%)", showgrid=True, gridcolor='rgba(255,255,255,0.08)', color='#cbd5e1', tickformat=".0%")
+            )
+            
+            st.plotly_chart(fig_fs, use_container_width=True)
+            
+            # Tarjetas de diagnóstico Fair Share
+            col_diag1, col_diag2 = st.columns(2)
+            subdimensionados = df_fs[df_fs['Brecha_Share'] > 0.03] # Ganan +3% más en venta de lo que tienen de espacio
+            sobredimensionados = df_fs[df_fs['Brecha_Share'] < -0.03] # Tienen +3% más de espacio de lo que venden
+            
+            with col_diag1:
+                if not subdimensionados.empty:
+                    top_sub = subdimensionados.iloc[0]
+                    st.success(f"🚀 **Oportunidad de Crecimiento (Subdimensionado):** `{top_sub[dim_fs]}` genera el **{top_sub['Pct_Ventas']*100:.1f}%** de las ventas pero solo ocupa el **{top_sub['Pct_Espacio']*100:.1f}%** del espacio físico. Conviene evaluar otorgarle más caras.")
+                else:
+                    st.info("✅ La asignación de espacio físico está equilibrada frente a las ventas.")
+                    
+            with col_diag2:
+                if not sobredimensionados.empty:
+                    top_sobre = sobredimensionados.sort_values(by='Brecha_Share', ascending=True).iloc[0]
+                    st.warning(f"⚠️ **Alerta de Sobreasignación:** `{top_sobre[dim_fs]}` consume el **{top_sobre['Pct_Espacio']*100:.1f}%** del espacio pero solo aporta el **{top_sobre['Pct_Ventas']*100:.1f}%** de las ventas. Candidato a reducción de espacio.")
+                else:
+                    st.info("✅ No se detectan sobreasignaciones críticas de espacio físico.")
+
+        # ==========================================
+        # 🎯 MATRIZ ESTRATÉGICA DE SKUs
         # ==========================================
         st.markdown("---")
         st.markdown("##### 🎯 Cuadrante Estratégico de SKUs: Ventas vs Margen %")
@@ -1066,6 +1190,7 @@ if df_raw is not None:
                 "Cobertura Alta (≥ 30)"
             ])
         
+        # Mapeo de Ubicaciones múltiples por SKU
         df_agrupado = df_base.copy()
         def formatear_ubicacion(val):
             val_str = str(val).strip()
