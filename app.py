@@ -99,7 +99,6 @@ def generar_html_pasillo_interactivo(df):
         niveles_ordenados = sorted(niveles_dict.keys(), reverse=True)
         html_niveles = ""
         
-        # Obtener la categoría más común de este cuerpo para el subtítulo
         todos_items_cuerpo = [it for sublist in niveles_dict.values() for it in sublist]
         cats_cuerpo = [str(it.get('Categoría', '')) for it in todos_items_cuerpo if str(it.get('Categoría', '')) not in ['', 'S/C', 'nan']]
         cat_predominante = max(set(cats_cuerpo), key=cats_cuerpo.count) if cats_cuerpo else ""
@@ -712,7 +711,6 @@ if df_raw is not None:
     df_base = df_raw.copy()
     df_base['COD_REAL_Str'] = df_base['COD REAL'].apply(clean_sku)
     
-    # 1. Extraer Monto Margen y Grupo de A (Desde DATA_AUX)
     if df_aux_raw is not None and not df_aux_raw.empty:
         df_aux_raw.columns = [str(c).strip() for c in df_aux_raw.columns]
         
@@ -825,7 +823,6 @@ if df_raw is not None:
 
         st.markdown("---")
         
-        # Renderizado directo sin iframe simulador
         html_pasillo = generar_html_pasillo_interactivo(df_base)
         components.html(html_pasillo, height=1350, scrolling=True)
             
@@ -884,10 +881,8 @@ if df_raw is not None:
             df_dash_base['Cuerpo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
             df_dash_base['Cuerpo_Ord'] = pd.to_numeric(df_dash_base['Cuerpo_Ord'], errors='coerce').fillna(1)
             
-            # Cálculo exacto por SKU único asignado a cada cuerpo (sin duplicar ventas por bandeja)
             df_sku_cuerpo = df_dash_base.drop_duplicates(subset=['COD REAL', 'Cuerpo_Ord']).copy()
             
-            # Obtener categoría principal por cuerpo
             cat_por_cuerpo = df_sku_cuerpo.groupby('Cuerpo_Ord')['Categoría'].agg(
                 lambda x: max(set([str(i) for i in x if str(i) not in ['S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['S/C', 'nan', '']]) > 0 else ""
             ).to_dict()
@@ -898,7 +893,6 @@ if df_raw is not None:
                 SKUs_Total=('COD REAL', 'count')
             ).reset_index()
             
-            # Etiqueta con Categoría integrada debajo de Cuerpo
             def crear_etiqueta_eje(c_num):
                 cat_nombre = cat_por_cuerpo.get(c_num, "")
                 if cat_nombre and len(cat_nombre) > 18:
@@ -1001,35 +995,59 @@ if df_raw is not None:
             st.plotly_chart(fig_pie, use_container_width=True)
 
         # ==========================================
-        # 🎯 GRÁFICO EXTRA: MATRIZ ESTRATÉGICA DE SKUs (BCG RETAIL)
+        # 🎯 GRÁFICO EXTRA SEGURO: CUADRANTE ESTRATÉGICO
         # ==========================================
         st.markdown("---")
         st.markdown("##### 🎯 Cuadrante Estratégico de SKUs: Ventas vs Margen %")
         
         df_scatter = df_dash_unicos.copy()
         df_scatter['Margen_Pct_SKU'] = df_scatter.apply(
-            lambda r: (r['Margen_Num'] / r['Venta_Num']) if r['Venta_Num'] > 0 else 0, axis=1
+            lambda r: (r['Margen_Num'] / r['Venta_Num']) if r['Venta_Num'] > 0 else 0.0, axis=1
         )
         col_desc = 'Descripción' if 'Descripción' in df_scatter.columns else 'Nombre'
-        df_scatter['Producto'] = df_scatter[col_desc]
+        df_scatter['Producto'] = df_scatter[col_desc].fillna('Sin Descripción')
         
-        fig_scatter = px.scatter(
-            df_scatter,
-            x='Venta_Num',
-            y='Margen_Pct_SKU',
-            size='Stock_Num',
-            color='TOPVENTAS',
-            color_discrete_map={'TOP': '#fbbf24', 'NO': '#3b82f6'},
-            hover_name='Producto',
-            hover_data={'COD REAL': True, 'Stock_Num': True, 'Cobertura': True, 'Categoría': True, 'Margen_Pct_SKU': ':.2%'},
-            labels={'Venta_Num': 'Ventas Netas (S/)', 'Margen_Pct_SKU': 'Margen (%)', 'Stock_Num': 'Stock'}
-        )
+        # Saneamiento de datos para Plotly
+        df_scatter['Venta_Num'] = df_scatter['Venta_Num'].fillna(0.0)
+        df_scatter['Margen_Pct_SKU'] = df_scatter['Margen_Pct_SKU'].fillna(0.0)
+        df_scatter['Stock_Num'] = df_scatter['Stock_Num'].fillna(0.0)
+        df_scatter['Bubble_Size'] = df_scatter['Stock_Num'].apply(lambda s: max(float(s), 0.0) + 4.0)
+
+        fig_scatter = go.Figure()
+        
+        for top_val, color_hex, name_legend in [('TOP', '#fbbf24', 'TOP Ventas'), ('NO', '#3b82f6', 'Resto SKUs')]:
+            df_sub = df_scatter[df_scatter['TOPVENTAS'] == top_val]
+            if not df_sub.empty:
+                fig_scatter.add_trace(go.Scatter(
+                    x=df_sub['Venta_Num'],
+                    y=df_sub['Margen_Pct_SKU'],
+                    mode='markers',
+                    name=name_legend,
+                    marker=dict(
+                        size=df_sub['Bubble_Size'],
+                        sizemode='diameter',
+                        sizeref=max(df_scatter['Bubble_Size'].max() / 35.0, 1.0),
+                        color=color_hex,
+                        line=dict(width=1, color='#ffffff'),
+                        opacity=0.85
+                    ),
+                    text=df_sub['Producto'],
+                    customdata=df_sub[['COD REAL', 'Stock_Num', 'Cobertura', 'Categoría', 'Marca']],
+                    hovertemplate=(
+                        "<b>%{text}</b><br>" +
+                        "Cód: %{customdata[0]} | Marca: %{customdata[4]}<br>" +
+                        "Categoría: %{customdata[3]}<br>" +
+                        "Ventas: S/ %{x:,.2f}<br>" +
+                        "Margen: %{y:.1%}<br>" +
+                        "Stock: %{customdata[1]} (Cob: %{customdata[2]})<extra></extra>"
+                    )
+                ))
         
         fig_scatter.update_layout(
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
             xaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor='rgba(255,255,255,0.08)', color='#cbd5e1'),
             yaxis=dict(title="Margen Real (%)", showgrid=True, gridcolor='rgba(255,255,255,0.08)', color='#cbd5e1', tickformat=".1%"),
-            legend=dict(title="Clasificación", orientation="h", y=1.05, x=1, font=dict(color='#cbd5e1')),
+            legend=dict(title="Segmento", orientation="h", y=1.05, x=1, font=dict(color='#cbd5e1')),
             margin=dict(t=20, b=20, l=10, r=10)
         )
         st.plotly_chart(fig_scatter, use_container_width=True)
@@ -1048,7 +1066,6 @@ if df_raw is not None:
                 "Cobertura Alta (≥ 30)"
             ])
         
-        # Mapeo de Ubicaciones múltiples por SKU
         df_agrupado = df_base.copy()
         def formatear_ubicacion(val):
             val_str = str(val).strip()
