@@ -72,34 +72,34 @@ def generar_html_pasillo_interactivo(df):
     df['NumOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').fillna(999999)
     
     bandeja_str = df.get('Bandeja', pd.Series(["1.1"]*len(df))).astype(str)
-    df[['Modulo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')
-    df['Modulo_Ord'] = pd.to_numeric(df['Modulo_Ord'], errors='coerce').fillna(1)
+    df[['Cuerpo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')
+    df['Cuerpo_Ord'] = pd.to_numeric(df['Cuerpo_Ord'], errors='coerce').fillna(1)
     df['Nivel_Ord'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
 
     df = df.sort_values(
-        by=['Modulo_Ord', 'Nivel_Ord', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
+        by=['Cuerpo_Ord', 'Nivel_Ord', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
         ascending=[True, False, False, True, True]
     )
 
-    modulos = {}
+    cuerpos = {}
     todas_marcas = sorted(list(df["Marca"].dropna().unique())) if "Marca" in df.columns else []
     todos_niveles = sorted(list(df["Nivel_Ord"].dropna().unique()), reverse=True)
 
     for _, r in df.iterrows():
         b_str = str(r.get("Bandeja", "1.1")).strip()
-        mod_id = f"Módulo {b_str.split('.')[0]}" if "." in b_str else "Módulo 1"
-        if mod_id not in modulos: modulos[mod_id] = {}
-        if b_str not in modulos[mod_id]: modulos[mod_id][b_str] = []
-        modulos[mod_id][b_str].append(r)
+        cuerpo_id = f"Cuerpo {b_str.split('.')[0]}" if "." in b_str else "Cuerpo 1"
+        if cuerpo_id not in cuerpos: cuerpos[cuerpo_id] = {}
+        if b_str not in cuerpos[cuerpo_id]: cuerpos[cuerpo_id][b_str] = []
+        cuerpos[cuerpo_id][b_str].append(r)
 
-    html_modulos = ""
-    for mod_nombre, bandejas_dict in sorted(modulos.items()):
-        mod_num = mod_nombre.replace("Módulo ", "").strip()
-        bandejas_ordenadas = sorted(bandejas_dict.keys(), reverse=True)
-        html_bandejas = ""
+    html_cuerpos = ""
+    for cuerpo_nombre, niveles_dict in sorted(cuerpos.items()):
+        cuerpo_num = cuerpo_nombre.replace("Cuerpo ", "").strip()
+        niveles_ordenados = sorted(niveles_dict.keys(), reverse=True)
+        html_niveles = ""
 
-        for b_nombre in bandejas_ordenadas:
-            items = bandejas_dict[b_nombre]
+        for b_nombre in niveles_ordenados:
+            items = niveles_dict[b_nombre]
             total_caras = sum([int(it.get("Caras", 1)) if str(it.get("Caras", 1)).isdigit() else 1 for it in items])
             nivel_num = b_nombre.split(".")[-1] if "." in b_nombre else "1"
 
@@ -157,9 +157,9 @@ def generar_html_pasillo_interactivo(df):
                 </div>
                 """
 
-            html_bandejas += f"""
+            html_niveles += f"""
             <div class="shelf-row" data-level="{nivel_num}">
-              <div class="shelf-info"><span>BANDEJA {b_nombre}</span><span class="shelf-caras-count">{total_caras} CARAS</span></div>
+              <div class="shelf-info"><span>NIVEL {nivel_num}</span><span class="shelf-caras-count">{total_caras} CARAS</span></div>
               <div class="shelf-products">
                 {cards_html}
               </div>
@@ -167,18 +167,18 @@ def generar_html_pasillo_interactivo(df):
             </div>
             """
 
-        html_modulos += f"""
-        <div class="bay-column" data-module="{mod_num}">
-          <div class="bay-title">{mod_nombre.upper()}</div>
+        html_cuerpos += f"""
+        <div class="bay-column" data-module="{cuerpo_num}">
+          <div class="bay-title">{cuerpo_nombre.upper()}</div>
           <div class="bay-shelves">
-            {html_bandejas}
+            {html_niveles}
           </div>
         </div>
         """
 
     options_marcas = "".join([f'<option value="{m}">{m}</option>' for m in todas_marcas])
-    options_modulos = "".join([f'<option value="{k.replace("Módulo ", "")}">{k}</option>' for k in modulos.keys()])
-    options_niveles = "".join([f'<option value="{int(lvl)}">Bandeja {int(lvl)}</option>' for lvl in todos_niveles])
+    options_cuerpos = "".join([f'<option value="{k.replace("Cuerpo ", "")}">{k}</option>' for k in cuerpos.keys()])
+    options_niveles = "".join([f'<option value="{int(lvl)}">Nivel {int(lvl)}</option>' for lvl in todos_niveles])
 
     return f"""
     <!DOCTYPE html>
@@ -315,8 +315,8 @@ def generar_html_pasillo_interactivo(df):
       <div class="filter-panel">
         <div class="filter-group"><span class="filter-label">🔍 Buscar Producto</span><input type="text" id="searchInput" class="filter-input" placeholder="Nombre o EAN..."></div>
         <div class="filter-group"><span class="filter-label">🏷️ Marca</span><select id="brandSelect" class="filter-select"><option value="ALL">Todas</option>{options_marcas}</select></div>
-        <div class="filter-group"><span class="filter-label">📦 Cuerpo / Módulo</span><select id="baySelect" class="filter-select"><option value="ALL">Todos</option>{options_modulos}</select></div>
-        <div class="filter-group"><span class="filter-label">📶 Nivel / Bandeja</span><select id="levelSelect" class="filter-select"><option value="ALL">Todos</option>{options_niveles}</select></div>
+        <div class="filter-group"><span class="filter-label">📦 Cuerpo</span><select id="baySelect" class="filter-select"><option value="ALL">Todos</option>{options_cuerpos}</select></div>
+        <div class="filter-group"><span class="filter-label">📶 Nivel</span><select id="levelSelect" class="filter-select"><option value="ALL">Todos</option>{options_niveles}</select></div>
         <div class="btn-group">
           <button id="resetBtn" class="filter-btn-reset">Restablecer</button>
           <button type="button" id="fullscreenBtn" class="filter-btn-fs" title="Ver Mueble Completo">🔲 Pantalla Completa</button>
@@ -324,7 +324,7 @@ def generar_html_pasillo_interactivo(df):
       </div>
 
       <div class="legend-panel">
-        <span class="legend-title">📍 Leyenda Interactiva (Filtra módulos y resalta productos)</span>
+        <span class="legend-title">📍 Leyenda Interactiva (Filtra cuerpos y resalta productos)</span>
         <div class="legend-chips">
           <button class="legend-chip" data-filter="bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
           <button class="legend-chip" data-filter="sin-stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
@@ -336,11 +336,11 @@ def generar_html_pasillo_interactivo(df):
       </div>
 
       <div class="aisle-wrapper">
-        <button class="nav-btn" id="btnPrev" title="Módulo Anterior">❮</button>
+        <button class="nav-btn" id="btnPrev" title="Cuerpo Anterior">❮</button>
         <div class="aisle-container" id="aisleContainer">
-          {html_modulos}
+          {html_cuerpos}
         </div>
-        <button class="nav-btn" id="btnNext" title="Módulo Siguiente">❯</button>
+        <button class="nav-btn" id="btnNext" title="Cuerpo Siguiente">❯</button>
       </div>
 
       <script>
@@ -574,7 +574,6 @@ def generar_html_pasillo_interactivo(df):
 @st.cache_data(ttl=14400)
 def cargar_datos_nube(url_matriz, url_jerarquia):
     try:
-        # Carga MATRIZ y DATA_AUX
         try:
             df_matriz = pd.read_excel(url_matriz, sheet_name="MATRIZ", skiprows=5, usecols="C:AB")
         except Exception:
@@ -589,7 +588,6 @@ def cargar_datos_nube(url_matriz, url_jerarquia):
         if "Bandeja" in df_matriz.columns and "EAN" in df_matriz.columns:
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
             
-        # Carga Archivo Jerarquía (Saltando las 2 primeras filas)
         try:
             df_jer = pd.read_excel(url_jerarquia, skiprows=2)
             if 'CodGA' not in df_jer.columns:
@@ -602,7 +600,6 @@ def cargar_datos_nube(url_matriz, url_jerarquia):
     except Exception as e:
         return None, None, None, None, str(e)
 
-# ⚠️ ENLACES A GOOGLE DRIVE CONFIGURADOS
 URL_NUBE = "https://drive.google.com/uc?export=download&id=1QFqktucaF983WXcjupQI-jpeEZzWxtX_"
 URL_JERARQUIA = "https://drive.google.com/uc?export=download&id=1JI4Ef0138lwI-fJsQmX5lz-fqXvemZQD"
 
@@ -820,39 +817,39 @@ if df_raw is not None:
         col_graf_izq, col_graf_der = st.columns([7, 3])
         
         with col_graf_izq:
-            st.markdown("##### 📈 Ventas y Rentabilidad por Módulo")
+            st.markdown("##### 📈 Ventas y Rentabilidad por Cuerpo")
             
             df_chart = df_base.copy()
             bandeja_str = df_chart.get('Bandeja', pd.Series(["1.1"]*len(df_chart))).astype(str)
-            df_chart['Modulo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
-            df_chart['Modulo_Ord'] = pd.to_numeric(df_chart['Modulo_Ord'], errors='coerce').fillna(1)
+            df_chart['Cuerpo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
+            df_chart['Cuerpo_Ord'] = pd.to_numeric(df_chart['Cuerpo_Ord'], errors='coerce').fillna(1)
             
-            ventas_mod = df_chart.groupby('Modulo_Ord').agg(
+            ventas_mod = df_chart.groupby('Cuerpo_Ord').agg(
                 Venta_Total=('Venta_Num', 'sum'),
                 Margen_Total=('Margen_Num', 'sum'),
                 SKUs_Total=('COD REAL', 'count')
             ).reset_index()
             
-            ventas_mod['Módulo'] = "Módulo " + ventas_mod['Modulo_Ord'].astype(int).astype(str)
+            ventas_mod['Cuerpo'] = "Cuerpo " + ventas_mod['Cuerpo_Ord'].astype(int).astype(str)
             ventas_mod['Margen_Pct'] = ventas_mod.apply(
                 lambda row: row['Margen_Total'] / row['Venta_Total'] if row['Venta_Total'] > 0 else 0, 
                 axis=1
             )
             
             orden_grafico = st.selectbox("Ordenar Gráfico por:", 
-                ["Módulo (Secuencial)", "Mayor a Menor Venta", "Mayor Margen (%)"],
+                ["Cuerpo (Secuencial)", "Mayor a Menor Venta", "Mayor Margen (%)"],
                 label_visibility="collapsed"
             )
             
             if orden_grafico == "Mayor a Menor Venta": ventas_mod = ventas_mod.sort_values('Venta_Total', ascending=False)
             elif orden_grafico == "Mayor Margen (%)": ventas_mod = ventas_mod.sort_values('Margen_Pct', ascending=False)
-            else: ventas_mod = ventas_mod.sort_values('Modulo_Ord')
+            else: ventas_mod = ventas_mod.sort_values('Cuerpo_Ord')
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             
             fig.add_trace(
                 go.Bar(
-                    x=ventas_mod['Módulo'], 
+                    x=ventas_mod['Cuerpo'], 
                     y=ventas_mod['Venta_Total'],
                     name="Ventas Totales (S/)",
                     text=ventas_mod['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
@@ -866,7 +863,7 @@ if df_raw is not None:
 
             fig.add_trace(
                 go.Scatter(
-                    x=ventas_mod['Módulo'], 
+                    x=ventas_mod['Cuerpo'], 
                     y=ventas_mod['Margen_Pct'],
                     name="Margen %",
                     mode="lines+markers+text",
@@ -938,8 +935,28 @@ if df_raw is not None:
                 "Cobertura Alta (≥ 30)"
             ])
         
-        # --- Solución al KeyError: Definimos Stock_Num y Cob_Num explícitamente ---
-        df_rep = df_base.copy()
+        # --- TABLA DEDUPLICADA (1 FILA POR SKU CON UBICACIONES AGRUPADAS) ---
+        df_agrupado = df_base.copy()
+        
+        # Convertimos la bandeja en formato legible: Cuerpo X - Nivel Y
+        def formatear_ubicacion(val):
+            val_str = str(val).strip()
+            if '.' in val_str:
+                partes = val_str.split('.')
+                return f"C{partes[0]} (N{partes[1]})"
+            return f"Cuerpo {val_str}"
+
+        df_agrupado['Ubic_Txt'] = df_agrupado['Bandeja'].apply(formatear_ubicacion)
+        
+        # Mapeamos las ubicaciones únicas concatenadas por SKU
+        ubicaciones_map = df_agrupado.groupby('COD REAL')['Ubic_Txt'].apply(
+            lambda x: ", ".join(sorted(list(set(x.dropna()))))
+        ).to_dict()
+
+        df_rep = df_unicos.copy()
+        df_rep['Ubicación(es)'] = df_rep['COD REAL'].map(ubicaciones_map)
+        
+        # Variables numéricas protegidas para filtrado
         df_rep['Stock_Num'] = df_rep['Stock'].apply(safe_float)
         df_rep['Cob_Num'] = df_rep['Cobertura'].apply(safe_float)
         
@@ -955,7 +972,11 @@ if df_raw is not None:
             df_rep = df_rep[df_rep['Cob_Num'] >= 30]
             
         col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
-        cols_to_show = ['Bandeja', 'N°', 'COD REAL', 'EAN', col_desc, 'Departamento', 'Sección', 'Categoría', 'Grupo de artículo', 'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen', 'TOPVENTAS']
+        cols_to_show = [
+            'COD REAL', 'EAN', col_desc, 'Ubicación(es)', 
+            'Departamento', 'Sección', 'Categoría', 'Grupo de artículo', 
+            'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen', 'TOPVENTAS'
+        ]
         cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
         
         with col_btn:
@@ -963,12 +984,12 @@ if df_raw is not None:
             st.write("")
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df_rep[cols_to_show].to_excel(writer, index=False, sheet_name='Reporte')
+                df_rep[cols_to_show].to_excel(writer, index=False, sheet_name='Reporte_SKUs')
             
             st.download_button(
                 label="📥 Descargar a Excel (.xlsx)",
                 data=buffer.getvalue(),
-                file_name="reporte_planograma_financiero.xlsx",
+                file_name="reporte_planograma_skus_unicos.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
             
