@@ -24,7 +24,6 @@ def safe_float(val, default=0.0):
         return default
 
 def obtener_estado_y_color(estado, stock_val):
-    """Devuelve el Color de Fondo, Color de Texto y la Categoría para la Leyenda"""
     estado = str(estado).strip().upper()
     if estado == "B": 
         return "#FFC7CE", "#9C0006", "bloqueado"
@@ -157,7 +156,7 @@ def generar_html_pasillo_interactivo(df):
         * {{ box-sizing: border-box; }}
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 12px; }}
         
-        /* PANEL DE FILTROS - FONDO BLANCO LETRAS NEGRAS PARA EVITAR BUGS DE OS */
+        /* PANEL DE FILTROS */
         .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }}
         .filter-group {{ display: flex; flex-direction: column; gap: 4px; }}
         .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
@@ -171,6 +170,19 @@ def generar_html_pasillo_interactivo(df):
         .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
         .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
         
+        /* TABLA DE RESUMEN (DASHBOARD) */
+        .summary-wrapper {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; overflow: hidden; margin-bottom: 12px; }}
+        .summary-table {{ width: 100%; border-collapse: collapse; text-align: center; }}
+        .summary-table th {{ background: #1e3a8a; color: #93c5fd; padding: 10px; font-size: 0.75rem; text-transform: uppercase; font-weight: 800; border-bottom: 2px solid #3b82f6; }}
+        .summary-table td {{ padding: 12px 10px; font-size: 1.3rem; font-weight: 900; color: #fff; }}
+        /* Colores para las celdas del resumen */
+        .t-bloq {{ color: #FFC7CE !important; }}
+        .t-sin {{ color: #F4B084 !important; }}
+        .t-bajo {{ color: #FFFF99 !important; }}
+        .t-ok {{ color: #C6EFCE !important; }}
+        .t-cob {{ color: #ef4444 !important; }}
+        .t-top {{ color: #fbbf24 !important; }}
+
         /* LEYENDA INTERACTIVA */
         .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 16px; margin-bottom: 16px; }}
         .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-bottom: 8px; display: block; }}
@@ -233,12 +245,20 @@ def generar_html_pasillo_interactivo(df):
             .nav-btn {{ width: 35px; font-size: 1.2rem; }}
             .sku-card {{ min-width: 100px; }}
             .legend-chips {{ justify-content: center; }}
+            .summary-table th, .summary-table td {{ padding: 6px 4px; font-size: 0.65rem; }}
+            .summary-table td {{ font-size: 1rem; }}
         }}
 
         @media print {{
           @page {{ size: landscape; margin: 5mm; }}
           body {{ background-color: #fff !important; color: #000 !important; }}
           .filter-panel, .legend-panel, .modal-overlay, .nav-btn {{ display: none !important; }}
+          
+          /* Tabla Resumen en B/N para impresión */
+          .summary-wrapper {{ border: 2px solid #000 !important; margin-bottom: 20px; }}
+          .summary-table th {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 2px solid #000 !important; }}
+          .summary-table td {{ color: #000 !important; border-right: 1px solid #ccc; }}
+          
           .aisle-wrapper {{ display: block; }}
           .aisle-container {{ display: block; border: none !important; background: #fff !important; padding: 0; }}
           .bay-column {{ background: #fff !important; border: 2px solid #000 !important; width: 100% !important; margin-bottom: 20px; page-break-inside: avoid; }}
@@ -271,7 +291,7 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
-      <!-- FILTROS (ALTO CONTRASTE) -->
+      <!-- FILTROS -->
       <div class="filter-panel">
         <div class="filter-group">
           <span class="filter-label">🔍 Buscar Producto</span>
@@ -296,9 +316,37 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
+      <!-- TABLA RESUMEN DINÁMICA -->
+      <div class="summary-wrapper">
+        <table class="summary-table">
+          <thead>
+            <tr>
+              <th>Total SKUs</th>
+              <th>Bloqueados</th>
+              <th>Sin Stock (0)</th>
+              <th>Stock Bajo (1-5)</th>
+              <th>Stock OK (>5)</th>
+              <th>Cobert. Alta (≥30)</th>
+              <th>★ Top Ventas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="t-total">0</td>
+              <td id="t-bloq" class="t-bloq">0</td>
+              <td id="t-sin" class="t-sin">0</td>
+              <td id="t-bajo" class="t-bajo">0</td>
+              <td id="t-ok" class="t-ok">0</td>
+              <td id="t-cob" class="t-cob">0</td>
+              <td id="t-top" class="t-top">0</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <!-- LEYENDA INTERACTIVA -->
       <div class="legend-panel">
-        <span class="legend-title">📍 Leyenda Interactiva (Clic para resaltar)</span>
+        <span class="legend-title">📍 Leyenda Interactiva (Clic para resaltar en el pasillo)</span>
         <div class="legend-chips">
           <button class="legend-chip" data-filter="bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
           <button class="legend-chip" data-filter="sin-stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
@@ -341,12 +389,19 @@ def generar_html_pasillo_interactivo(df):
           let availableBays = new Set();
           let availableLevels = new Set();
 
+          // Variables para la Tabla de Resumen
+          let cTot=0, cBloq=0, cSin=0, cBajo=0, cOk=0, cCob=0, cTop=0;
+
           document.querySelectorAll('.sku-card').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
              const level = card.closest('.shelf-row').getAttribute('data-level');
              const name = (card.getAttribute('data-name') || '').toLowerCase();
              const ean = card.getAttribute('data-ean') || '';
+             
+             const cat = card.getAttribute('data-cat') || '';
+             const isTop = card.getAttribute('data-top') === 'TOP';
+             const cobVal = parseFloat(card.getAttribute('data-cob')) || 0;
 
              const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
              const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
@@ -356,8 +411,29 @@ def generar_html_pasillo_interactivo(df):
              if(matchSearch && matchBay && matchLevel) availableBrands.add(brand);
              if(matchSearch && matchBrand && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchBay) availableLevels.add(level);
+
+             // Llenar tabla resumen si pasa los filtros estandar (sin importar la leyenda)
+             if(matchSearch && matchBrand && matchBay && matchLevel) {{
+                 cTot++;
+                 if(cat === 'bloqueado') cBloq++;
+                 if(cat === 'sin-stock') cSin++;
+                 if(cat === 'stock-bajo') cBajo++;
+                 if(cat === 'stock-ok') cOk++;
+                 if(cobVal >= 30) cCob++;
+                 if(isTop) cTop++;
+             }}
           }});
 
+          // Actualizar HTML de la Tabla
+          document.getElementById('t-total').textContent = cTot;
+          document.getElementById('t-bloq').textContent = cBloq;
+          document.getElementById('t-sin').textContent = cSin;
+          document.getElementById('t-bajo').textContent = cBajo;
+          document.getElementById('t-ok').textContent = cOk;
+          document.getElementById('t-cob').textContent = cCob;
+          document.getElementById('t-top').textContent = cTop;
+
+          // Reconstruir selects en cascada
           if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
           if (selectedBay !== 'ALL' && !availableBays.has(selectedBay)) selectedBay = 'ALL';
           if (selectedLevel !== 'ALL' && !availableLevels.has(selectedLevel)) selectedLevel = 'ALL';
@@ -383,6 +459,7 @@ def generar_html_pasillo_interactivo(df):
               }}
           }});
 
+          // Ocultar Contenedores Vacíos
           document.querySelectorAll('.bay-column').forEach(bay => {{
             const bayNum = bay.getAttribute('data-module');
             bay.classList.toggle('hidden', !(selectedBay === 'ALL' || selectedBay === bayNum));
@@ -393,7 +470,7 @@ def generar_html_pasillo_interactivo(df):
             shelf.classList.toggle('hidden', !(selectedLevel === 'ALL' || selectedLevel === shelfLevel));
           }});
 
-          // APLICAR LEYENDA Y BÚSQUEDA
+          // APLICAR LEYENDA Y BÚSQUEDA A LAS TARJETAS
           document.querySelectorAll('.sku-card').forEach(card => {{
             const brand = card.getAttribute('data-brand') || '';
             const name = (card.getAttribute('data-name') || '').toLowerCase();
@@ -404,7 +481,6 @@ def generar_html_pasillo_interactivo(df):
 
             const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
             const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
-            
             const passesStandard = matchBrand && matchSearch;
             
             let passesLegend = true;
@@ -524,7 +600,7 @@ def generar_html_pasillo_interactivo(df):
 
         container.addEventListener('scroll', updateScrollButtons);
         window.addEventListener('resize', updateScrollButtons);
-        setTimeout(updateScrollButtons, 500);
+        setTimeout(applyFilters, 100); // Llama a los filtros al iniciar para llenar la tabla
       </script>
     </body>
     </html>
