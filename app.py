@@ -177,6 +177,7 @@ def generar_html_pasillo_interactivo(df):
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb:hover {{ background: #2563eb; }}
 
+        /* PANELES SUPERIORES */
         .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }}
         .filter-group {{ display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }}
         .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
@@ -205,16 +206,16 @@ def generar_html_pasillo_interactivo(df):
         .legend-chip:hover {{ opacity: 1; transform: translateY(-2px); }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
+        /* PASILLO PRINCIPAL */
         .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; }}
-        .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
+        .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 35px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
         .nav-btn:hover {{ background: #3b82f6; }}
         .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
         
         .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; touch-action: pan-x pan-y pinch-zoom; }}
         
-        .bay-column {{ flex: 0 0 460px; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; scroll-snap-align: center; transition: all 0.3s; }}
+        .bay-column {{ flex: 0 0 600px; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; scroll-snap-align: center; transition: all 0.3s; }}
         .bay-column.hidden {{ display: none !important; }}
-        
         .bay-title {{ background: #1e3a8a; padding: 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; }}
         .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }}
         .shelf-row {{ display: flex; flex-direction: column; background: #162238; border-radius: 4px; transition: all 0.3s; }}
@@ -224,6 +225,7 @@ def generar_html_pasillo_interactivo(df):
         
         .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px; min-height: 125px; overflow-x: auto; padding-bottom: 8px; }}
         
+        /* TARJETAS ESTÁNDAR */
         .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 110px; position: relative; transition: all 0.2s; cursor: pointer; }}
         .sku-card.dimmed {{ opacity: 0.2; filter: grayscale(1); }}
         .sku-card.highlighted {{ box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); transform: scale(1.02); z-index: 5; border-color: #3b82f6 !important; }}
@@ -237,6 +239,47 @@ def generar_html_pasillo_interactivo(df):
         .sku-cap-val {{ font-size: 0.65rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; flex-shrink: 0; }}
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; }}
         
+        /* ======================================================== */
+        /* MODO "SINGLE-MODULE": COMPRESIÓN AL 100% DE LA PANTALLA  */
+        /* ======================================================== */
+        .aisle-container.single-module {{
+            justify-content: center;
+        }}
+        .aisle-container.single-module .bay-column {{
+            flex: 1 1 100%; /* Toma todo el ancho de la pantalla */
+            max-width: 100%;
+            min-width: unset;
+        }}
+        .aisle-container.single-module .shelf-products {{
+            overflow-x: hidden; /* Elimina la barra de scroll de la bandeja */
+            justify-content: center;
+            gap: 2px;
+        }}
+        .aisle-container.single-module .sku-card {{
+            min-width: 40px !important; /* Permite comprimirse extremadamente */
+            padding: 4px;
+        }}
+        .aisle-container.single-module .sku-name-text {{
+            font-size: 0.60rem; /* Letra más chica para encajar */
+            -webkit-line-clamp: 4;
+        }}
+        .aisle-container.single-module .sku-pos,
+        .aisle-container.single-module .sku-caras-tag {{
+            font-size: 0.5rem;
+            padding: 1px 2px;
+        }}
+        .aisle-container.single-module .sku-bottom-bar {{
+            flex-direction: column; /* Apila EAN y Cob para que quepan horizontalmente */
+            align-items: center;
+            gap: 1px;
+            font-size: 0.55rem;
+        }}
+        .aisle-container.single-module .sku-ean-code {{
+            max-width: 100%;
+        }}
+        /* ======================================================== */
+
+        /* MODAL EMERGENTE */
         .modal-overlay {{ position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transform: translateY(20px); transition: transform 0.2s; border: 2px solid #3b82f6; }}
@@ -247,9 +290,7 @@ def generar_html_pasillo_interactivo(df):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* ========================================= */
-        /* RESPONSIVE MÓVIL (Y MODO EMULADOR)        */
-        /* ========================================= */
+        /* RESPONSIVE MÓVIL (EMULADOR) */
         @media (max-width: 768px) {{
             .filter-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
             .btn-group {{ justify-content: space-between; width: 100%; margin-top: 4px; }}
@@ -257,13 +298,10 @@ def generar_html_pasillo_interactivo(df):
             .summary-table th, .summary-table td {{ padding: 6px 4px; font-size: 0.65rem; }}
             .summary-table td {{ font-size: 1rem; }}
             
-            /* Flechas de navegación mucho más delgadas */
-            .nav-btn {{ width: 22px; font-size: 1.2rem; padding: 0; border-radius: 4px; border-width: 1px; }}
+            .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
             .aisle-wrapper {{ gap: 4px; }}
-            
-            /* El cuerpo ocupa todo el ancho disponible */
             .bay-column {{ flex: 0 0 100%; max-width: 100%; margin-right: 0; }}
-            .sku-card {{ min-width: 90px; }}
+            .sku-card {{ min-width: 80px; }} /* Permite scroll horizontal en móvil si hay muchos */
         }}
 
         @media print {{
@@ -357,7 +395,7 @@ def generar_html_pasillo_interactivo(df):
       </div>
 
       <div class="legend-panel">
-        <span class="legend-title">📍 Leyenda Interactiva (Resalta productos sin desarmar el mueble)</span>
+        <span class="legend-title">📍 Leyenda Interactiva (Filtra módulos y resalta productos)</span>
         <div class="legend-chips">
           <button class="legend-chip" data-filter="bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
           <button class="legend-chip" data-filter="sin-stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
@@ -400,8 +438,8 @@ def generar_html_pasillo_interactivo(df):
           let availableLevels = new Set();
 
           let cTot=0, cBloq=0, cSin=0, cBajo=0, cOk=0, cCob=0, cTop=0;
+          let visibleBaysCount = 0;
 
-          // EVALUAR TARJETAS Y APLICAR ESTILOS
           document.querySelectorAll('.sku-card').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
@@ -468,7 +506,6 @@ def generar_html_pasillo_interactivo(df):
           document.getElementById('t-cob').textContent = cCob;
           document.getElementById('t-top').textContent = cTop;
 
-          // RECONSTRUIR CASCADAS
           if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
           if (selectedBay !== 'ALL' && !availableBays.has(selectedBay)) selectedBay = 'ALL';
           if (selectedLevel !== 'ALL' && !availableLevels.has(selectedLevel)) selectedLevel = 'ALL';
@@ -482,7 +519,7 @@ def generar_html_pasillo_interactivo(df):
           levelSelect.innerHTML = '';
           allLevels.forEach(opt => {{ if(opt.val === 'ALL' || availableLevels.has(opt.val)) levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel)); }});
 
-          // OCULTAMIENTO INTELIGENTE DE MÓDULOS 
+          // OCULTAR MÓDULOS NO RELACIONADOS
           document.querySelectorAll('.bay-column').forEach(bay => {{
             const bayNum = bay.getAttribute('data-module');
             const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
@@ -492,10 +529,19 @@ def generar_html_pasillo_interactivo(df):
                 return !card.classList.contains('dimmed');
             }});
 
-            bay.classList.toggle('hidden', !(passesBayFilter && hasMatch));
+            const isVisible = passesBayFilter && hasMatch;
+            bay.classList.toggle('hidden', !isVisible);
+            if(isVisible) visibleBaysCount++;
           }});
 
-          // MANTENER BANDEJAS INTACTAS PARA LA ESTRUCTURA DEL MUEBLE
+          // APLICAR CLASE "SINGLE-MODULE" PARA AUTO-COMPRESIÓN AL 100% DE LA PANTALLA
+          const aisleContainer = document.getElementById('aisleContainer');
+          if (visibleBaysCount === 1) {{
+              aisleContainer.classList.add('single-module');
+          }} else {{
+              aisleContainer.classList.remove('single-module');
+          }}
+
           document.querySelectorAll('.shelf-row').forEach(shelf => {{
             const shelfLevel = shelf.getAttribute('data-level');
             const passesLevelFilter = (selectedLevel === 'ALL' || selectedLevel === shelfLevel);
@@ -623,12 +669,12 @@ if archivo_excel is not None:
                         padding: 0; 
                         background: #000; 
                         box-shadow: 0 20px 40px rgba(0,0,0,0.5); 
-                        max-width: 400px; 
+                        max-width: 400px; /* Marco celular estrecho */
                         margin: 0 auto;
                         overflow: hidden;'>
                     """, unsafe_allow_html=True)
-                    # En la vista móvil el contenedor es estrecho (simulando 400px)
-                    components.html(html_pasillo, height=750, scrolling=True)
+                    # Altura ajustada a móvil
+                    components.html(html_pasillo, height=850, scrolling=True)
                     st.markdown("</div>", unsafe_allow_html=True)
             else:
                 components.html(html_pasillo, height=1300, scrolling=True)
