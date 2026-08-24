@@ -13,13 +13,14 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- FORZAR ANCHO MÁXIMO (CERO MÁRGENES) ---
+# --- FORZAR ANCHO MÁXIMO Y AJUSTAR MÁRGENES ---
 st.markdown("""
     <style>
         .block-container {
             padding-left: 1rem !important;
             padding-right: 1rem !important;
             padding-top: 1.5rem !important;
+            padding-bottom: 1rem !important;
             max-width: 100% !important;
         }
     </style>
@@ -210,7 +211,6 @@ def generar_html_pasillo_interactivo(df):
         
         .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; }}
         
-        /* LA MAGIA DEL AUTOAJUSTE: Crece si hay espacio (flex: 1), pero respeta el max-width */
         .bay-column {{ flex: 1 0 480px; max-width: 100%; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; scroll-snap-align: center; transition: all 0.3s; }}
         .bay-column.hidden {{ display: none !important; }}
         
@@ -247,9 +247,6 @@ def generar_html_pasillo_interactivo(df):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* ========================================= */
-        /* RESPONSIVE MÓVIL (Y MODO EMULADOR)        */
-        /* ========================================= */
         @media (max-width: 768px) {{
             .kpi-card {{ flex: 1 1 30%; min-width: 30%; padding: 8px 4px; }}
             .kpi-val {{ font-size: 1.2rem; }}
@@ -259,11 +256,8 @@ def generar_html_pasillo_interactivo(df):
             .btn-group {{ justify-content: space-between; width: 100%; margin-top: 4px; }}
             .legend-panel {{ justify-content: center; }}
             
-            /* Flechas ultradelgadas para celular */
             .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
             .aisle-wrapper {{ gap: 4px; }}
-            
-            /* En celular, un módulo OBLIGATORIAMENTE ocupa el 100% de la pantalla */
             .bay-column {{ flex: 1 0 100%; max-width: 100%; margin-right: 0; }}
             .sku-card {{ min-width: 80px; }}
         }}
@@ -307,7 +301,7 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
-      <!-- 1. KPIs RESUMEN -->
+      <!-- KPIs RESUMEN -->
       <div class="kpi-container">
         <div class="kpi-card" style="border-bottom: 4px solid #3b82f6;">
           <span class="kpi-title">Total SKUs</span>
@@ -339,7 +333,7 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
-      <!-- 2. FILTROS -->
+      <!-- FILTROS -->
       <div class="filter-panel">
         <div class="filter-group">
           <span class="filter-label">🔍 Buscar Producto</span>
@@ -364,7 +358,7 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
-      <!-- 3. LEYENDA -->
+      <!-- LEYENDA -->
       <div class="legend-panel">
         <span class="legend-title">📍 Leyenda Interactiva (Clic para resaltar)</span>
         <div class="legend-chips">
@@ -377,7 +371,7 @@ def generar_html_pasillo_interactivo(df):
         </div>
       </div>
 
-      <!-- 4. PASILLO -->
+      <!-- PASILLO -->
       <div class="aisle-wrapper">
         <button class="nav-btn" id="btnPrev" title="Módulo Anterior">❮</button>
         <div class="aisle-container" id="aisleContainer">
@@ -411,7 +405,6 @@ def generar_html_pasillo_interactivo(df):
 
           let cTot=0, cBloq=0, cSin=0, cBajo=0, cOk=0, cCob=0, cTop=0;
 
-          // EVALUAR TARJETAS Y APLICAR ESTILOS
           document.querySelectorAll('.sku-card').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
@@ -478,7 +471,6 @@ def generar_html_pasillo_interactivo(df):
           document.getElementById('t-cob').textContent = cCob;
           document.getElementById('t-top').textContent = cTop;
 
-          // RECONSTRUIR CASCADAS
           if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
           if (selectedBay !== 'ALL' && !availableBays.has(selectedBay)) selectedBay = 'ALL';
           if (selectedLevel !== 'ALL' && !availableLevels.has(selectedLevel)) selectedLevel = 'ALL';
@@ -492,7 +484,7 @@ def generar_html_pasillo_interactivo(df):
           levelSelect.innerHTML = '';
           allLevels.forEach(opt => {{ if(opt.val === 'ALL' || availableLevels.has(opt.val)) levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel)); }});
 
-          // OCULTAR MÓDULOS NO RELACIONADOS
+          // OCULTAMIENTO INTELIGENTE DE MÓDULOS 
           document.querySelectorAll('.bay-column').forEach(bay => {{
             const bayNum = bay.getAttribute('data-module');
             const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
@@ -502,8 +494,7 @@ def generar_html_pasillo_interactivo(df):
                 return !card.classList.contains('dimmed');
             }});
 
-            const isVisible = passesBayFilter && hasMatch;
-            bay.classList.toggle('hidden', !isVisible);
+            bay.classList.toggle('hidden', !(passesBayFilter && hasMatch));
           }});
 
           document.querySelectorAll('.shelf-row').forEach(shelf => {{
@@ -637,11 +628,9 @@ if archivo_excel is not None:
                         margin: 0 auto;
                         overflow: hidden;'>
                     """, unsafe_allow_html=True)
-                    # En modo emulador, se forza altura de celular
                     components.html(html_pasillo, height=850, scrolling=True)
                     st.markdown("</div>", unsafe_allow_html=True)
             else:
-                # En escritorio, usa gran parte de la pantalla (1300px)
                 components.html(html_pasillo, height=1300, scrolling=True)
             
         with tab2:
@@ -766,7 +755,7 @@ if archivo_excel is not None:
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
                 
-            st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True)
+            st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True, height=800)
         
     except Exception as e:
         st.error(f"Error general en el proceso. Revisa el formato de la tabla: {e}")
