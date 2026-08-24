@@ -4,12 +4,11 @@ import streamlit.components.v1 as components
 import io
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import plotly.express as px
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
-    page_title="Planograma 2.0",
-    page_icon="📦",
+    page_title="Planograma 2.0 - Realograma",
+    page_icon="🏪",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -19,7 +18,6 @@ st.markdown("""
         .block-container {
             padding-left: 1.5rem !important;
             padding-right: 1.5rem !important;
-            /* Aumentamos el padding top para que no se corte el título con el menú de Streamlit */
             padding-top: 3.5rem !important; 
             max-width: 100% !important;
         }
@@ -53,18 +51,16 @@ def clean_sku(val):
         s = s[:-2]
     return s
 
-def obtener_estado_y_color(estado, stock_val):
+def obtener_alerta_css(estado, stock_val):
     estado = str(estado).strip().upper()
-    if estado == "B": 
-        return "#FFC7CE", "#9C0006", "bloqueado"
+    if estado == "B": return "alerta-bloqueado", "Bloqueado"
     elif estado == "A":
-        if stock_val <= 0: return "#F4B084", "#833C0C", "sin-stock"
-        elif stock_val <= 5: return "#FFFF99", "#8A5A00", "stock-bajo"
-        else: return "#C6EFCE", "#006100", "stock-ok"
-    else: 
-        return "#D9D9D9", "#000000", "desconocido"
+        if stock_val <= 0: return "alerta-sinstock", "Sin Stock"
+        elif stock_val <= 5: return "alerta-stockbajo", "Stock Bajo"
+        else: return "alerta-ok", "Stock OK"
+    else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR HTML INTERACTIVO ---
+# --- GENERADOR HTML INTERACTIVO (REALOGRAMA) ---
 def generar_html_pasillo_interactivo(df):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -110,16 +106,21 @@ def generar_html_pasillo_interactivo(df):
 
             cards_html = ""
             for it in items:
-                pos = it.get("N°", "-")
-                if pd.isna(pos): pos = "-"
-                
                 cod_real = str(it.get("COD REAL", ""))
                 ean = str(it.get("EAN", ""))
                 nombre = str(it.get("Descripción", it.get("Nombre", "")))
                 marca = str(it.get("Marca", "S/M"))
                 estado = str(it.get("Estado", ""))
+                
                 caras_val = str(it.get("Caras", "1"))
-                caras = caras_val if caras_val.isdigit() and int(caras_val) > 0 else "1"
+                caras = int(caras_val) if caras_val.isdigit() and int(caras_val) > 0 else 1
+                
+                link_foto = str(it.get("Links de fotos", ""))
+                # Forzar HTTPS y foto por defecto
+                if link_foto in ['nan', '', 'None']:
+                    link_foto = "https://via.placeholder.com/60x150.png/0f172a/94a3b8?text=Sin+Foto"
+                else:
+                    link_foto = link_foto.replace("http://", "https://")
 
                 stock_val = safe_float(it.get("Stock", 0))
                 cob_val = safe_float(it.get("Cobertura", 0))
@@ -132,40 +133,44 @@ def generar_html_pasillo_interactivo(df):
                 ga_val = str(it.get("Grupo de artículo", "S/G")).replace('"', '&quot;')
                 
                 part_fmt = format_pct(part_val)
-                bg_color, text_color, cat_leyenda = obtener_estado_y_color(estado, stock_val)
-                estilo_cobertura = "color: red; font-weight: bold;" if cob_val >= 30 else ""
+                clase_alerta, cat_leyenda = obtener_alerta_css(estado, stock_val)
                 
                 stock_fmt = f"{stock_val:.2f}"
                 cob_fmt = f"{cob_val:.2f}"
-                venta_fmt = f"{venta_val:.2f}"
+                
+                # Multiplicador visual de Caras (Facings)
+                img_tags = "".join([f'<img src="{link_foto}" alt="{marca}">' for _ in range(caras)])
 
                 cards_html += f"""
-                <div class="sku-card" style="flex: {caras}; background-color: {bg_color}; border: 1px solid #7f7f7f;" 
+                <div class="sku-group {clase_alerta}" 
                      data-brand="{marca}" data-name="{nombre}" data-ean="{ean}"
                      data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_val}" data-part="{part_fmt}" 
                      data-cod="{cod_real}" data-cat="{cat_leyenda}" 
-                     data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}">
-                  <div class="sku-pos">{pos}</div>
-                  <div class="sku-caras-tag">{caras} C</div>
-                  <div class="sku-details">
-                    <span class="sku-brand-text" style="color: {text_color};">{marca}</span>
-                    <span class="sku-name-text" style="color: #000000;">{nombre}</span>
-                    <span style="font-size: 0.65rem; color: {text_color}; font-weight: 800; margin-top: 2px;">Stock: {stock_fmt}</span>
+                     data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
+                     title="Clic para ver detalles de {nombre}">
+                  
+                  <div class="top-badge"></div>
+                  
+                  <div class="sku-images-wrapper">
+                    {img_tags}
                   </div>
-                  <div class="sku-bottom-bar" style="border-top-color: {text_color};">
-                    <span class="sku-ean-code" style="color: {text_color};">EAN: {ean}</span>
-                    <span class="sku-cap-val" style="{estilo_cobertura}">Cob: {cob_fmt}</span>
+                  
+                  <div class="sku-fleje">
+                    <span class="fleje-ean">{ean}</span>
+                    <span class="fleje-caras">{caras}C</span>
                   </div>
+                  
                 </div>
                 """
 
             html_niveles += f"""
             <div class="shelf-row" data-level="{nivel_num}">
-              <div class="shelf-info"><span>NIVEL {nivel_num}</span><span class="shelf-caras-count">{total_caras} CARAS</span></div>
               <div class="shelf-products">
                 {cards_html}
               </div>
-              <div class="shelf-bottom-rail"></div>
+              <div class="shelf-base">
+                <span class="shelf-name-tag">NIVEL {nivel_num} • {total_caras} CARAS</span>
+              </div>
             </div>
             """
 
@@ -230,36 +235,50 @@ def generar_html_pasillo_interactivo(df):
         .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
         .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
         
+        /* Contenedor del planograma: Scroll X e Y encapsulado */
         .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; align-items: stretch; }}
         
-        /* 🚨 CUERPOS A PANTALLA COMPLETA 100% WIDTH 🚨 */
-        .bay-column {{ flex: 0 0 100%; width: 100%; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; height: max-content; scroll-snap-align: start; }}
+        .bay-column {{ flex: 0 0 100%; width: 100%; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; height: max-content; scroll-snap-align: start; padding-bottom: 20px; }}
         .bay-column.hidden {{ display: none !important; }}
         
         .bay-title {{ background: #1e3a8a; padding: 6px 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
         .bay-subcat {{ font-size: 0.68rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
         
-        .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; overflow: visible; }}
-        .shelf-row {{ display: flex; flex-direction: column; background: #162238; border-radius: 4px; transition: all 0.3s; }}
+        .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 25px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }}
+        
+        /* --- ESTILOS REALOGRAMA --- */
+        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 15px; }}
         .shelf-row.hidden {{ display: none !important; }}
-        .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
-        .shelf-caras-count {{ background: rgba(0, 0, 0, 0.4); padding: 1px 6px; border-radius: 3px; color: #93c5fd; font-size: 0.65rem; }}
         
-        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px; min-height: 125px; overflow-x: auto; padding-bottom: 8px; }}
+        .shelf-products {{ display: flex; flex-direction: row; align-items: flex-end; justify-content: center; gap: 2px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }}
         
-        .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; cursor: pointer; }}
-        .sku-card.dimmed {{ opacity: 0.2; filter: grayscale(1); }}
-        .sku-card.highlighted {{ box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); transform: scale(1.02); z-index: 5; border-color: #3b82f6 !important; }}
-        .sku-pos {{ position: absolute; top: 4px; left: 4px; background: #0f172a; color: #fff; font-size: 0.6rem; font-weight: 800; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 2px; }}
-        .sku-caras-tag {{ position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.9); color: #000; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 2px; }}
-        .sku-details {{ margin-top: 18px; display: flex; flex-direction: column; gap: 3px; text-align: center; overflow: hidden; }}
-        .sku-brand-text {{ font-size: 0.65rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-        .sku-name-text {{ font-size: 0.70rem; font-weight: 700; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }}
-        .sku-bottom-bar {{ margin-top: 4px; border-top: 1px dashed; padding-top: 2px; display: flex; justify-content: space-between; align-items: center; gap: 4px; }}
-        .sku-ean-code {{ font-size: 0.60rem; font-family: monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }}
-        .sku-cap-val {{ font-size: 0.65rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; flex-shrink: 0; }}
-        .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; }}
+        /* La base de la repisa (Dorada/Amarilla) */
+        .shelf-base {{ height: 12px; background: linear-gradient(180deg, #fde047 0%, #ca8a04 100%); border-radius: 2px; box-shadow: 0 4px 6px rgba(0,0,0,0.6); display: flex; justify-content: center; position: relative; z-index: 5; margin-top: -2px; border-top: 1px solid #fef08a; border-bottom: 2px solid #854d0e; }}
+        .shelf-name-tag {{ position: absolute; top: 10px; background: rgba(0,0,0,0.7); color: #fef08a; font-size: 0.55rem; padding: 1px 6px; border-radius: 0 0 4px 4px; font-weight: 800; letter-spacing: 0.5px; }}
         
+        .sku-group {{ display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; transition: all 0.2s; z-index: 10; padding: 0 2px; }}
+        .sku-group.dimmed {{ opacity: 0.15; filter: grayscale(1); z-index: 1; }}
+        .sku-group.highlighted {{ transform: scale(1.05); z-index: 20; }}
+        
+        .sku-images-wrapper {{ display: flex; flex-direction: row; align-items: flex-end; gap: 1px; }}
+        .sku-images-wrapper img {{ height: 95px; width: auto; max-width: 60px; object-fit: contain; filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.5)); transition: transform 0.2s; }}
+        .sku-group:hover .sku-images-wrapper img {{ transform: translateY(-4px); filter: drop-shadow(4px 8px 8px rgba(0,0,0,0.7)); }}
+        
+        /* Fleje digital estilo retail */
+        .sku-fleje {{ background: #ffffff; color: #000; border: 1px solid #64748b; font-size: 0.50rem; display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; z-index: 15; box-shadow: 0 2px 4px rgba(0,0,0,0.5); width: max-content; padding: 1px 2px; }}
+        .fleje-ean {{ font-weight: 600; font-family: monospace; letter-spacing: -0.5px; }}
+        .fleje-caras {{ font-weight: 900; background: #e2e8f0; width: 100%; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 1px; color: #1e293b; }}
+        
+        /* FILTROS CSS (ALERTAS) */
+        .alerta-bloqueado .sku-images-wrapper img {{ filter: grayscale(100%) opacity(0.4) drop-shadow(0 0 2px #fff); }}
+        .alerta-sinstock .sku-images-wrapper img {{ filter: drop-shadow(0 0 10px #ef4444) drop-shadow(0 0 5px #ef4444); }}
+        .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 8px #f59e0b); }}
+        
+        /* TOP VENTAS DINÁMICO */
+        .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -15px; right: -5px; font-size: 1.1rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); z-index: 30; animation: float 2s ease-in-out infinite; }}
+        @keyframes float {{ 0% {{transform: translateY(0px);}} 50% {{transform: translateY(-4px);}} 100% {{transform: translateY(0px);}} }}
+        
+        /* TARJETA MODAL */
         .modal-overlay {{ position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 99999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.9); border: 2px solid #3b82f6; }}
@@ -278,28 +297,41 @@ def generar_html_pasillo_interactivo(df):
           .aisle-wrapper {{ display: block !important; width: 100% !important; height: 100% !important; border: none !important; }}
           .aisle-container {{ display: block !important; width: 100% !important; height: 100% !important; background: transparent !important; border: none !important; padding: 0 !important; overflow: visible !important; }}
           
-          /* Ajuste Cuerpo A4 Completo */
           .bay-column {{ background: #fff !important; border: 3px solid #000 !important; width: 195mm !important; height: 280mm !important; max-width: 100% !important; page-break-inside: avoid; margin: 0 auto !important; display: flex !important; flex-direction: column !important; }}
           .bay-column.hidden {{ display: none !important; }}
-          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding: 8px !important; font-size: 18pt !important; display: block; text-align: center; }}
-          .bay-subcat {{ color: #334155 !important; font-size: 12pt !important; display: block; }}
+          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding: 10px !important; font-size: 20pt !important; display: block; text-align: center; }}
+          .bay-subcat {{ color: #334155 !important; font-size: 14pt !important; display: block; }}
           
-          .bay-shelves {{ padding: 10px !important; gap: 15px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; justify-content: space-evenly !important; overflow: visible !important; height: 100% !important; }}
-          .shelf-row {{ background: #fff !important; border: 2px solid #000 !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; height: 100% !important; }}
-          .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 5px solid #000 !important; font-size: 12pt !important; padding: 4px 8px !important; font-weight: 900 !important; }}
-          .shelf-caras-count {{ background: #e2e8f0 !important; color: #000 !important; font-size: 10pt !important; }}
+          .bay-shelves {{ padding: 5px !important; gap: 15px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; justify-content: space-evenly !important; overflow: visible !important; height: 100% !important; }}
+          .shelf-row {{ background: transparent !important; display: flex !important; flex-direction: column !important; justify-content: flex-end !important; flex-grow: 1 !important; margin-bottom: 0 !important; padding-top: 5px !important; }}
           
-          .shelf-products {{ flex-grow: 1 !important; padding: 6px !important; gap: 4px !important; display: flex !important; align-items: stretch !important; overflow: visible !important; height: 100% !important; }}
-          .sku-card {{ background: #fff !important; border: 2px solid #000 !important; color: #000 !important; padding: 4px !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; flex-basis: 0 !important; flex-grow: 1 !important; min-width: unset !important; }}
-          .sku-card[data-top="TOP"] {{ border: 4px double #000 !important; }}
+          .shelf-products {{ flex-grow: 0 !important; padding: 2px !important; gap: 2px !important; display: flex !important; align-items: flex-end !important; justify-content: center !important; overflow: visible !important; }}
           
-          .sku-pos, .sku-caras-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-size: 9pt !important; width: auto !important; height: auto !important; padding: 2px 4px !important; font-weight: bold !important; }}
-          .sku-details {{ margin-top: 15px !important; }}
-          .sku-brand-text {{ font-size: 10pt !important; color: #000 !important; display: block; font-weight: bold !important; }}
-          .sku-name-text {{ font-size: 11pt !important; color: #000 !important; -webkit-line-clamp: 4 !important; line-height: 1.2 !important; font-weight: bold !important; }}
-          .sku-bottom-bar {{ border-top: 2px dashed #000 !important; margin-top: auto !important; padding-top: 4px !important; }}
-          .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 9pt !important; }}
-          .shelf-bottom-rail {{ display: none !important; }}
+          .sku-images-wrapper img {{ height: 110px !important; max-width: 45px !important; filter: none !important; }}
+          .sku-fleje {{ font-size: 7pt !important; padding: 2px !important; margin-top: 1px !important; border: 1px solid #000 !important; }}
+          .fleje-ean {{ font-size: 7pt !important; font-weight: bold !important; }}
+          .fleje-caras {{ font-size: 8pt !important; font-weight: 900 !important; color: #000 !important; background: transparent !important; border-top: 1px solid #000 !important; }}
+          
+          .shelf-base {{ height: 10px !important; background: #eab308 !important; border-bottom: 3px solid #000 !important; border-top: 1px solid #000 !important; box-shadow: none !important; margin-top: 0 !important; }}
+          .shelf-name-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; border-top: none !important; font-size: 8pt !important; top: 8px !important; padding: 1px 4px !important; font-weight: bold !important; }}
+          
+          .top-badge::after {{ font-size: 14pt !important; top: -15px !important; filter: none !important; }}
+        }}
+
+        /* 📱 FIX RESPONSIVO PARA MÓVILES */
+        @media (max-width: 768px) {{
+            .kpi-container {{ flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-bottom: 8px; }}
+            .kpi-card {{ flex: 0 0 140px; }}
+            .legend-chips {{ flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; justify-content: flex-start; }}
+            .legend-chip {{ flex: 0 0 auto; }}
+            
+            .filter-panel, .top-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
+            .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
+            .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
+            .aisle-wrapper {{ height: calc(100vh - 120px); min-height: 400px; }}
+            .bay-column {{ flex: 0 0 95vw !important; min-width: 300px; margin-right: 5px; height: 100%; padding-bottom: 10px; }}
+            
+            .sku-images-wrapper img {{ height: 75px; max-width: 40px; }}
         }}
       </style>
     </head>
@@ -408,7 +440,7 @@ def generar_html_pasillo_interactivo(df):
           let visibleSkus = new Map();
           let totalVentasFiltered = 0;
 
-          document.querySelectorAll('.sku-card').forEach(card => {{
+          document.querySelectorAll('.sku-group').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const catjer = card.getAttribute('data-catjer') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
@@ -453,7 +485,7 @@ def generar_html_pasillo_interactivo(df):
           let setTot = new Set(), setBloq = new Set(), setSin = new Set(), setBajo = new Set(), setOk = new Set(), setCob = new Set(), setTop = new Set();
           let visibleBaysCount = 0;
 
-          document.querySelectorAll('.sku-card').forEach(card => {{
+          document.querySelectorAll('.sku-group').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const catjer = card.getAttribute('data-catjer') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
@@ -465,8 +497,11 @@ def generar_html_pasillo_interactivo(df):
              const cod = card.getAttribute('data-cod');
              
              const isTop = topNSkusSet.has(cod);
-             card.setAttribute('data-top', isTop ? 'TOP' : 'NO');
-             card.style.border = isTop ? "3px solid #FFC000" : "1px solid #7f7f7f";
+             if(isTop) {
+                 card.classList.add('is-top');
+             } else {
+                 card.classList.remove('is-top');
+             }
 
              const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
              const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
@@ -483,10 +518,10 @@ def generar_html_pasillo_interactivo(df):
 
              if(passesStandard) {{
                  setTot.add(cod);
-                 if(cat === 'bloqueado') setBloq.add(cod);
-                 if(cat === 'sin-stock') setSin.add(cod);
-                 if(cat === 'stock-bajo') setBajo.add(cod);
-                 if(cat === 'stock-ok') setOk.add(cod);
+                 if(cat === 'Bloqueado') setBloq.add(cod);
+                 if(cat === 'Sin Stock') setSin.add(cod);
+                 if(cat === 'Stock Bajo') setBajo.add(cod);
+                 if(cat === 'Stock OK') setOk.add(cod);
                  if(cobVal >= 30) setCob.add(cod);
                  if(isTop) setTop.add(cod);
              }}
@@ -495,7 +530,7 @@ def generar_html_pasillo_interactivo(df):
              if (currentLegendFilter) {{
                  if (currentLegendFilter === 'cob-alta') passesLegend = (cobVal >= 30);
                  else if (currentLegendFilter === 'top-ventas') passesLegend = isTop;
-                 else passesLegend = (cat === currentLegendFilter);
+                 else passesLegend = (cat.toLowerCase().replace(' ','-') === currentLegendFilter);
              }}
 
              if (matchBrand && matchCat && matchSearch) {{
@@ -545,7 +580,7 @@ def generar_html_pasillo_interactivo(df):
           document.querySelectorAll('.bay-column').forEach(bay => {{
             const bayNum = bay.getAttribute('data-module');
             const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
-            const hasMatch = Array.from(bay.querySelectorAll('.sku-card')).some(card => {{
+            const hasMatch = Array.from(bay.querySelectorAll('.sku-group')).some(card => {{
                 if (currentLegendFilter) return card.classList.contains('highlighted');
                 return !card.classList.contains('dimmed');
             }});
@@ -623,7 +658,7 @@ def generar_html_pasillo_interactivo(df):
 
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
-        document.querySelectorAll('.sku-card').forEach(card => {{
+        document.querySelectorAll('.sku-group').forEach(card => {{
             card.addEventListener('click', () => {{
                 document.getElementById('m-name').textContent = card.getAttribute('data-name');
                 document.getElementById('m-cod').textContent = card.getAttribute('data-cod');
@@ -640,8 +675,8 @@ def generar_html_pasillo_interactivo(df):
                 const ventaVal = parseFloat(ventaStr.replace(/,/g, '')) || 0;
                 document.getElementById('m-venta').textContent = "S/ " + ventaVal.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}});
                 
-                const topStatus = card.getAttribute('data-top');
-                document.getElementById('m-top').textContent = topStatus === 'TOP' ? '⭐ SÍ (Top Ventas)' : 'NO';
+                const isTop = card.classList.contains('is-top');
+                document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
                 modal.classList.add('active');
             }});
@@ -675,7 +710,7 @@ def generar_html_pasillo_interactivo(df):
 # --- LÓGICA DE CARGA HÍBRIDA (NUBE + MANUAL) ---
 
 @st.cache_data(ttl=14400)
-def cargar_datos_nube(url_matriz, url_jerarquia):
+def cargar_datos_nube(url_matriz, url_jerarquia, url_fotos):
     try:
         try:
             df_matriz = pd.read_excel(url_matriz, sheet_name="MATRIZ", skiprows=5, usecols="C:AB")
@@ -698,21 +733,28 @@ def cargar_datos_nube(url_matriz, url_jerarquia):
         except Exception:
             df_jer = pd.DataFrame()
             
+        try:
+            df_fotos = pd.read_excel(url_fotos)
+        except Exception:
+            df_fotos = pd.DataFrame()
+            
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_matriz, df_aux, df_jer, hora_lectura, None
+        return df_matriz, df_aux, df_jer, df_fotos, hora_lectura, None
     except Exception as e:
-        return None, None, None, None, str(e)
+        return None, None, None, None, None, str(e)
 
 URL_NUBE = "https://drive.google.com/uc?export=download&id=1QFqktucaF983WXcjupQI-jpeEZzWxtX_"
 URL_JERARQUIA = "https://drive.google.com/uc?export=download&id=1JI4Ef0138lwI-fJsQmX5lz-fqXvemZQD"
+URL_FOTOS = "https://drive.google.com/uc?export=download&id=1y8P_GVLySBrbGkm-1nc0BiTwGCorhVtF"
 
 df_raw = None
 df_aux_raw = None
 df_jer_raw = None
+df_fotos_raw = None
 info_hora = None
 error_nube = None
 
-# --- HEADER COMPACTO Y FUNCIONAL ---
+# --- HEADER COMPACTO CON ST.EMPTY PARA LA HORA ---
 col_head1, col_head2, col_head3 = st.columns([5, 1.5, 4.5])
 
 with col_head1:
@@ -726,22 +768,26 @@ with col_head2:
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col_head3:
-    st.markdown(f"""
-        <div style="text-align: right; margin-top: 5px;">
-            <div style="font-size: 0.92rem; color: #cbd5e1;">Desarrollado por <b>Alfredo HM</b></div>
-            <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">Última actualización: {info_hora if info_hora else 'No disponible'}</div>
-        </div>
-    """, unsafe_allow_html=True)
+    header_time_placeholder = st.empty()
 
 st.markdown("<div style='border-bottom: 2px solid #1e3a8a; padding-bottom: 5px; margin-bottom: 15px;'><span style='color: #93c5fd; font-size: 0.9rem;'>Análisis interactivo de pasillos y rentabilidad de tienda</span></div>", unsafe_allow_html=True)
 
-with st.spinner("Sincronizando base de datos central y jerarquías..."):
-    df_nube, df_aux_nube, df_jer_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE, URL_JERARQUIA)
+with st.spinner("Sincronizando base de datos central, jerarquías e imágenes..."):
+    df_nube, df_aux_nube, df_jer_nube, df_fotos_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE, URL_JERARQUIA, URL_FOTOS)
+
+# Llenamos la hora una vez que ya descargó la data
+header_time_placeholder.markdown(f"""
+    <div style="text-align: right; margin-top: 5px;">
+        <div style="font-size: 0.92rem; color: #cbd5e1;">Desarrollado por <b>Alfredo HM</b></div>
+        <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">Última actualización: {info_hora if info_hora else 'No disponible'}</div>
+    </div>
+""", unsafe_allow_html=True)
 
 if df_nube is not None:
     df_raw = df_nube
     df_aux_raw = df_aux_nube
     df_jer_raw = df_jer_nube
+    df_fotos_raw = df_fotos_nube
 else:
     st.warning("⚠️ No se pudo conectar a la Nube. Puedes subir el archivo MATRIZ manualmente.")
     archivo_manual = st.file_uploader("📥 Subir archivo Excel del Planograma (.xlsx, .xlsb)", type=["xlsx", "xls", "xlsb"])
@@ -759,6 +805,7 @@ else:
                 df_aux_raw = pd.DataFrame()
                 
             df_jer_raw = pd.DataFrame()
+            df_fotos_raw = pd.DataFrame()
             
             df_raw.columns = [str(c).strip() for c in df_raw.columns]
             if "Bandeja" in df_raw.columns and "EAN" in df_raw.columns:
@@ -769,11 +816,12 @@ else:
 if df_raw is not None:
     
     # ---------------------------------------------------------
-    # 🔗 TRIPLE CRUCE MAESTRO DE TABLAS (FORMATO TEXTO)
+    # 🔗 CUÁDRUPLE CRUCE MAESTRO DE TABLAS
     # ---------------------------------------------------------
     df_base = df_raw.copy()
     df_base['COD_REAL_Str'] = df_base['COD REAL'].apply(clean_sku)
     
+    # 1. DATA_AUX (Margen y Grupo A)
     if df_aux_raw is not None and not df_aux_raw.empty:
         df_aux_raw.columns = [str(c).strip() for c in df_aux_raw.columns]
         
@@ -805,8 +853,8 @@ if df_raw is not None:
         
     df_base['Monto Margen'] = df_base.get('Monto Margen', 0.0).fillna(0.0)
 
+    # 2. JERARQUÍA
     columnas_jerarquia = ['Departamento', 'Sección', 'Categoría', 'Grupo de artículo']
-    
     if df_jer_raw is not None and not df_jer_raw.empty:
         df_jer_raw.columns = [str(c).strip() for c in df_jer_raw.columns]
         if 'CodGA' in df_jer_raw.columns:
@@ -836,7 +884,19 @@ if df_raw is not None:
     else:
         for col in columnas_jerarquia: df_base[col] = 'S/D'
         
-    df_base.drop(columns=['COD_REAL_Str', 'Grupo_A_Str', 'CodGA_Str'], inplace=True, errors='ignore')
+    # 3. FOTOS
+    if df_fotos_raw is not None and not df_fotos_raw.empty:
+        df_fotos_raw.columns = [str(c).strip() for c in df_fotos_raw.columns]
+        if '_SKUReferenceCode' in df_fotos_raw.columns and 'Links de fotos' in df_fotos_raw.columns:
+            df_fotos_raw['_SKUReferenceCode'] = df_fotos_raw['_SKUReferenceCode'].apply(clean_sku)
+            df_fotos_unique = df_fotos_raw[['_SKUReferenceCode', 'Links de fotos']].drop_duplicates(subset=['_SKUReferenceCode'])
+            df_base = df_base.merge(df_fotos_unique, left_on='COD_REAL_Str', right_on='_SKUReferenceCode', how='left')
+        else:
+            df_base['Links de fotos'] = ""
+    else:
+        df_base['Links de fotos'] = ""
+        
+    df_base.drop(columns=['COD_REAL_Str', 'Grupo_A_Str', 'CodGA_Str', '_SKUReferenceCode'], inplace=True, errors='ignore')
 
     # Tratamiento numérico de variables
     df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
@@ -855,8 +915,6 @@ if df_raw is not None:
     tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard Analítico Financiero"])
     
     with tab1:
-        # Altura inmensa (2200px) para que el Iframe de Streamlit no genere un scroll vertical propio.
-        # Todo el scroll lo gestionará el HTML interno.
         html_pasillo = generar_html_pasillo_interactivo(df_base)
         components.html(html_pasillo, height=2200, scrolling=False)
             
@@ -992,7 +1050,6 @@ if df_raw is not None:
                 yaxis2=dict(title="Margen (%)", showgrid=False, color='#10b981', zeroline=False)
             )
             
-            # Bloquear gráfico estático (Sin Zoom ni Botones)
             fig.update_xaxes(fixedrange=True)
             fig.update_yaxes(fixedrange=True)
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
@@ -1033,9 +1090,6 @@ if df_raw is not None:
             
             st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
 
-        # ==========================================
-        # ⚖️ ANÁLISIS FAIR SHARE (ESPACIO VS RENDIMIENTO)
-        # ==========================================
         st.markdown("---")
         st.markdown("### ⚖️ Análisis Fair Share: Participación de Espacio vs Rendimiento Financiero")
         
@@ -1078,7 +1132,6 @@ if df_raw is not None:
             
             fig_fs = go.Figure()
             
-            # Etiquetas reincorporadas según petición
             fig_fs.add_trace(go.Bar(
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Espacio'],
@@ -1162,7 +1215,6 @@ if df_raw is not None:
             ], label_visibility="collapsed")
         
         with col_dl:
-            st.markdown("<div style='margin-top: 15px;'>", unsafe_allow_html=True)
             buffer = io.BytesIO()
             df_agrupado = df_base.copy()
             def formatear_ubicacion(val):
@@ -1196,9 +1248,10 @@ if df_raw is not None:
             ]
             cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
 
-            # Botón claro y explícito como pediste (El método de la foto solía dar error en navegadores)
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                 df_rep[cols_to_show].to_excel(writer, index=False, sheet_name='Reporte_SKUs')
+                
+            st.markdown("<div style='margin-top: 15px;'>", unsafe_allow_html=True)
             st.download_button(
                 label="📥 Descargar a Excel (.xlsx)",
                 data=buffer.getvalue(),
@@ -1208,4 +1261,5 @@ if df_raw is not None:
             )
             st.markdown("</div>", unsafe_allow_html=True)
             
+        st.markdown("<p style='font-size: 0.85rem; color: #94a3b8; margin-top: -10px;'>💡 También puedes usar el ícono nativo de descarga que aparece al pasar el cursor sobre la esquina derecha de la tabla.</p>", unsafe_allow_html=True)
         st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True)
