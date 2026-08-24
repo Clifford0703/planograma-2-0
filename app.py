@@ -37,6 +37,14 @@ def safe_float(val, default=0.0):
 def format_pct(val):
     return f"{val*100:.2f}%" if val < 1 else f"{val:.2f}%"
 
+def clean_sku(val):
+    """Fuerza cualquier valor a texto puro, eliminando decimales ocultos de Excel (.0)"""
+    if pd.isna(val): return ""
+    s = str(val).strip()
+    if s.endswith('.0'):
+        s = s[:-2]
+    return s
+
 def obtener_estado_y_color(estado, stock_val):
     estado = str(estado).strip().upper()
     if estado == "B": 
@@ -106,6 +114,9 @@ def generar_html_pasillo_interactivo(df):
                 venta_val = safe_float(it.get("Venta", 0))
                 part_val = safe_float(it.get("% Part", 0))
                 
+                area_val = str(it.get("Area", "S/A")).replace('"', '&quot;')
+                dept_val = str(it.get("Departamento", "S/D")).replace('"', '&quot;')
+                
                 part_fmt = format_pct(part_val)
                 bg_color, text_color, cat_leyenda = obtener_estado_y_color(estado, stock_val)
                 es_top = top_ventas == "TOP"
@@ -119,7 +130,8 @@ def generar_html_pasillo_interactivo(df):
                 cards_html += f"""
                 <div class="sku-card" style="flex: {caras}; background-color: {bg_color}; {border_style}" 
                      data-brand="{marca}" data-name="{nombre}" data-ean="{ean}" data-top="{top_ventas}"
-                     data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_fmt}" data-part="{part_fmt}" data-cod="{cod_real}" data-cat="{cat_leyenda}">
+                     data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_fmt}" data-part="{part_fmt}" 
+                     data-cod="{cod_real}" data-cat="{cat_leyenda}" data-area="{area_val}" data-dept="{dept_val}">
                   <div class="sku-pos">{pos}</div>
                   <div class="sku-caras-tag">{caras} C</div>
                   <div class="sku-details">
@@ -239,7 +251,7 @@ def generar_html_pasillo_interactivo(df):
         .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.8); transform: translateY(20px); transition: transform 0.2s; border: 2px solid #3b82f6; }}
         .modal-overlay.active .modal-content {{ transform: translateY(0); }}
         .modal-close {{ position: absolute; top: 10px; right: 15px; font-size: 1.8rem; cursor: pointer; color: #94a3b8; font-weight: bold; line-height: 1; }}
-        .m-row {{ border-bottom: 1px solid #334155; padding: 10px 0; display: flex; justify-content: space-between; font-size: 0.9rem; }}
+        .m-row {{ border-bottom: 1px solid #334155; padding: 8px 0; display: flex; justify-content: space-between; font-size: 0.85rem; }}
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
@@ -267,6 +279,8 @@ def generar_html_pasillo_interactivo(df):
           <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod"></span></div>
           <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
           <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
+          <div class="m-row"><span class="m-label">Área:</span><span class="m-val" id="m-area" style="color: #cbd5e1;"></span></div>
+          <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept" style="color: #cbd5e1;"></span></div>
           <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
           <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
           <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
@@ -337,7 +351,15 @@ def generar_html_pasillo_interactivo(df):
           let availableBrands = new Set();
           let availableBays = new Set();
           let availableLevels = new Set();
-          let cTot=0, cBloq=0, cSin=0, cBajo=0, cOk=0, cCob=0, cTop=0;
+          
+          let setTot = new Set();
+          let setBloq = new Set();
+          let setSin = new Set();
+          let setBajo = new Set();
+          let setOk = new Set();
+          let setCob = new Set();
+          let setTop = new Set();
+          
           let visibleBaysCount = 0;
 
           document.querySelectorAll('.sku-card').forEach(card => {{
@@ -349,6 +371,7 @@ def generar_html_pasillo_interactivo(df):
              const cat = card.getAttribute('data-cat') || '';
              const isTop = card.getAttribute('data-top') === 'TOP';
              const cobVal = parseFloat(card.getAttribute('data-cob')) || 0;
+             const cod = card.getAttribute('data-cod');
 
              const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
              const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
@@ -362,13 +385,13 @@ def generar_html_pasillo_interactivo(df):
              if(matchSearch && matchBrand && matchBay) availableLevels.add(level);
 
              if(passesStandard) {{
-                 cTot++;
-                 if(cat === 'bloqueado') cBloq++;
-                 if(cat === 'sin-stock') cSin++;
-                 if(cat === 'stock-bajo') cBajo++;
-                 if(cat === 'stock-ok') cOk++;
-                 if(cobVal >= 30) cCob++;
-                 if(isTop) cTop++;
+                 setTot.add(cod);
+                 if(cat === 'bloqueado') setBloq.add(cod);
+                 if(cat === 'sin-stock') setSin.add(cod);
+                 if(cat === 'stock-bajo') setBajo.add(cod);
+                 if(cat === 'stock-ok') setOk.add(cod);
+                 if(cobVal >= 30) setCob.add(cod);
+                 if(isTop) setTop.add(cod);
              }}
 
              let passesLegend = true;
@@ -397,13 +420,13 @@ def generar_html_pasillo_interactivo(df):
              }}
           }});
 
-          document.getElementById('t-total').textContent = cTot;
-          document.getElementById('t-bloq').textContent = cBloq;
-          document.getElementById('t-sin').textContent = cSin;
-          document.getElementById('t-bajo').textContent = cBajo;
-          document.getElementById('t-ok').textContent = cOk;
-          document.getElementById('t-cob').textContent = cCob;
-          document.getElementById('t-top').textContent = cTop;
+          document.getElementById('t-total').textContent = setTot.size;
+          document.getElementById('t-bloq').textContent = setBloq.size;
+          document.getElementById('t-sin').textContent = setSin.size;
+          document.getElementById('t-bajo').textContent = setBajo.size;
+          document.getElementById('t-ok').textContent = setOk.size;
+          document.getElementById('t-cob').textContent = setCob.size;
+          document.getElementById('t-top').textContent = setTop.size;
 
           if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
           if (selectedBay !== 'ALL' && !availableBays.has(selectedBay)) selectedBay = 'ALL';
@@ -495,6 +518,8 @@ def generar_html_pasillo_interactivo(df):
                 document.getElementById('m-cod').textContent = card.getAttribute('data-cod');
                 document.getElementById('m-ean').textContent = card.getAttribute('data-ean');
                 document.getElementById('m-brand').textContent = card.getAttribute('data-brand');
+                document.getElementById('m-area').textContent = card.getAttribute('data-area');
+                document.getElementById('m-dept').textContent = card.getAttribute('data-dept');
                 document.getElementById('m-stock').textContent = card.getAttribute('data-stock');
                 document.getElementById('m-cob').textContent = card.getAttribute('data-cob');
                 document.getElementById('m-venta').textContent = card.getAttribute('data-venta');
@@ -531,10 +556,9 @@ def generar_html_pasillo_interactivo(df):
 
 # --- LÓGICA DE CARGA HÍBRIDA (NUBE + MANUAL) ---
 
-@st.cache_data(ttl=14400) # Memoria caché de 4 horas
+@st.cache_data(ttl=14400)
 def cargar_datos_nube(url):
     try:
-        # Ahora Pandas lee ambas hojas: MATRIZ y DATA_AUX
         try:
             df_matriz = pd.read_excel(url, sheet_name="MATRIZ", skiprows=5, usecols="C:AB")
         except Exception:
@@ -555,7 +579,6 @@ def cargar_datos_nube(url):
     except Exception as e:
         return None, None, None, str(e)
 
-# --- ENLACE DIRECTO DE GOOGLE DRIVE ---
 URL_NUBE = "https://drive.google.com/uc?export=download&id=1QFqktucaF983WXcjupQI-jpeEZzWxtX_"
 
 df_raw = None
@@ -563,14 +586,12 @@ df_aux_raw = None
 info_hora = None
 error_nube = None
 
-# Botón de Sincronización Manual
 col_sync1, col_sync2 = st.columns([1, 6])
 with col_sync1:
     if st.button("🔄 Sincronizar Datos", type="primary", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
 
-# Intentar cargar desde Drive
 with st.spinner("Sincronizando base de datos central..."):
     df_nube, df_aux_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE)
 
@@ -578,7 +599,6 @@ if df_nube is not None:
     df_raw = df_nube
     df_aux_raw = df_aux_nube
 else:
-    # Respaldo Manual si Drive falla
     st.warning("⚠️ No se pudo conectar a Google Drive. Puedes subir el archivo manualmente para continuar.")
     archivo_manual = st.file_uploader("📥 Subir archivo Excel del Planograma (.xlsx, .xlsb)", type=["xlsx", "xls", "xlsb"])
     if archivo_manual:
@@ -602,36 +622,50 @@ else:
         except Exception as e:
             st.error(f"Error al leer el archivo manual: {e}")
 
-# SI TENEMOS DATOS RENDERIZAMOS LA APP
 if df_raw is not None:
     
-    # ---------------------------------------------------------
-    # 🔗 CRUCE DE TABLAS (BUSCARV): MATRIZ + DATA_AUX (Monto Margen)
-    # ---------------------------------------------------------
     df_base = df_raw.copy()
+    df_base['COD_REAL_Str'] = df_base['COD REAL'].apply(clean_sku)
     
     if df_aux_raw is not None and not df_aux_raw.empty:
         df_aux_raw.columns = [str(c).strip() for c in df_aux_raw.columns]
         
-        if 'Material' in df_aux_raw.columns and 'Monto Margen' in df_aux_raw.columns:
-            # Limpiamos los códigos para hacer el cruce perfecto (evitar que 1022988.0 no cruce con 1022988)
-            df_aux_raw['Material_Str'] = df_aux_raw['Material'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
-            df_base['COD_REAL_Str'] = df_base['COD REAL'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
-            
-            # Eliminamos duplicados de DATA_AUX por si acaso
-            df_aux_unique = df_aux_raw.drop_duplicates(subset=['Material_Str'])
-            
-            # Cruce (Left Join)
-            df_base = df_base.merge(df_aux_unique[['Material_Str', 'Monto Margen']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
-            df_base.drop(columns=['Material_Str', 'COD_REAL_Str'], inplace=True, errors='ignore')
-            
-            # Llenar vacíos con 0
-            df_base['Monto Margen'] = df_base['Monto Margen'].fillna(0)
-        else:
-            df_base['Monto Margen'] = 0.0
+        if 'Monto Margen' in df_aux_raw.columns:
+            cols_material = [c for c in df_aux_raw.columns if 'Material' in c]
+            if cols_material:
+                col_mat_ventas = cols_material[0]
+                df_margen = df_aux_raw[[col_mat_ventas, 'Monto Margen']].copy()
+                df_margen['Mat_Ventas_Str'] = df_margen[col_mat_ventas].apply(clean_sku)
+                df_margen = df_margen[df_margen['Mat_Ventas_Str'] != ""]
+                df_margen = df_margen.drop_duplicates(subset=['Mat_Ventas_Str'])
+                
+                df_base = df_base.merge(df_margen[['Mat_Ventas_Str', 'Monto Margen']], left_on='COD_REAL_Str', right_on='Mat_Ventas_Str', how='left')
+                df_base.drop(columns=['Mat_Ventas_Str'], inplace=True, errors='ignore')
+        
+        df_base['Monto Margen'] = df_base.get('Monto Margen', 0.0).fillna(0.0)
+        
+        if 'Denomin. Á' in df_aux_raw.columns and 'Denomin. D' in df_aux_raw.columns:
+            cols_material = [c for c in df_aux_raw.columns if 'Material' in c]
+            if cols_material:
+                col_mat_barras = cols_material[-1] 
+                df_barras = df_aux_raw[[col_mat_barras, 'Denomin. Á', 'Denomin. D']].copy()
+                df_barras['Mat_Barras_Str'] = df_barras[col_mat_barras].apply(clean_sku)
+                df_barras = df_barras[df_barras['Mat_Barras_Str'] != ""]
+                df_barras = df_barras.drop_duplicates(subset=['Mat_Barras_Str'])
+                df_barras = df_barras.rename(columns={'Denomin. Á': 'Area', 'Denomin. D': 'Departamento'})
+                
+                df_base = df_base.merge(df_barras[['Mat_Barras_Str', 'Area', 'Departamento']], left_on='COD_REAL_Str', right_on='Mat_Barras_Str', how='left')
+                df_base.drop(columns=['Mat_Barras_Str'], inplace=True, errors='ignore')
+                
+        df_base['Area'] = df_base.get('Area', 'S/A').fillna('S/A')
+        df_base['Departamento'] = df_base.get('Departamento', 'S/D').fillna('S/D')
+        
     else:
         df_base['Monto Margen'] = 0.0
-    # ---------------------------------------------------------
+        df_base['Area'] = 'S/A'
+        df_base['Departamento'] = 'S/D'
+        
+    df_base.drop(columns=['COD_REAL_Str'], inplace=True, errors='ignore')
 
     st.markdown(f"""
     <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 20px;">
@@ -649,10 +683,6 @@ if df_raw is not None:
     tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard y Reporte Excel"])
     
     with tab1:
-        
-        # ==========================================
-        # ⚙️ MÓDULO DE SEGMENTACIÓN DINÁMICA
-        # ==========================================
         st.markdown("### ⚙️ Segmentación Dinámica de Ventas")
         col_cfg1, col_cfg2 = st.columns([1, 3])
         
@@ -675,7 +705,6 @@ if df_raw is not None:
             st.info(f"💡 Has seleccionado el **TOP {top_n}**. Estos {top_n} productos concentran el **{part_acumulada*100:.2f}%** de la venta total de la categoría.")
 
         df_base['TOPVENTAS'] = df_base['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top else "NO")
-        # ==========================================
 
         st.markdown("---")
         st.markdown("##### Control de Vista")
@@ -712,7 +741,6 @@ if df_raw is not None:
         df_chart['Modulo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
         df_chart['Modulo_Ord'] = pd.to_numeric(df_chart['Modulo_Ord'], errors='coerce').fillna(1)
         
-        # AGRUPACIÓN DE TOTALES POR MÓDULO
         ventas_mod = df_chart.groupby('Modulo_Ord').agg(
             Venta_Total=('Venta_Num', 'sum'),
             Margen_Total=('Margen_Num', 'sum'),
@@ -721,7 +749,6 @@ if df_raw is not None:
         
         ventas_mod['Módulo'] = "Módulo " + ventas_mod['Modulo_Ord'].astype(int).astype(str)
         
-        # CÁLCULO DEL MARGEN REAL % DEL MÓDULO COMPLETO
         ventas_mod['Margen_Pct'] = ventas_mod.apply(
             lambda row: row['Margen_Total'] / row['Venta_Total'] if row['Venta_Total'] > 0 else 0, 
             axis=1
@@ -742,12 +769,8 @@ if df_raw is not None:
         else:
             ventas_mod = ventas_mod.sort_values('Modulo_Ord')
 
-        # ---------------------------------------------------------
-        # 🎨 REDISEÑO DEL GRÁFICO (DARK MODE BI)
-        # ---------------------------------------------------------
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         
-        # Barras de Venta (Azul Translúcido)
         fig.add_trace(
             go.Bar(
                 x=ventas_mod['Módulo'], 
@@ -765,7 +788,6 @@ if df_raw is not None:
             secondary_y=False
         )
 
-        # Línea de Margen % (Verde Neón)
         fig.add_trace(
             go.Scatter(
                 x=ventas_mod['Módulo'], 
@@ -787,7 +809,6 @@ if df_raw is not None:
             secondary_y=True
         )
 
-        # Diseño de Fondo y Ejes
         fig.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
@@ -811,7 +832,6 @@ if df_raw is not None:
         )
         
         st.plotly_chart(fig, use_container_width=True)
-        # ---------------------------------------------------------
         
         st.markdown("---")
         st.markdown("### 📋 Reporte Detallado y Exportación")
@@ -841,7 +861,7 @@ if df_raw is not None:
             df_rep = df_rep[df_rep['Cob_Num'] >= 30]
             
         col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
-        cols_to_show = ['Bandeja', 'N°', 'COD REAL', 'EAN', col_desc, 'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen', 'TOPVENTAS']
+        cols_to_show = ['Bandeja', 'N°', 'COD REAL', 'EAN', col_desc, 'Area', 'Departamento', 'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen', 'TOPVENTAS']
         cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
         
         with col_btn:
