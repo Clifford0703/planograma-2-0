@@ -23,6 +23,7 @@ st.markdown("""
             max-width: 100% !important;
         }
         
+        /* Estilos para Tarjetas Financieras */
         .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; }
         .fin-kpi-card { flex: 1; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 18px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
         .fin-kpi-title { font-size: 0.80rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
@@ -416,7 +417,6 @@ def generar_html_pasillo_interactivo(df):
           let selectedLevel = levelSelect.value;
           const topN = parseInt(topNInput.value) || 30;
 
-          // 1. Primer paso: Extraer ventas de SKUs únicos VISIBLES para calcular TOP
           let visibleSkus = new Map();
           let totalVentasFiltered = 0;
 
@@ -445,7 +445,6 @@ def generar_html_pasillo_interactivo(df):
              }}
           }});
 
-          // 2. Ordenar y obtener los TOP N SKUs
           let sortedSkus = Array.from(visibleSkus.entries()).sort((a, b) => b[1] - a[1]);
           let topNSkusSet = new Set();
           let topVentasSum = 0;
@@ -455,11 +454,9 @@ def generar_html_pasillo_interactivo(df):
               topVentasSum += sortedSkus[i][1];
           }}
 
-          // 3. Actualizar texto de información %
           let pct = totalVentasFiltered > 0 ? (topVentasSum / totalVentasFiltered) * 100 : 0;
-          document.getElementById('topNInfo').innerHTML = `💡 Has resaltado el <b>TOP ${topNSkusSet.size}</b> de esta vista. Concentran el <b style="color:#10b981; font-size:1rem;">${pct.toFixed(2)}%</b> de la venta mostrada (S/ ${totalVentasFiltered.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2})}).`;
+          document.getElementById('topNInfo').innerHTML = "💡 Has resaltado el <b>TOP " + topNSkusSet.size + "</b> de esta vista. Concentran el <b style='color:#10b981; font-size:1rem;'>" + pct.toFixed(2) + "%</b> de la venta mostrada (S/ " + totalVentasFiltered.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}}) + ").";
 
-          // 4. Segundo paso: Aplicar estilos y sumar contadores finales
           let availableBrands = new Set();
           let availableCats = new Set();
           let availableBays = new Set();
@@ -479,7 +476,6 @@ def generar_html_pasillo_interactivo(df):
              const cobVal = parseFloat(card.getAttribute('data-cob')) || 0;
              const cod = card.getAttribute('data-cod');
              
-             // Aquí aplicamos dinámicamente si es TOP según nuestro Set calculado
              const isTop = topNSkusSet.has(cod);
              card.setAttribute('data-top', isTop ? 'TOP' : 'NO');
              card.style.border = isTop ? "3px solid #FFC000" : "1px solid #7f7f7f";
@@ -510,7 +506,7 @@ def generar_html_pasillo_interactivo(df):
              let passesLegend = true;
              if (currentLegendFilter) {{
                  if (currentLegendFilter === 'cob-alta') passesLegend = (cobVal >= 30);
-                 else if (currentLegendFilter === 'top-ventas') passesLegend = isTop; // Reacciona al TOP dinámico
+                 else if (currentLegendFilter === 'top-ventas') passesLegend = isTop;
                  else passesLegend = (cat === currentLegendFilter);
              }}
 
@@ -658,10 +654,9 @@ def generar_html_pasillo_interactivo(df):
                 document.getElementById('m-stock').textContent = card.getAttribute('data-stock');
                 document.getElementById('m-cob').textContent = card.getAttribute('data-cob');
                 
-                // Formatear venta para visualización en tarjeta
                 const ventaStr = card.getAttribute('data-venta') || "0";
                 const ventaVal = parseFloat(ventaStr.replace(/,/g, '')) || 0;
-                document.getElementById('m-venta').textContent = "S/ " + ventaVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+                document.getElementById('m-venta').textContent = "S/ " + ventaVal.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}});
                 
                 const topStatus = card.getAttribute('data-top');
                 document.getElementById('m-top').textContent = topStatus === 'TOP' ? '⭐ SÍ (Top Ventas)' : 'NO';
@@ -871,11 +866,9 @@ if df_raw is not None:
     df_base['Cob_Num'] = df_base['Cobertura'].apply(safe_float)
     df_base['Caras_Num'] = df_base['Caras'].apply(lambda x: safe_float(x, default=1.0))
     
-    # Campo Total Unid en Bandeja
     col_unid_bandeja = 'Total Unid en Bandeja' if 'Total Unid en Bandeja' in df_base.columns else ('Total_Unidades' if 'Total_Unidades' in df_base.columns else 'Stock')
     df_base['Unid_Bandeja_Num'] = df_base[col_unid_bandeja].apply(safe_float)
     
-    # Base única de SKUs
     df_unicos = df_base.drop_duplicates(subset=['COD REAL']).copy()
     df_unicos = df_unicos[df_unicos['COD REAL'].notna()]
     
@@ -936,7 +929,6 @@ if df_raw is not None:
         
         st.markdown("---")
         
-        # Filtro de Segmentación de Categoría para Dashboard
         cats_disponibles = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
         col_seg_cat, _ = st.columns([2, 2])
         with col_seg_cat:
@@ -957,10 +949,8 @@ if df_raw is not None:
             df_dash_base['Cuerpo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
             df_dash_base['Cuerpo_Ord'] = pd.to_numeric(df_dash_base['Cuerpo_Ord'], errors='coerce').fillna(1)
             
-            # Cálculo exacto por SKU único asignado a cada cuerpo (sin duplicar ventas por bandeja)
             df_sku_cuerpo = df_dash_base.drop_duplicates(subset=['COD REAL', 'Cuerpo_Ord']).copy()
             
-            # Obtener categoría principal por cuerpo
             cat_por_cuerpo = df_sku_cuerpo.groupby('Cuerpo_Ord')['Categoría'].agg(
                 lambda x: max(set([str(i) for i in x if str(i) not in ['S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['S/C', 'nan', '']]) > 0 else ""
             ).to_dict()
@@ -971,7 +961,6 @@ if df_raw is not None:
                 SKUs_Total=('COD REAL', 'count')
             ).reset_index()
             
-            # Etiqueta con Categoría integrada debajo de Cuerpo
             def crear_etiqueta_eje(c_num):
                 cat_nombre = cat_por_cuerpo.get(c_num, "")
                 if cat_nombre and len(cat_nombre) > 18:
@@ -1096,14 +1085,12 @@ if df_raw is not None:
 
         col_espacio_elegida = 'Caras_Num' if metrica_espacio == "Caras (Facings)" else 'Unid_Bandeja_Num'
         
-        # Agrupación por dimensión
         df_fs = df_dash_base.groupby(dim_fs).agg(
             Espacio_Total=(col_espacio_elegida, 'sum'),
             Ventas_Total=('Venta_Num', 'sum'),
             Margen_Total=('Margen_Num', 'sum')
         ).reset_index()
         
-        # Filtrar valores sin nombre o vacíos
         df_fs = df_fs[~df_fs[dim_fs].isin(['S/D', 'S/C', 'S/S', 'S/G', 'nan', ''])].copy()
         
         total_espacio_sum = df_fs['Espacio_Total'].sum()
@@ -1114,13 +1101,12 @@ if df_raw is not None:
             df_fs['Pct_Espacio'] = df_fs['Espacio_Total'] / total_espacio_sum
             df_fs['Pct_Ventas'] = df_fs['Ventas_Total'] / total_ventas_sum
             df_fs['Pct_Margen'] = df_fs['Margen_Total'] / total_margen_sum if total_margen_sum > 0 else 0.0
-            df_fs['Brecha_Share'] = df_fs['Pct_Ventas'] - df_fs['Pct_Espacio'] # Positivo = Subdimensionado, Negativo = Sobredimensionado
+            df_fs['Brecha_Share'] = df_fs['Pct_Ventas'] - df_fs['Pct_Espacio']
             
             df_fs = df_fs.sort_values(by='Pct_Ventas', ascending=False)
             
             fig_fs = go.Figure()
             
-            # Barra de Espacio (Azul)
             fig_fs.add_trace(go.Bar(
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Espacio'],
@@ -1133,7 +1119,6 @@ if df_raw is not None:
                 customdata=df_fs['Espacio_Total']
             ))
             
-            # Barra de Ventas (Verde Esmeralda)
             fig_fs.add_trace(go.Bar(
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Ventas'],
@@ -1146,7 +1131,6 @@ if df_raw is not None:
                 customdata=df_fs['Ventas_Total']
             ))
 
-            # Barra de Margen (Ámbar)
             fig_fs.add_trace(go.Bar(
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Margen'],
@@ -1172,15 +1156,14 @@ if df_raw is not None:
             
             st.plotly_chart(fig_fs, use_container_width=True)
             
-            # Tarjetas de diagnóstico Fair Share
             col_diag1, col_diag2 = st.columns(2)
-            subdimensionados = df_fs[df_fs['Brecha_Share'] > 0.03] # Ganan +3% más en venta de lo que tienen de espacio
-            sobredimensionados = df_fs[df_fs['Brecha_Share'] < -0.03] # Tienen +3% más de espacio de lo que venden
+            subdimensionados = df_fs[df_fs['Brecha_Share'] > 0.03]
+            sobredimensionados = df_fs[df_fs['Brecha_Share'] < -0.03]
             
             with col_diag1:
                 if not subdimensionados.empty:
                     top_sub = subdimensionados.iloc[0]
-                    st.success(f"🚀 **Oportunidad de Crecimiento (Subdimensionado):** `{top_sub[dim_fs]}` genera el **{top_sub['Pct_Ventas']*100:.1f}%** de las ventas pero solo ocupa el **{top_sub['Pct_Espacio']*100:.1f}%** del espacio físico. Conviene evaluar otorgarle más caras.")
+                    st.success(f"🚀 **Oportunidad de Crecimiento (Subdimensionado):** `{top_sub[dim_fs]}` genera el **{top_sub['Pct_Ventas']*100:.1f}%** de las ventas pero solo ocupa el **{top_sub['Pct_Espacio']*100:.1f}%** del espacio físico. Conviene evaluar otorgarle más espacio.")
                 else:
                     st.info("✅ La asignación de espacio físico está equilibrada frente a las ventas.")
                     
@@ -1204,7 +1187,6 @@ if df_raw is not None:
         col_desc = 'Descripción' if 'Descripción' in df_scatter.columns else 'Nombre'
         df_scatter['Producto'] = df_scatter[col_desc].fillna('Sin Descripción')
         
-        # Saneamiento de datos para Plotly
         df_scatter['Venta_Num'] = df_scatter['Venta_Num'].fillna(0.0)
         df_scatter['Margen_Pct_SKU'] = df_scatter['Margen_Pct_SKU'].fillna(0.0)
         df_scatter['Stock_Num'] = df_scatter['Stock_Num'].fillna(0.0)
@@ -1263,7 +1245,6 @@ if df_raw is not None:
                 "Cobertura Alta (≥ 30)"
             ])
         
-        # Mapeo de Ubicaciones múltiples por SKU
         df_agrupado = df_base.copy()
         def formatear_ubicacion(val):
             val_str = str(val).strip()
