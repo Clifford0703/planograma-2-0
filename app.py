@@ -285,8 +285,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
         .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 15px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        /* ESTILOS COMUNES PRODUCTOS */
-        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px; min-height: 125px; overflow-x: auto; padding-bottom: 8px; align-items: flex-end; justify-content: center; }}
+        /* CORRECCIÓN SCROLL: justify-content: flex-start y padding balanceado para que el primer SKU no se corte */
+        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px 12px; min-height: 125px; overflow-x: auto; padding-bottom: 8px; align-items: flex-end; justify-content: flex-start; }}
         .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); z-index: 1; }}
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
         
@@ -294,7 +294,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
         .shelf-base {{ height: 12px; background: linear-gradient(180deg, #fde047 0%, #ca8a04 100%); border-radius: 2px; box-shadow: 0 4px 6px rgba(0,0,0,0.6); display: flex; justify-content: center; position: relative; z-index: 5; margin-top: -2px; border-top: 1px solid #fef08a; border-bottom: 2px solid #854d0e; }}
         .shelf-name-tag {{ position: absolute; top: 10px; background: rgba(0,0,0,0.7); color: #fef08a; font-size: 0.55rem; padding: 1px 6px; border-radius: 0 0 4px 4px; font-weight: 800; letter-spacing: 0.5px; }}
         
-        .sku-group {{ display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; transition: all 0.2s; z-index: 10; padding: 0 2px; }}
+        .sku-group {{ display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; transition: all 0.2s; z-index: 10; padding: 0 2px; flex-shrink: 0; }}
         .sku-images-wrapper {{ display: flex; flex-direction: row; align-items: flex-end; gap: 1px; }}
         .sku-images-wrapper img {{ height: 95px; width: auto; max-width: 60px; object-fit: contain; filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.5)); transition: transform 0.2s; }}
         .sku-group:hover .sku-images-wrapper img {{ transform: translateY(-4px); filter: drop-shadow(4px 8px 8px rgba(0,0,0,0.7)); }}
@@ -310,7 +310,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
         @keyframes float {{ 0% {{transform: translateY(0px);}} 50% {{transform: translateY(-4px);}} 100% {{transform: translateY(0px);}} }}
         
         /* ESTILOS CAJAS DE COLORES (OLD VIEW) */
-        .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; cursor: pointer; align-items: stretch; }}
+        .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; cursor: pointer; align-items: stretch; flex-shrink: 0; }}
         .sku-pos {{ position: absolute; top: 4px; left: 4px; background: #0f172a; color: #fff; font-size: 0.6rem; font-weight: 800; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 2px; }}
         .sku-caras-tag {{ position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.9); color: #000; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 2px; }}
         .sku-details {{ margin-top: 18px; display: flex; flex-direction: column; gap: 3px; text-align: center; overflow: hidden; }}
@@ -723,10 +723,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
-                /* POSICIONAMIENTO DINÁMICO AL CLIC */
+                /* POSICIONAMIENTO DINÁMICO AL CLIC (Rastreo del cursor) */
                 const modalContent = document.querySelector('.modal-content');
-                let topPos = e.pageY - 220; // 220px más arriba de donde hiciste clic
-                if (topPos < 20) topPos = 20; // Límite superior para que no se pierda
+                let topPos = e.pageY - 220; 
+                if (topPos < 20) topPos = 20; 
                 modalContent.style.marginTop = topPos + 'px';
                 
                 modal.classList.add('active');
@@ -965,8 +965,6 @@ if df_raw is not None:
             
         st.markdown("---")
         
-        # Le damos un lienzo muy grande (2200px) para que el Iframe nunca tenga barra de scroll interna. 
-        # Toda la navegación se hace en el HTML generado.
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma)
         components.html(html_pasillo, height=2200, scrolling=False)
             
