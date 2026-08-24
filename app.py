@@ -1,10 +1,8 @@
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
-import io
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import plotly.express as px
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -23,7 +21,6 @@ st.markdown("""
             max-width: 100% !important;
         }
         
-        /* Estilos para Tarjetas Financieras */
         .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; }
         .fin-kpi-card { flex: 1; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 18px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
         .fin-kpi-title { font-size: 0.80rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
@@ -196,9 +193,10 @@ def generar_html_pasillo_interactivo(df):
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
       <style>
         * {{ box-sizing: border-box; }}
-        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 12px; touch-action: pan-x pan-y pinch-zoom; }}
+        /* Ocultamos el scroll vertical del body para que no pelee con el de la página */
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 12px; touch-action: pan-x pan-y pinch-zoom; overflow-y: hidden; overflow-x: hidden; }}
         
-        ::-webkit-scrollbar {{ height: 8px; width: 8px; }}
+        ::-webkit-scrollbar {{ height: 10px; width: 8px; }}
         ::-webkit-scrollbar-track {{ background: #0f172a; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb:hover {{ background: #2563eb; }}
@@ -224,11 +222,11 @@ def generar_html_pasillo_interactivo(df):
         .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; box-shadow: 0 2px 4px rgba(0,0,0,0.2); outline: none; }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
-        .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; }}
+        .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; height: calc(100vh - 250px); min-height: 600px; }}
         .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
         .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
         
-        .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; touch-action: pan-x pan-y pinch-zoom; }}
+        .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; touch-action: pan-x pan-y pinch-zoom; }}
         
         .bay-column {{ flex: 1 0 480px; max-width: 100%; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; scroll-snap-align: center; transition: all 0.3s; }}
         .bay-column.hidden {{ display: none !important; }}
@@ -236,7 +234,7 @@ def generar_html_pasillo_interactivo(df):
         .bay-title {{ background: #1e3a8a; padding: 6px 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; }}
         .bay-subcat {{ font-size: 0.68rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
         
-        .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }}
+        .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }}
         .shelf-row {{ display: flex; flex-direction: column; background: #162238; border-radius: 4px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
@@ -276,44 +274,36 @@ def generar_html_pasillo_interactivo(df):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* --- REGLAS DE IMPRESIÓN A4 VERTICAL POR CUERPO --- */
+        /* --- REGLAS DE IMPRESIÓN A4 VERTICAL PERFECTO --- */
         @media print {{
-          @page {{ size: A4 portrait; margin: 8mm; }}
-          body {{ background-color: #fff !important; color: #000 !important; margin: 0; padding: 0; font-size: 9pt; }}
+          @page {{ size: A4 portrait; margin: 10mm; }}
+          body, html {{ background-color: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; height: 100% !important; overflow: visible !important; }}
           .filter-panel, .legend-panel, .modal-overlay, .nav-btn, .kpi-container, .top-panel {{ display: none !important; }}
-          .aisle-wrapper {{ display: block !important; width: 100% !important; }}
-          .aisle-container {{ display: block !important; background: transparent !important; border: none !important; padding: 0 !important; overflow: visible !important; }}
-          .bay-column {{ background: #fff !important; border: 2px solid #000 !important; width: 100% !important; max-width: 100% !important; page-break-inside: avoid; margin-bottom: 0 !important; }}
+          
+          .aisle-wrapper {{ display: block !important; width: 100% !important; height: 100% !important; min-height: unset !important; border: none !important; }}
+          .aisle-container {{ display: block !important; width: 100% !important; height: 100% !important; background: transparent !important; border: none !important; padding: 0 !important; overflow: visible !important; }}
+          
+          .bay-column {{ background: #fff !important; border: 3px solid #000 !important; width: 100% !important; height: 260mm !important; max-width: 100% !important; page-break-inside: avoid; margin: 0 !important; display: flex !important; flex-direction: column !important; }}
           .bay-column.hidden {{ display: none !important; }}
-          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 2px solid #000 !important; padding: 4px !important; font-size: 11pt !important; display: block; text-align: center; }}
-          .bay-subcat {{ color: #334155 !important; font-size: 9pt !important; display: block; }}
-          .bay-shelves {{ padding: 6px !important; gap: 8px !important; }}
-          .shelf-row {{ background: #fff !important; border: 1px solid #000 !important; page-break-inside: avoid; margin-bottom: 4px !important; }}
-          .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 4px solid #000 !important; font-size: 8pt !important; padding: 2px 4px !important; }}
+          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding: 8px !important; font-size: 16pt !important; display: block; text-align: center; }}
+          .bay-subcat {{ color: #334155 !important; font-size: 11pt !important; display: block; }}
+          
+          .bay-shelves {{ padding: 10px !important; gap: 15px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; justify-content: space-evenly !important; overflow: visible !important; }}
+          .shelf-row {{ background: #fff !important; border: 2px solid #000 !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; }}
+          .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 5px solid #000 !important; font-size: 11pt !important; padding: 4px 8px !important; }}
           .shelf-caras-count {{ background: #e2e8f0 !important; color: #000 !important; }}
-          .shelf-products {{ min-height: 80px !important; padding: 4px !important; gap: 2px !important; overflow: hidden !important; }}
-          .sku-card {{ background: #fff !important; border: 1px solid #000 !important; color: #000 !important; padding: 3px !important; min-width: 45px !important; }}
-          .sku-card[data-top="TOP"] {{ border: 3px double #000 !important; }}
-          .sku-pos, .sku-caras-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-size: 6pt !important; width: 12px; height: 12px; }}
-          .sku-brand-text {{ font-size: 6.5pt !important; color: #000 !important; display: block; }}
-          .sku-name-text {{ font-size: 6.5pt !important; color: #000 !important; -webkit-line-clamp: 3 !important; line-height: 1.1 !important; }}
-          .sku-bottom-bar {{ border-top: 1px dashed #000 !important; font-size: 6pt !important; margin-top: 2px !important; padding-top: 1px !important; }}
-          .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 6pt !important; }}
-          .shelf-bottom-rail {{ background: #000 !important; height: 4px !important; }}
-        }}
-
-        @media (max-width: 768px) {{
-            .kpi-card {{ flex: 1 1 30%; min-width: 30%; padding: 8px 4px; }}
-            .kpi-val {{ font-size: 1.2rem; }}
-            .kpi-title {{ font-size: 0.55rem; }}
-            .filter-panel, .top-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
-            .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
-            .legend-chips {{ justify-content: center; }}
-            .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
-            .aisle-wrapper {{ gap: 4px; }}
-            .bay-column {{ flex: 0 0 100%; max-width: 100%; margin-right: 0; }}
-            .sku-card {{ min-width: 80px; }}
-            .aisle-container.single-module .bay-column {{ flex: 1 0 100%; }}
+          
+          .shelf-products {{ flex-grow: 1 !important; padding: 6px !important; gap: 4px !important; display: flex !important; align-items: stretch !important; overflow: visible !important; }}
+          .sku-card {{ background: #fff !important; border: 2px solid #000 !important; color: #000 !important; padding: 4px !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; min-width: unset !important; }}
+          .sku-card[data-top="TOP"] {{ border: 4px double #000 !important; }}
+          
+          .sku-pos, .sku-caras-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-size: 8pt !important; width: auto !important; height: auto !important; padding: 2px 4px !important; }}
+          .sku-details {{ margin-top: 10px !important; }}
+          .sku-brand-text {{ font-size: 8.5pt !important; color: #000 !important; display: block; }}
+          .sku-name-text {{ font-size: 9pt !important; color: #000 !important; -webkit-line-clamp: 4 !important; line-height: 1.2 !important; }}
+          .sku-bottom-bar {{ border-top: 2px dashed #000 !important; font-size: 8pt !important; margin-top: auto !important; padding-top: 4px !important; }}
+          .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 8pt !important; }}
+          .shelf-bottom-rail {{ display: none !important; }}
         }}
       </style>
     </head>
@@ -333,11 +323,12 @@ def generar_html_pasillo_interactivo(df):
           <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
           <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
           <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
-          <div class="m-row"><span class="m-label" style="color: #fbbf24; font-weight: 800;">¿Es TOP Ventas?:</span><span class="m-val" id="m-top" style="color: #fbbf24; font-weight: 800;"></span></div>
+          <div class="m-row"><span class="m-label">% Participación:</span><span class="m-val" id="m-part"></span></div>
+          <div class="m-row" style="border-bottom: none;"><span class="m-label">Top Ventas:</span><span class="m-val" id="m-top" style="color: #fbbf24; font-weight: 800;"></span></div>
         </div>
       </div>
 
-      <!-- PANEL TOP DINÁMICO EN JS -->
+      <!-- PANEL TOP DINÁMICO -->
       <div class="top-panel" style="background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 1.2rem;">🏆</span>
@@ -780,7 +771,6 @@ if df_raw is not None:
     if df_aux_raw is not None and not df_aux_raw.empty:
         df_aux_raw.columns = [str(c).strip() for c in df_aux_raw.columns]
         
-        # Margen
         if 'Monto Margen' in df_aux_raw.columns:
             cols_material = [c for c in df_aux_raw.columns if 'Material' in c]
             if cols_material:
@@ -792,7 +782,6 @@ if df_raw is not None:
                 df_base = df_base.merge(df_margen[['Mat_Ventas_Str', 'Monto Margen']], left_on='COD_REAL_Str', right_on='Mat_Ventas_Str', how='left')
                 df_base.drop(columns=['Mat_Ventas_Str'], inplace=True, errors='ignore')
         
-        # Grupo de A
         if 'Grupo de A' in df_aux_raw.columns:
             cols_material = [c for c in df_aux_raw.columns if 'Material' in c]
             if cols_material:
@@ -810,7 +799,6 @@ if df_raw is not None:
         
     df_base['Monto Margen'] = df_base.get('Monto Margen', 0.0).fillna(0.0)
 
-    # 2. Extraer Ramas desde el Archivo de Jerarquía Externa
     columnas_jerarquia = ['Departamento', 'Sección', 'Categoría', 'Grupo de artículo']
     
     if df_jer_raw is not None and not df_jer_raw.empty:
@@ -875,29 +863,19 @@ if df_raw is not None:
     tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard Analítico Financiero"])
     
     with tab1:
-        # El renderizado HTML ahora tiene el control total del TOP y Filtros
+        # El HTML controla filtros, impresión A4 y renderizado sin doble scroll vertical
         html_pasillo = generar_html_pasillo_interactivo(df_base)
-        components.html(html_pasillo, height=1350, scrolling=True)
+        components.html(html_pasillo, height=950, scrolling=False)
             
     with tab2:
-        # ==========================================
-        # ⚙️ CONFIGURACIÓN DEL DASHBOARD PYTHON
-        # ==========================================
-        st.markdown("### ⚙️ Configuración del Dashboard")
-        col_cfg_dash1, col_cfg_dash2 = st.columns([1, 3])
-        with col_cfg_dash1:
-            top_n_dash = st.number_input("🏆 TOP Ventas a resaltar en Gráficos:", min_value=1, max_value=200, value=30, step=1, key="top_dash")
-            
-        # Calcular TOP a nivel global para Tab 2 (Scatter y Reporte)
+        # Para el cálculo estático de Tab2 (ya que no existe el selector manual aquí)
+        top_n_fijo = 30
         df_top_calc_dash = df_unicos.sort_values(by='Venta_Num', ascending=False)
-        skus_top_dash = df_top_calc_dash.head(top_n_dash)['COD REAL'].astype(str).str.strip().tolist()
-        df_base['TOPVENTAS'] = df_base['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top_dash else "NO")
+        skus_top_dash = df_top_calc_dash.head(top_n_fijo)['COD REAL'].astype(str).str.strip().tolist()
         df_unicos['TOPVENTAS'] = df_unicos['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top_dash else "NO")
-        
-        st.markdown("---")
-        
+
         # ==========================================
-        # 💼 EXECUTIVE DASHBOARD
+        # 💼 EXECUTIVE DASHBOARD REDISEÑADO
         # ==========================================
         st.markdown("### 💼 Resumen Ejecutivo")
         
@@ -1173,69 +1151,12 @@ if df_raw is not None:
                     st.warning(f"⚠️ **Alerta de Sobreasignación:** `{top_sobre[dim_fs]}` consume el **{top_sobre['Pct_Espacio']*100:.1f}%** del espacio pero solo aporta el **{top_sobre['Pct_Ventas']*100:.1f}%** de las ventas. Candidato a reducción de espacio.")
                 else:
                     st.info("✅ No se detectan sobreasignaciones críticas de espacio físico.")
-
-        # ==========================================
-        # 🎯 MATRIZ ESTRATÉGICA DE SKUs
-        # ==========================================
-        st.markdown("---")
-        st.markdown("##### 🎯 Cuadrante Estratégico de SKUs: Ventas vs Margen %")
-        
-        df_scatter = df_dash_unicos.copy()
-        df_scatter['Margen_Pct_SKU'] = df_scatter.apply(
-            lambda r: (r['Margen_Num'] / r['Venta_Num']) if r['Venta_Num'] > 0 else 0.0, axis=1
-        )
-        col_desc = 'Descripción' if 'Descripción' in df_scatter.columns else 'Nombre'
-        df_scatter['Producto'] = df_scatter[col_desc].fillna('Sin Descripción')
-        
-        df_scatter['Venta_Num'] = df_scatter['Venta_Num'].fillna(0.0)
-        df_scatter['Margen_Pct_SKU'] = df_scatter['Margen_Pct_SKU'].fillna(0.0)
-        df_scatter['Stock_Num'] = df_scatter['Stock_Num'].fillna(0.0)
-        df_scatter['Bubble_Size'] = df_scatter['Stock_Num'].apply(lambda s: max(float(s), 0.0) + 4.0)
-
-        fig_scatter = go.Figure()
-        
-        for top_val, color_hex, name_legend in [('TOP', '#fbbf24', 'TOP Ventas'), ('NO', '#3b82f6', 'Resto SKUs')]:
-            df_sub = df_scatter[df_scatter['TOPVENTAS'] == top_val]
-            if not df_sub.empty:
-                fig_scatter.add_trace(go.Scatter(
-                    x=df_sub['Venta_Num'],
-                    y=df_sub['Margen_Pct_SKU'],
-                    mode='markers',
-                    name=name_legend,
-                    marker=dict(
-                        size=df_sub['Bubble_Size'],
-                        sizemode='diameter',
-                        sizeref=max(df_scatter['Bubble_Size'].max() / 35.0, 1.0),
-                        color=color_hex,
-                        line=dict(width=1, color='#ffffff'),
-                        opacity=0.85
-                    ),
-                    text=df_sub['Producto'],
-                    customdata=df_sub[['COD REAL', 'Stock_Num', 'Cobertura', 'Categoría', 'Marca']],
-                    hovertemplate=(
-                        "<b>%{text}</b><br>" +
-                        "Cód: %{customdata[0]} | Marca: %{customdata[4]}<br>" +
-                        "Categoría: %{customdata[3]}<br>" +
-                        "Ventas: S/ %{x:,.2f}<br>" +
-                        "Margen: %{y:.1%}<br>" +
-                        "Stock: %{customdata[1]} (Cob: %{customdata[2]})<extra></extra>"
-                    )
-                ))
-        
-        fig_scatter.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-            xaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor='rgba(255,255,255,0.08)', color='#cbd5e1'),
-            yaxis=dict(title="Margen Real (%)", showgrid=True, gridcolor='rgba(255,255,255,0.08)', color='#cbd5e1', tickformat=".1%"),
-            legend=dict(title="Segmento", orientation="h", y=1.05, x=1, font=dict(color='#cbd5e1')),
-            margin=dict(t=20, b=20, l=10, r=10)
-        )
-        st.plotly_chart(fig_scatter, use_container_width=True)
             
         st.markdown("---")
-        st.markdown("### 📋 Reporte Detallado y Exportación (SKUs Únicos)")
         
-        col_filt, col_btn = st.columns([2, 1])
+        col_filt, _ = st.columns([2, 1])
         with col_filt:
+            st.markdown("### 📋 Reporte Detallado (SKUs Únicos)")
             filtro_reporte = st.selectbox("Filtrar Tabla Resumen:", [
                 "Todos los SKUs",
                 "Bloqueados (Estado B)",
@@ -1243,7 +1164,9 @@ if df_raw is not None:
                 "Stock Bajo (Stock 1 a 5)",
                 "Top Ventas (TOP)",
                 "Cobertura Alta (≥ 30)"
-            ])
+            ], label_visibility="collapsed")
+        
+        st.markdown("<p style='font-size: 0.85rem; color: #94a3b8;'>💡 Usa el ícono de descarga (⬇) que aparece en la esquina superior derecha de esta tabla al pasar el ratón para exportar directamente a Excel/CSV.</p>", unsafe_allow_html=True)
         
         df_agrupado = df_base.copy()
         def formatear_ubicacion(val):
@@ -1280,18 +1203,5 @@ if df_raw is not None:
         ]
         cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
         
-        with col_btn:
-            st.write("") 
-            st.write("")
-            buffer = io.BytesIO()
-            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df_rep[cols_to_show].to_excel(writer, index=False, sheet_name='Reporte_SKUs')
-            
-            st.download_button(
-                label="📥 Descargar a Excel (.xlsx)",
-                data=buffer.getvalue(),
-                file_name="reporte_planograma_skus_unicos.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-            
-        st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True, height=800)
+        # Tabla nativa de Streamlit (sin forzar altura para evitar scrollbars dobles extraños)
+        st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True)
