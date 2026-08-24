@@ -534,25 +534,32 @@ def generar_html_pasillo_interactivo(df):
 @st.cache_data(ttl=14400) # Memoria caché de 4 horas
 def cargar_datos_nube(url):
     try:
+        # Ahora Pandas lee ambas hojas: MATRIZ y DATA_AUX
         try:
-            dataframe = pd.read_excel(url, sheet_name="MATRIZ", skiprows=5, usecols="C:AB")
+            df_matriz = pd.read_excel(url, sheet_name="MATRIZ", skiprows=5, usecols="C:AB")
         except Exception:
-            dataframe = pd.read_excel(url, skiprows=5, usecols="C:AB")
+            df_matriz = pd.read_excel(url, skiprows=5, usecols="C:AB")
+            
+        try:
+            df_aux = pd.read_excel(url, sheet_name="DATA_AUX", skiprows=5)
+        except Exception:
+            df_aux = pd.DataFrame()
 
-        dataframe.columns = [str(c).strip() for c in dataframe.columns]
+        df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
         
-        if "Bandeja" in dataframe.columns and "EAN" in dataframe.columns:
-            dataframe = dataframe.dropna(subset=["Bandeja", "EAN"], how="all")
+        if "Bandeja" in df_matriz.columns and "EAN" in df_matriz.columns:
+            df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
             
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return dataframe, hora_lectura, None
+        return df_matriz, df_aux, hora_lectura, None
     except Exception as e:
-        return None, None, str(e)
+        return None, None, None, str(e)
 
 # --- ENLACE DIRECTO DE GOOGLE DRIVE ---
 URL_NUBE = "https://drive.google.com/uc?export=download&id=1QFqktucaF983WXcjupQI-jpeEZzWxtX_"
 
 df_raw = None
+df_aux_raw = None
 info_hora = None
 error_nube = None
 
@@ -564,11 +571,12 @@ with col_sync1:
         st.rerun()
 
 # Intentar cargar desde Drive
-with st.spinner("Sincronizando con Google Drive..."):
-    df_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE)
+with st.spinner("Sincronizando base de datos central..."):
+    df_nube, df_aux_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE)
 
 if df_nube is not None:
     df_raw = df_nube
+    df_aux_raw = df_aux_nube
 else:
     # Respaldo Manual si Drive falla
     st.warning("⚠️ No se pudo conectar a Google Drive. Puedes subir el archivo manualmente para continuar.")
@@ -580,6 +588,11 @@ else:
                 df_raw = pd.read_excel(archivo_manual, sheet_name="MATRIZ", skiprows=5, usecols="C:AB", engine=motor)
             except Exception:
                 df_raw = pd.read_excel(archivo_manual, skiprows=5, usecols="C:AB", engine=motor)
+                
+            try:
+                df_aux_raw = pd.read_excel(archivo_manual, sheet_name="DATA_AUX", skiprows=5, engine=motor)
+            except Exception:
+                df_aux_raw = pd.DataFrame()
             
             df_raw.columns = [str(c).strip() for c in df_raw.columns]
             if "Bandeja" in df_raw.columns and "EAN" in df_raw.columns:
@@ -592,6 +605,34 @@ else:
 # SI TENEMOS DATOS RENDERIZAMOS LA APP
 if df_raw is not None:
     
+    # ---------------------------------------------------------
+    # 🔗 CRUCE DE TABLAS (BUSCARV): MATRIZ + DATA_AUX (Monto Margen)
+    # ---------------------------------------------------------
+    df_base = df_raw.copy()
+    
+    if df_aux_raw is not None and not df_aux_raw.empty:
+        df_aux_raw.columns = [str(c).strip() for c in df_aux_raw.columns]
+        
+        if 'Material' in df_aux_raw.columns and 'Monto Margen' in df_aux_raw.columns:
+            # Limpiamos los códigos para hacer el cruce perfecto (evitar que 1022988.0 no cruce con 1022988)
+            df_aux_raw['Material_Str'] = df_aux_raw['Material'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
+            df_base['COD_REAL_Str'] = df_base['COD REAL'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip()
+            
+            # Eliminamos duplicados de DATA_AUX por si acaso
+            df_aux_unique = df_aux_raw.drop_duplicates(subset=['Material_Str'])
+            
+            # Cruce (Left Join)
+            df_base = df_base.merge(df_aux_unique[['Material_Str', 'Monto Margen']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
+            df_base.drop(columns=['Material_Str', 'COD_REAL_Str'], inplace=True, errors='ignore')
+            
+            # Llenar vacíos con 0
+            df_base['Monto Margen'] = df_base['Monto Margen'].fillna(0)
+        else:
+            df_base['Monto Margen'] = 0.0
+    else:
+        df_base['Monto Margen'] = 0.0
+    # ---------------------------------------------------------
+
     st.markdown(f"""
     <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 20px;">
         <div>
@@ -610,44 +651,37 @@ if df_raw is not None:
     with tab1:
         
         # ==========================================
-        # ⚙️ MÓDULO DE SEGMENTACIÓN DINÁMICA (NUEVO)
+        # ⚙️ MÓDULO DE SEGMENTACIÓN DINÁMICA
         # ==========================================
         st.markdown("### ⚙️ Segmentación Dinámica de Ventas")
         col_cfg1, col_cfg2 = st.columns([1, 3])
         
         with col_cfg1:
-            # El usuario elige dinámicamente qué "Top" quiere ver
             top_n = st.number_input("🏆 Resaltar TOP Ventas (Cantidad de SKUs):", min_value=1, max_value=200, value=30, step=1)
         
-        # 1. Aseguramos que los valores sean numéricos
-        df = df_raw.copy()
-        df['Venta_Num'] = df['Venta'].apply(safe_float)
-        df['Part_Num'] = df['% Part'].apply(safe_float)
+        df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
+        df_base['Part_Num'] = df_base['% Part'].apply(safe_float)
         
-        # 2. Sacamos los SKUs únicos para hacer el ranking real
-        df_unicos = df.drop_duplicates(subset=['COD REAL']).copy()
+        df_unicos = df_base.drop_duplicates(subset=['COD REAL']).copy()
         df_unicos = df_unicos[df_unicos['COD REAL'].notna()]
         
-        # 3. Ordenamos de mayor a menor venta
         df_unicos = df_unicos.sort_values(by='Venta_Num', ascending=False)
         
-        # 4. Extraemos la lista de los mejores N productos y su participación acumulada
         skus_top = df_unicos.head(top_n)['COD REAL'].astype(str).str.strip().tolist()
         part_acumulada = df_unicos.head(top_n)['Part_Num'].sum()
         
         with col_cfg2:
-            st.write("") # Espaciador para alinear con el input
+            st.write("") 
             st.info(f"💡 Has seleccionado el **TOP {top_n}**. Estos {top_n} productos concentran el **{part_acumulada*100:.2f}%** de la venta total de la categoría.")
 
-        # 5. Sobrescribimos la columna TOPVENTAS dinámicamente para que el HTML la lea
-        df['TOPVENTAS'] = df['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top else "NO")
+        df_base['TOPVENTAS'] = df_base['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top else "NO")
         # ==========================================
 
         st.markdown("---")
         st.markdown("##### Control de Vista")
         mobile_preview = st.toggle("📱 Simular Vista Móvil (Celular)")
         
-        html_pasillo = generar_html_pasillo_interactivo(df)
+        html_pasillo = generar_html_pasillo_interactivo(df_base)
         
         if mobile_preview:
             col1, col2, col3 = st.columns([1, 1, 1])
@@ -669,78 +703,115 @@ if df_raw is not None:
             components.html(html_pasillo, height=1300, scrolling=True)
             
     with tab2:
-        st.markdown("### 📈 Desempeño por Módulo (Cuerpo)")
+        st.markdown("### 📈 Análisis Financiero: Ventas vs Margen por Módulo")
         
-        df_chart = df.copy()
-        # Venta_Num y Part_Num ya están calculados gracias a la sección dinámica
+        df_chart = df_base.copy()
+        df_chart['Margen_Num'] = df_chart['Monto Margen'].apply(safe_float)
         
         bandeja_str = df_chart.get('Bandeja', pd.Series(["1.1"]*len(df_chart))).astype(str)
         df_chart['Modulo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
         df_chart['Modulo_Ord'] = pd.to_numeric(df_chart['Modulo_Ord'], errors='coerce').fillna(1)
         
+        # AGRUPACIÓN DE TOTALES POR MÓDULO
         ventas_mod = df_chart.groupby('Modulo_Ord').agg(
             Venta_Total=('Venta_Num', 'sum'),
-            Part_Total=('Part_Num', 'sum'),
+            Margen_Total=('Margen_Num', 'sum'),
             SKUs_Total=('COD REAL', 'count')
         ).reset_index()
+        
         ventas_mod['Módulo'] = "Módulo " + ventas_mod['Modulo_Ord'].astype(int).astype(str)
+        
+        # CÁLCULO DEL MARGEN REAL % DEL MÓDULO COMPLETO
+        ventas_mod['Margen_Pct'] = ventas_mod.apply(
+            lambda row: row['Margen_Total'] / row['Venta_Total'] if row['Venta_Total'] > 0 else 0, 
+            axis=1
+        )
         
         col_ord, _ = st.columns([1, 3])
         with col_ord:
             orden_grafico = st.selectbox("Ordenar Gráfico por:", 
-                ["Módulo (Secuencial)", "Mayor a Menor Venta", "Menor a Mayor Venta", "Mayor Participación (%)"]
+                ["Módulo (Secuencial)", "Mayor a Menor Venta", "Menor a Mayor Venta", "Mayor Margen (%)"]
             )
             
         if orden_grafico == "Mayor a Menor Venta":
             ventas_mod = ventas_mod.sort_values('Venta_Total', ascending=False)
         elif orden_grafico == "Menor a Mayor Venta":
             ventas_mod = ventas_mod.sort_values('Venta_Total', ascending=True)
-        elif orden_grafico == "Mayor Participación (%)":
-            ventas_mod = ventas_mod.sort_values('Part_Total', ascending=False)
+        elif orden_grafico == "Mayor Margen (%)":
+            ventas_mod = ventas_mod.sort_values('Margen_Pct', ascending=False)
         else:
             ventas_mod = ventas_mod.sort_values('Modulo_Ord')
 
+        # ---------------------------------------------------------
+        # 🎨 REDISEÑO DEL GRÁFICO (DARK MODE BI)
+        # ---------------------------------------------------------
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         
+        # Barras de Venta (Azul Translúcido)
         fig.add_trace(
             go.Bar(
                 x=ventas_mod['Módulo'], 
                 y=ventas_mod['Venta_Total'],
-                name="Venta Total",
-                text=ventas_mod['Venta_Total'].apply(lambda x: f"S/ {x:,.2f}"),
-                textposition='outside',
-                marker_color="#3b82f6",
+                name="Ventas Totales (S/)",
+                text=ventas_mod['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
+                textposition='auto',
+                marker=dict(
+                    color='rgba(59, 130, 246, 0.7)',
+                    line=dict(color='#3b82f6', width=2)
+                ),
                 hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>Cant. SKUs: %{customdata}<extra></extra>",
                 customdata=ventas_mod['SKUs_Total']
             ),
             secondary_y=False
         )
 
+        # Línea de Margen % (Verde Neón)
         fig.add_trace(
             go.Scatter(
                 x=ventas_mod['Módulo'], 
-                y=ventas_mod['Part_Total'],
-                name="% Participación",
+                y=ventas_mod['Margen_Pct'],
+                name="Margen %",
                 mode="lines+markers+text",
-                text=ventas_mod['Part_Total'].apply(lambda x: f"{x*100:,.2f}%" if x < 1 else f"{x:,.2f}%"),
+                text=ventas_mod['Margen_Pct'].apply(lambda x: f"{x*100:,.1f}%"),
                 textposition='top center',
-                marker=dict(color="#e11d48", size=8),
-                line=dict(color="#e11d48", width=3),
-                hovertemplate="<b>%{x}</b><br>Participación: %{text}<extra></extra>"
+                textfont=dict(color='#10b981', size=13, weight='bold'),
+                marker=dict(
+                    color="#10b981", 
+                    size=10, 
+                    symbol='circle', 
+                    line=dict(color='#ffffff', width=2)
+                ),
+                line=dict(color="#10b981", width=4, shape='spline'),
+                hovertemplate="<b>%{x}</b><br>Margen: %{text}<extra></extra>"
             ),
             secondary_y=True
         )
 
+        # Diseño de Fondo y Ejes
         fig.update_layout(
-            title_text="Análisis de Ventas vs Participación",
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
             hovermode="x unified",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            margin=dict(t=60, b=20, l=20, r=20)
+            legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color='#cbd5e1')),
+            margin=dict(t=50, b=20, l=20, r=20),
+            xaxis=dict(showgrid=False, color='#cbd5e1', tickfont=dict(size=12, weight='bold')),
+            yaxis=dict(
+                title="Ventas (S/)", 
+                showgrid=True, 
+                gridcolor='rgba(255,255,255,0.1)', 
+                color='#cbd5e1', 
+                zeroline=False
+            ),
+            yaxis2=dict(
+                title="Margen (%)", 
+                showgrid=False, 
+                color='#10b981', 
+                zeroline=False
+            )
         )
-        fig.update_yaxes(title_text="Ventas (Monto)", secondary_y=False, showgrid=False)
-        fig.update_yaxes(title_text="% Participación", secondary_y=True, showgrid=False, showticklabels=False)
         
         st.plotly_chart(fig, use_container_width=True)
+        # ---------------------------------------------------------
         
         st.markdown("---")
         st.markdown("### 📋 Reporte Detallado y Exportación")
@@ -756,9 +827,7 @@ if df_raw is not None:
                 "Cobertura Alta (≥ 30)"
             ])
         
-        df_rep = df_chart.copy()
-        df_rep['Stock_Num'] = df_rep['Stock'].apply(safe_float)
-        df_rep['Cob_Num'] = df_rep['Cobertura'].apply(safe_float)
+        df_rep = df_base.copy()
         
         if filtro_reporte == "Bloqueados (Estado B)":
             df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
@@ -772,7 +841,7 @@ if df_raw is not None:
             df_rep = df_rep[df_rep['Cob_Num'] >= 30]
             
         col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
-        cols_to_show = ['Bandeja', 'N°', 'COD REAL', 'EAN', col_desc, 'Marca', 'Stock', 'Cobertura', 'Venta', 'TOPVENTAS']
+        cols_to_show = ['Bandeja', 'N°', 'COD REAL', 'EAN', col_desc, 'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen', 'TOPVENTAS']
         cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
         
         with col_btn:
@@ -785,7 +854,7 @@ if df_raw is not None:
             st.download_button(
                 label="📥 Descargar a Excel (.xlsx)",
                 data=buffer.getvalue(),
-                file_name="reporte_planograma.xlsx",
+                file_name="reporte_planograma_financiero.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
             
