@@ -4,6 +4,7 @@ import streamlit.components.v1 as components
 import io
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import plotly.express as px
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -194,7 +195,6 @@ def generar_html_pasillo_interactivo(df):
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
       <style>
         * {{ box-sizing: border-box; }}
-        /* Eliminamos el doble scroll haciendo el body exacto al tamaño de la ventana y bloqueando el desbordamiento externo */
         body, html {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 0; height: 100vh; overflow: hidden; }}
         
         .main-container {{ padding: 12px; height: 100%; display: flex; flex-direction: column; }}
@@ -225,15 +225,15 @@ def generar_html_pasillo_interactivo(df):
         .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
-        /* Contenedor del planograma: Usa TODO el espacio restante de la pantalla */
-        .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; flex-grow: 1; min-height: 0; }}
+        /* 🚨 CONTROL DE SCROLL Y ALTURA PARA EVITAR DOBLE BARRA 🚨 */
+        .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; flex-grow: 1; min-height: 0; overflow: hidden; }}
         .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
         .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
         
-        /* Aisle Container: Aquí se genera EL ÚNICO SCROLL interno (horizontal y vertical) */
+        /* Contenedor principal que maneja el scroll X y Y */
         .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow: auto; flex-grow: 1; align-items: flex-start; scroll-behavior: smooth; }}
         
-        /* La columna del cuerpo crece según el número de niveles automáticamente */
+        /* Cuerpo crece dinámicamente con los niveles */
         .bay-column {{ flex: 0 0 500px; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; height: max-content; }}
         .bay-column.hidden {{ display: none !important; }}
         
@@ -261,7 +261,6 @@ def generar_html_pasillo_interactivo(df):
         .sku-cap-val {{ font-size: 0.65rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; flex-shrink: 0; }}
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; }}
         
-        /* TARJETA MODAL CENTRADA Y FIJA EN PANTALLA */
         .modal-overlay {{ position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 99999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.9); border: 2px solid #3b82f6; }}
@@ -270,7 +269,7 @@ def generar_html_pasillo_interactivo(df):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* --- IMPRESIÓN A4 VERTICAL PANTALLA COMPLETA --- */
+        /* --- REGLAS DE IMPRESIÓN A4 VERTICAL PERFECTO --- */
         @media print {{
           @page {{ size: A4 portrait; margin: 5mm; }}
           body, html {{ background-color: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; height: 100% !important; overflow: hidden !important; }}
@@ -304,6 +303,21 @@ def generar_html_pasillo_interactivo(df):
           .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 9pt !important; }}
           .shelf-bottom-rail {{ display: none !important; }}
         }}
+
+        /* 📱 FIX RESPONSIVO PARA MÓVILES */
+        @media (max-width: 768px) {{
+            .kpi-card {{ flex: 1 1 30%; min-width: 30%; padding: 8px 4px; }}
+            .kpi-val {{ font-size: 1.2rem; }}
+            .kpi-title {{ font-size: 0.55rem; }}
+            .filter-panel, .top-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
+            .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
+            .legend-chips {{ justify-content: center; }}
+            .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
+            .aisle-wrapper {{ gap: 4px; height: calc(100vh - 200px); }}
+            /* El cuerpo debe verse bien en celular */
+            .bay-column {{ flex: 0 0 85vw !important; min-width: 300px; margin-right: 10px; }}
+            .sku-card {{ min-width: 80px; }}
+        }}
       </style>
     </head>
     <body>
@@ -327,7 +341,7 @@ def generar_html_pasillo_interactivo(df):
           </div>
         </div>
 
-        <div class="top-panel" style="background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; flex-shrink: 0;">
+        <div class="top-panel">
           <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 1.2rem;">🏆</span>
               <label style="color: #93c5fd; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; margin: 0;">Resaltar TOP Ventas:</label>
@@ -646,7 +660,6 @@ def generar_html_pasillo_interactivo(df):
                 const topStatus = card.getAttribute('data-top');
                 document.getElementById('m-top').textContent = topStatus === 'TOP' ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
-                // MAGIA: El modal siempre centrado sin importar el scroll
                 modal.classList.add('active');
             }});
         }});
@@ -716,12 +729,28 @@ df_jer_raw = None
 info_hora = None
 error_nube = None
 
-# --- HEADER CON BOTÓN DE SINCRONIZACIÓN EXPANDIDO ---
-col_head1, col_head2 = st.columns([10, 0.1])
-with col_head1:
-    if st.button("🔄 Sincronizar Base de Datos (Drive) ☁️", type="primary", use_container_width=True):
+# --- HEADER CON TÍTULO Y BOTÓN DE SINCRONIZACIÓN COMPACTO ---
+col_title, col_btn, col_dev = st.columns([5, 2, 3])
+
+with col_title:
+    st.markdown("<h1 style='margin: 0; padding: 0; font-size: 2.1rem; color: #fff;'>📦 Planograma 2.0</h1>", unsafe_allow_html=True)
+    
+with col_btn:
+    st.markdown("<div style='margin-top: 10px;'>", unsafe_allow_html=True)
+    if st.button("🔄 Actualizar Data", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with col_dev:
+    st.markdown(f"""
+        <div style="text-align: right; margin-top: 10px;">
+            <div style="font-size: 0.92rem; color: #cbd5e1;">Desarrollado por <b>Alfredo HM</b></div>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 3px;">Última actualización: {info_hora if info_hora else 'No disponible'}</div>
+        </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("<div style='border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 20px;'><span style='color: #93c5fd; font-size: 0.9rem;'>Análisis interactivo de pasillos y rentabilidad de tienda</span></div>", unsafe_allow_html=True)
 
 with st.spinner("Sincronizando base de datos central y jerarquías..."):
     df_nube, df_aux_nube, df_jer_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE, URL_JERARQUIA)
@@ -751,8 +780,6 @@ else:
             df_raw.columns = [str(c).strip() for c in df_raw.columns]
             if "Bandeja" in df_raw.columns and "EAN" in df_raw.columns:
                 df_raw = df_raw.dropna(subset=["Bandeja", "EAN"], how="all")
-                
-            info_hora = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p (Carga Local)")
         except Exception as e:
             st.error(f"Error al leer el archivo manual: {e}")
 
@@ -828,19 +855,7 @@ if df_raw is not None:
         
     df_base.drop(columns=['COD_REAL_Str', 'Grupo_A_Str', 'CodGA_Str'], inplace=True, errors='ignore')
 
-    st.markdown(f"""
-    <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1e3a8a; padding-bottom: 8px; margin-bottom: 16px; margin-top: 5px;">
-        <div>
-            <h1 style="margin: 0; font-size: 2.1rem; color: #fff;">📦 Planograma 2.0</h1>
-            <span style="color: #93c5fd; font-size: 0.88rem;">Análisis interactivo de pasillos y rentabilidad de tienda</span>
-        </div>
-        <div style="text-align: right;">
-            <div style="font-size: 0.92rem; color: #cbd5e1;">Desarrollado por <b>Alfredo HM</b></div>
-            <div style="font-size: 0.75rem; color: #64748b; margin-top: 3px;">Última actualización: {info_hora}</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
+    # Tratamiento numérico de variables
     df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(safe_float)
     df_base['Part_Num'] = df_base['% Part'].apply(safe_float)
@@ -857,10 +872,9 @@ if df_raw is not None:
     tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard Analítico Financiero"])
     
     with tab1:
-        # Se fija el alto del iframe, y el CSS interno (ahora con body overflow: hidden) 
-        # asegura que la única barra de scroll que verás es la de la tarjeta de estantes.
+        # Altura fija de 800px. El scroll Y se maneja nativamente desde el HTML.
         html_pasillo = generar_html_pasillo_interactivo(df_base)
-        components.html(html_pasillo, height=850, scrolling=False)
+        components.html(html_pasillo, height=800, scrolling=False)
             
     with tab2:
         st.markdown("### 💼 Resumen Ejecutivo")
@@ -988,7 +1002,13 @@ if df_raw is not None:
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor='rgba(255,255,255,0.1)', color='#cbd5e1', zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color='#10b981', zeroline=False)
             )
-            st.plotly_chart(fig, use_container_width=True)
+            
+            # Bloquear ejes para que no se pueda hacer zoom ni desplazarse accidentalmente (UX limpia)
+            fig.update_xaxes(fixedrange=True)
+            fig.update_yaxes(fixedrange=True)
+            
+            # Ocultar la barra de herramientas de Plotly
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
             
         with col_graf_der:
             st.markdown("##### 🍩 Distribución de Ventas")
@@ -1024,7 +1044,7 @@ if df_raw is not None:
             )
             fig_pie.update_traces(hovertemplate="<b>%{label}</b><br>Ventas: S/ %{value:,.2f}<br>Participación: %{percent}<extra></extra>")
             
-            st.plotly_chart(fig_pie, use_container_width=True)
+            st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
 
         # ==========================================
         # ⚖️ ANÁLISIS FAIR SHARE (ESPACIO VS RENDIMIENTO)
@@ -1075,11 +1095,8 @@ if df_raw is not None:
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Espacio'],
                 name=f"% Espacio ({'Caras' if metrica_espacio == 'Caras (Facings)' else 'Unid. Bandeja'})",
-                text=df_fs['Pct_Espacio'].apply(lambda x: f"{x*100:.1f}%"),
-                textposition='auto',
-                textfont=dict(color='#ffffff', size=11, weight='bold'),
                 marker=dict(color='rgba(59, 130, 246, 0.85)', line=dict(color='#3b82f6', width=2)),
-                hovertemplate="<b>%{x}</b><br>% Espacio: %{text}<br>Total Físico: %{customdata:,.0f}<extra></extra>",
+                hovertemplate="<b>%{x}</b><br>% Espacio: %{y:.1%}<br>Total Físico: %{customdata:,.0f}<extra></extra>",
                 customdata=df_fs['Espacio_Total']
             ))
             
@@ -1087,11 +1104,8 @@ if df_raw is not None:
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Ventas'],
                 name="% Ventas (Monto S/)",
-                text=df_fs['Pct_Ventas'].apply(lambda x: f"{x*100:.1f}%"),
-                textposition='auto',
-                textfont=dict(color='#ffffff', size=11, weight='bold'),
                 marker=dict(color='rgba(16, 185, 129, 0.85)', line=dict(color='#10b981', width=2)),
-                hovertemplate="<b>%{x}</b><br>% Ventas: %{text}<br>Ventas S/: %{customdata:,.2f}<extra></extra>",
+                hovertemplate="<b>%{x}</b><br>% Ventas: %{y:.1%}<br>Ventas S/: %{customdata:,.2f}<extra></extra>",
                 customdata=df_fs['Ventas_Total']
             ))
 
@@ -1099,11 +1113,8 @@ if df_raw is not None:
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Margen'],
                 name="% Margen (Ganancia S/)",
-                text=df_fs['Pct_Margen'].apply(lambda x: f"{x*100:.1f}%"),
-                textposition='auto',
-                textfont=dict(color='#ffffff', size=11, weight='bold'),
                 marker=dict(color='rgba(245, 158, 11, 0.85)', line=dict(color='#f59e0b', width=2)),
-                hovertemplate="<b>%{x}</b><br>% Margen: %{text}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
+                hovertemplate="<b>%{x}</b><br>% Margen: %{y:.1%}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
                 customdata=df_fs['Margen_Total']
             ))
             
@@ -1118,7 +1129,9 @@ if df_raw is not None:
                 yaxis=dict(title="Participación Relativa (%)", showgrid=True, gridcolor='rgba(255,255,255,0.08)', color='#cbd5e1', tickformat=".0%")
             )
             
-            st.plotly_chart(fig_fs, use_container_width=True)
+            fig_fs.update_xaxes(fixedrange=True)
+            fig_fs.update_yaxes(fixedrange=True)
+            st.plotly_chart(fig_fs, use_container_width=True, config={'displayModeBar': False})
             
             col_diag1, col_diag2 = st.columns(2)
             subdimensionados = df_fs[df_fs['Brecha_Share'] > 0.03]
@@ -1127,20 +1140,20 @@ if df_raw is not None:
             with col_diag1:
                 if not subdimensionados.empty:
                     top_sub = subdimensionados.iloc[0]
-                    st.success(f"🚀 **Oportunidad de Crecimiento (Subdimensionado):** `{top_sub[dim_fs]}` genera el **{top_sub['Pct_Ventas']*100:.1f}%** de las ventas pero solo ocupa el **{top_sub['Pct_Espacio']*100:.1f}%** del espacio físico. Conviene evaluar otorgarle más espacio.")
+                    st.success(f"🚀 **Oportunidad de Crecimiento:** `{top_sub[dim_fs]}` genera el **{top_sub['Pct_Ventas']*100:.1f}%** de las ventas pero solo ocupa el **{top_sub['Pct_Espacio']*100:.1f}%** del espacio físico.")
                 else:
                     st.info("✅ La asignación de espacio físico está equilibrada frente a las ventas.")
                     
             with col_diag2:
                 if not sobredimensionados.empty:
                     top_sobre = sobredimensionados.sort_values(by='Brecha_Share', ascending=True).iloc[0]
-                    st.warning(f"⚠️ **Alerta de Sobreasignación:** `{top_sobre[dim_fs]}` consume el **{top_sobre['Pct_Espacio']*100:.1f}%** del espacio pero solo aporta el **{top_sobre['Pct_Ventas']*100:.1f}%** de las ventas. Candidato a reducción de espacio.")
+                    st.warning(f"⚠️ **Alerta de Sobreasignación:** `{top_sobre[dim_fs]}` consume el **{top_sobre['Pct_Espacio']*100:.1f}%** del espacio pero solo aporta el **{top_sobre['Pct_Ventas']*100:.1f}%** de las ventas.")
                 else:
                     st.info("✅ No se detectan sobreasignaciones críticas de espacio físico.")
             
         st.markdown("---")
         
-        col_filt, _ = st.columns([2, 1])
+        col_filt, col_dl = st.columns([4, 1])
         with col_filt:
             st.markdown("### 📋 Reporte Detallado (SKUs Únicos)")
             filtro_reporte = st.selectbox("Filtrar Tabla Resumen:", [
@@ -1148,11 +1161,8 @@ if df_raw is not None:
                 "Bloqueados (Estado B)",
                 "Sin Stock (Stock = 0)",
                 "Stock Bajo (Stock 1 a 5)",
-                "Top Ventas (TOP)",
                 "Cobertura Alta (≥ 30)"
             ], label_visibility="collapsed")
-        
-        st.markdown("<p style='font-size: 0.85rem; color: #94a3b8;'>💡 Usa el ícono nativo de descarga (⬇) que aparece arriba a la derecha de esta tabla al pasar el ratón por encima.</p>", unsafe_allow_html=True)
         
         df_agrupado = df_base.copy()
         def formatear_ubicacion(val):
@@ -1176,8 +1186,6 @@ if df_raw is not None:
             df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
         elif filtro_reporte == "Stock Bajo (Stock 1 a 5)":
             df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
-        elif filtro_reporte == "Top Ventas (TOP)":
-            df_rep = df_rep[df_rep['TOPVENTAS'].astype(str).str.strip().str.upper() == 'TOP']
         elif filtro_reporte == "Cobertura Alta (≥ 30)":
             df_rep = df_rep[df_rep['Cob_Num'] >= 30]
             
@@ -1188,5 +1196,17 @@ if df_raw is not None:
             'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen'
         ]
         cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
+        
+        with col_dl:
+            buffer = io.BytesIO()
+            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                df_rep[cols_to_show].to_excel(writer, index=False, sheet_name='Reporte_SKUs')
+            st.download_button(
+                label="📥 Descargar a Excel (.xlsx)",
+                data=buffer.getvalue(),
+                file_name="reporte_planograma_skus_unicos.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True
+            )
         
         st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True)
