@@ -4,7 +4,6 @@ import streamlit.components.v1 as components
 import io
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import plotly.express as px
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -19,7 +18,7 @@ st.markdown("""
         .block-container {
             padding-left: 1.5rem !important;
             padding-right: 1.5rem !important;
-            padding-top: 0.5rem !important;
+            padding-top: 1rem !important;
             max-width: 100% !important;
         }
         
@@ -195,9 +194,10 @@ def generar_html_pasillo_interactivo(df):
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
       <style>
         * {{ box-sizing: border-box; }}
+        /* HTML BASE CERO SCROLL EXTERNO */
         body, html {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 0; height: 100vh; overflow: hidden; }}
         
-        .main-container {{ padding: 12px; height: 100%; display: flex; flex-direction: column; }}
+        .main-container {{ padding: 12px; height: 100%; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }}
 
         ::-webkit-scrollbar {{ height: 10px; width: 10px; }}
         ::-webkit-scrollbar-track {{ background: #0f172a; border-radius: 4px; }}
@@ -225,22 +225,22 @@ def generar_html_pasillo_interactivo(df):
         .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
-        /* 🚨 CONTROL DE SCROLL Y ALTURA PARA EVITAR DOBLE BARRA 🚨 */
-        .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; flex-grow: 1; min-height: 0; overflow: hidden; }}
+        /* Contenedor central (Se expande hacia abajo según necesidad) */
+        .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; flex-grow: 1; min-height: 500px; }}
         .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
         .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
         
-        /* Contenedor principal que maneja el scroll X y Y */
-        .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow: auto; flex-grow: 1; align-items: flex-start; scroll-behavior: smooth; }}
+        /* Contenedor de cuerpos (hace scroll horizontal solamente) */
+        .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; align-items: stretch; }}
         
-        /* Cuerpo crece dinámicamente con los niveles */
-        .bay-column {{ flex: 0 0 500px; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; height: max-content; }}
+        .bay-column {{ flex: 0 0 500px; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; height: 100%; }}
         .bay-column.hidden {{ display: none !important; }}
         
-        .bay-title {{ background: #1e3a8a; padding: 6px 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; }}
+        .bay-title {{ background: #1e3a8a; padding: 6px 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
         .bay-subcat {{ font-size: 0.68rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
         
-        .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; overflow: visible; }}
+        /* SCROLL VERTICAL ÚNICO DENTRO DEL MUEBLE */
+        .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }}
         .shelf-row {{ display: flex; flex-direction: column; background: #162238; border-radius: 4px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
@@ -269,54 +269,55 @@ def generar_html_pasillo_interactivo(df):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* --- REGLAS DE IMPRESIÓN A4 VERTICAL PERFECTO --- */
+        /* --- ADAPTACIÓN RESPONSIVA CELULARES --- */
+        @media (max-width: 768px) {{
+            .kpi-container {{ flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-bottom: 8px; }}
+            .kpi-card {{ flex: 0 0 140px; }}
+            .legend-chips {{ flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; }}
+            .legend-chip {{ flex: 0 0 auto; }}
+            
+            .filter-panel, .top-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
+            .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
+            .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
+            .aisle-wrapper {{ height: calc(100vh - 120px); min-height: 400px; }}
+            
+            /* Tarjeta de cuerpo completa en vista móvil (Swipe) */
+            .bay-column {{ flex: 0 0 88vw !important; min-width: 300px; margin-right: 5px; height: 100%; }}
+            .sku-card {{ min-width: 80px; }}
+        }}
+
+        /* --- IMPRESIÓN A4 VERTICAL PERFECTO PANTALLA COMPLETA --- */
         @media print {{
           @page {{ size: A4 portrait; margin: 5mm; }}
-          body, html {{ background-color: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; height: 100% !important; overflow: hidden !important; }}
+          body, html, .main-container {{ background-color: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; height: 100% !important; overflow: hidden !important; }}
           
-          .main-container {{ padding: 0 !important; }}
           .filter-panel, .legend-panel, .modal-overlay, .nav-btn, .kpi-container, .top-panel {{ display: none !important; }}
           
           .aisle-wrapper {{ display: block !important; width: 100% !important; height: 100% !important; border: none !important; }}
           .aisle-container {{ display: block !important; width: 100% !important; height: 100% !important; background: transparent !important; border: none !important; padding: 0 !important; overflow: visible !important; }}
           
-          /* Forzar al cuerpo a estirarse exactamente al A4 */
-          .bay-column {{ background: #fff !important; border: 3px solid #000 !important; width: 195mm !important; height: 280mm !important; max-width: 100% !important; margin: 0 auto !important; display: flex !important; flex-direction: column !important; }}
+          /* Ajuste Cuerpo A4 Completo */
+          .bay-column {{ background: #fff !important; border: 3px solid #000 !important; width: 100% !important; height: 98vh !important; max-width: 100% !important; page-break-inside: avoid; margin: 0 !important; display: flex !important; flex-direction: column !important; }}
           .bay-column.hidden {{ display: none !important; }}
-          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding: 8px !important; font-size: 18pt !important; display: block; text-align: center; }}
-          .bay-subcat {{ color: #334155 !important; font-size: 12pt !important; display: block; }}
+          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding: 10px !important; font-size: 20pt !important; display: block; text-align: center; }}
+          .bay-subcat {{ color: #334155 !important; font-size: 14pt !important; display: block; }}
           
-          .bay-shelves {{ padding: 10px !important; gap: 15px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; justify-content: space-evenly !important; overflow: visible !important; }}
-          .shelf-row {{ background: #fff !important; border: 2px solid #000 !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; }}
-          .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 5px solid #000 !important; font-size: 12pt !important; padding: 4px 8px !important; }}
-          .shelf-caras-count {{ background: #e2e8f0 !important; color: #000 !important; font-size: 10pt !important; }}
+          .bay-shelves {{ padding: 10px !important; gap: 15px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; justify-content: space-evenly !important; overflow: visible !important; height: 100% !important; }}
+          .shelf-row {{ background: #fff !important; border: 2px solid #000 !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; height: 100% !important; }}
+          .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 5px solid #000 !important; font-size: 14pt !important; padding: 4px 8px !important; font-weight: 900 !important; }}
+          .shelf-caras-count {{ background: #e2e8f0 !important; color: #000 !important; font-size: 12pt !important; }}
           
-          .shelf-products {{ flex-grow: 1 !important; padding: 6px !important; gap: 4px !important; display: flex !important; align-items: stretch !important; overflow: visible !important; }}
+          .shelf-products {{ flex-grow: 1 !important; padding: 6px !important; gap: 4px !important; display: flex !important; align-items: stretch !important; overflow: visible !important; height: 100% !important; }}
           .sku-card {{ background: #fff !important; border: 2px solid #000 !important; color: #000 !important; padding: 4px !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; flex-basis: 0 !important; flex-grow: 1 !important; min-width: unset !important; }}
           .sku-card[data-top="TOP"] {{ border: 4px double #000 !important; }}
           
-          .sku-pos, .sku-caras-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-size: 9pt !important; width: auto !important; height: auto !important; padding: 2px 4px !important; }}
+          .sku-pos, .sku-caras-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-size: 11pt !important; width: auto !important; height: auto !important; padding: 2px 4px !important; font-weight: bold !important; }}
           .sku-details {{ margin-top: 15px !important; }}
-          .sku-brand-text {{ font-size: 10pt !important; color: #000 !important; display: block; font-weight: bold !important; }}
-          .sku-name-text {{ font-size: 11pt !important; color: #000 !important; -webkit-line-clamp: 4 !important; line-height: 1.2 !important; font-weight: bold !important; }}
+          .sku-brand-text {{ font-size: 12pt !important; color: #000 !important; display: block; font-weight: 900 !important; text-transform: uppercase !important; }}
+          .sku-name-text {{ font-size: 13pt !important; color: #000 !important; -webkit-line-clamp: 4 !important; line-height: 1.2 !important; font-weight: 800 !important; }}
           .sku-bottom-bar {{ border-top: 2px dashed #000 !important; margin-top: auto !important; padding-top: 4px !important; }}
-          .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 9pt !important; }}
+          .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 11pt !important; font-weight: bold !important; }}
           .shelf-bottom-rail {{ display: none !important; }}
-        }}
-
-        /* 📱 FIX RESPONSIVO PARA MÓVILES */
-        @media (max-width: 768px) {{
-            .kpi-card {{ flex: 1 1 30%; min-width: 30%; padding: 8px 4px; }}
-            .kpi-val {{ font-size: 1.2rem; }}
-            .kpi-title {{ font-size: 0.55rem; }}
-            .filter-panel, .top-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
-            .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
-            .legend-chips {{ justify-content: center; }}
-            .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
-            .aisle-wrapper {{ gap: 4px; height: calc(100vh - 200px); }}
-            /* El cuerpo debe verse bien en celular */
-            .bay-column {{ flex: 0 0 85vw !important; min-width: 300px; margin-right: 10px; }}
-            .sku-card {{ min-width: 80px; }}
         }}
       </style>
     </head>
@@ -377,7 +378,7 @@ def generar_html_pasillo_interactivo(df):
         </div>
 
         <div class="legend-panel">
-          <span class="legend-title">📍 Leyenda Interactiva (Filtra cuerpos y resalta productos)</span>
+          <span class="legend-title">📍 Leyenda Interactiva</span>
           <div class="legend-chips">
             <button class="legend-chip" data-filter="bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
             <button class="legend-chip" data-filter="sin-stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
@@ -729,28 +730,28 @@ df_jer_raw = None
 info_hora = None
 error_nube = None
 
-# --- HEADER CON TÍTULO Y BOTÓN DE SINCRONIZACIÓN COMPACTO ---
-col_title, col_btn, col_dev = st.columns([5, 2, 3])
+# --- HEADER CON TÍTULO Y BOTÓN COMPACTO AL LADO ---
+col_head1, col_head2, col_head3 = st.columns([5, 2.5, 4.5])
 
-with col_title:
+with col_head1:
     st.markdown("<h1 style='margin: 0; padding: 0; font-size: 2.1rem; color: #fff;'>📦 Planograma 2.0</h1>", unsafe_allow_html=True)
     
-with col_btn:
+with col_head2:
     st.markdown("<div style='margin-top: 10px;'>", unsafe_allow_html=True)
     if st.button("🔄 Actualizar Data", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-with col_dev:
+with col_head3:
     st.markdown(f"""
-        <div style="text-align: right; margin-top: 10px;">
+        <div style="text-align: right; margin-top: 5px;">
             <div style="font-size: 0.92rem; color: #cbd5e1;">Desarrollado por <b>Alfredo HM</b></div>
-            <div style="font-size: 0.75rem; color: #64748b; margin-top: 3px;">Última actualización: {info_hora if info_hora else 'No disponible'}</div>
+            <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">Última actualización: {info_hora if info_hora else 'No disponible'}</div>
         </div>
     """, unsafe_allow_html=True)
 
-st.markdown("<div style='border-bottom: 2px solid #1e3a8a; padding-bottom: 10px; margin-bottom: 20px;'><span style='color: #93c5fd; font-size: 0.9rem;'>Análisis interactivo de pasillos y rentabilidad de tienda</span></div>", unsafe_allow_html=True)
+st.markdown("<div style='border-bottom: 2px solid #1e3a8a; padding-bottom: 5px; margin-bottom: 15px;'><span style='color: #93c5fd; font-size: 0.9rem;'>Análisis interactivo de pasillos y rentabilidad de tienda</span></div>", unsafe_allow_html=True)
 
 with st.spinner("Sincronizando base de datos central y jerarquías..."):
     df_nube, df_aux_nube, df_jer_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE, URL_JERARQUIA)
@@ -854,8 +855,7 @@ if df_raw is not None:
         for col in columnas_jerarquia: df_base[col] = 'S/D'
         
     df_base.drop(columns=['COD_REAL_Str', 'Grupo_A_Str', 'CodGA_Str'], inplace=True, errors='ignore')
-
-    # Tratamiento numérico de variables
+    
     df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(safe_float)
     df_base['Part_Num'] = df_base['% Part'].apply(safe_float)
@@ -872,11 +872,16 @@ if df_raw is not None:
     tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard Analítico Financiero"])
     
     with tab1:
-        # Altura fija de 800px. El scroll Y se maneja nativamente desde el HTML.
         html_pasillo = generar_html_pasillo_interactivo(df_base)
+        # Altura fija suficiente, y el CSS interno controla que el SCROLL sea solo el de la caja de cuerpos
         components.html(html_pasillo, height=800, scrolling=False)
             
     with tab2:
+        top_n_fijo = 30
+        df_top_calc_dash = df_unicos.sort_values(by='Venta_Num', ascending=False)
+        skus_top_dash = df_top_calc_dash.head(top_n_fijo)['COD REAL'].astype(str).str.strip().tolist()
+        df_unicos['TOPVENTAS'] = df_unicos['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top_dash else "NO")
+
         st.markdown("### 💼 Resumen Ejecutivo")
         
         ventas_globales = df_unicos['Venta_Num'].sum()
@@ -1003,11 +1008,8 @@ if df_raw is not None:
                 yaxis2=dict(title="Margen (%)", showgrid=False, color='#10b981', zeroline=False)
             )
             
-            # Bloquear ejes para que no se pueda hacer zoom ni desplazarse accidentalmente (UX limpia)
             fig.update_xaxes(fixedrange=True)
             fig.update_yaxes(fixedrange=True)
-            
-            # Ocultar la barra de herramientas de Plotly
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
             
         with col_graf_der:
@@ -1153,7 +1155,7 @@ if df_raw is not None:
             
         st.markdown("---")
         
-        col_filt, col_dl = st.columns([4, 1])
+        col_filt, col_dl = st.columns([4, 1.5])
         with col_filt:
             st.markdown("### 📋 Reporte Detallado (SKUs Únicos)")
             filtro_reporte = st.selectbox("Filtrar Tabla Resumen:", [
@@ -1161,44 +1163,47 @@ if df_raw is not None:
                 "Bloqueados (Estado B)",
                 "Sin Stock (Stock = 0)",
                 "Stock Bajo (Stock 1 a 5)",
+                "Top Ventas (TOP)",
                 "Cobertura Alta (≥ 30)"
             ], label_visibility="collapsed")
         
-        df_agrupado = df_base.copy()
-        def formatear_ubicacion(val):
-            val_str = str(val).strip()
-            if '.' in val_str:
-                partes = val_str.split('.')
-                return f"C{partes[0]} (N{partes[1]})"
-            return f"Cuerpo {val_str}"
-
-        df_agrupado['Ubic_Txt'] = df_agrupado['Bandeja'].apply(formatear_ubicacion)
-        ubicaciones_map = df_agrupado.groupby('COD REAL')['Ubic_Txt'].apply(
-            lambda x: ", ".join(sorted(list(set(x.dropna()))))
-        ).to_dict()
-
-        df_rep = df_unicos.copy()
-        df_rep['Ubicación(es)'] = df_rep['COD REAL'].map(ubicaciones_map)
-        
-        if filtro_reporte == "Bloqueados (Estado B)":
-            df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
-        elif filtro_reporte == "Sin Stock (Stock = 0)":
-            df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
-        elif filtro_reporte == "Stock Bajo (Stock 1 a 5)":
-            df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
-        elif filtro_reporte == "Cobertura Alta (≥ 30)":
-            df_rep = df_rep[df_rep['Cob_Num'] >= 30]
-            
-        col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
-        cols_to_show = [
-            'COD REAL', 'EAN', col_desc, 'Ubicación(es)', 
-            'Departamento', 'Sección', 'Categoría', 'Grupo de artículo', 
-            'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen'
-        ]
-        cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
-        
         with col_dl:
+            st.markdown("<div style='margin-top: 15px;'>", unsafe_allow_html=True)
             buffer = io.BytesIO()
+            df_agrupado = df_base.copy()
+            def formatear_ubicacion(val):
+                val_str = str(val).strip()
+                if '.' in val_str:
+                    partes = val_str.split('.')
+                    return f"C{partes[0]} (N{partes[1]})"
+                return f"Cuerpo {val_str}"
+            df_agrupado['Ubic_Txt'] = df_agrupado['Bandeja'].apply(formatear_ubicacion)
+            ubicaciones_map = df_agrupado.groupby('COD REAL')['Ubic_Txt'].apply(
+                lambda x: ", ".join(sorted(list(set(x.dropna()))))
+            ).to_dict()
+
+            df_rep = df_unicos.copy()
+            df_rep['Ubicación(es)'] = df_rep['COD REAL'].map(ubicaciones_map)
+            
+            if filtro_reporte == "Bloqueados (Estado B)":
+                df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
+            elif filtro_reporte == "Sin Stock (Stock = 0)":
+                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
+            elif filtro_reporte == "Stock Bajo (Stock 1 a 5)":
+                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
+            elif filtro_reporte == "Top Ventas (TOP)":
+                df_rep = df_rep[df_rep['TOPVENTAS'].astype(str).str.strip().str.upper() == 'TOP']
+            elif filtro_reporte == "Cobertura Alta (≥ 30)":
+                df_rep = df_rep[df_rep['Cob_Num'] >= 30]
+                
+            col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
+            cols_to_show = [
+                'COD REAL', 'EAN', col_desc, 'Ubicación(es)', 
+                'Departamento', 'Sección', 'Categoría', 'Grupo de artículo', 
+                'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen'
+            ]
+            cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
+
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                 df_rep[cols_to_show].to_excel(writer, index=False, sheet_name='Reporte_SKUs')
             st.download_button(
@@ -1208,5 +1213,6 @@ if df_raw is not None:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
-        
+            st.markdown("</div>", unsafe_allow_html=True)
+            
         st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True)
