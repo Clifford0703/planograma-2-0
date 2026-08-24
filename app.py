@@ -10,7 +10,21 @@ st.set_page_config(
     page_title="Planograma 2.0",
     page_icon="📦",
     layout="wide",
+    initial_sidebar_state="collapsed"
 )
+
+# --- FORZAR ANCHO MÁXIMO (CERO MÁRGENES) ---
+st.markdown("""
+    <style>
+        /* Elimina el padding lateral predeterminado de Streamlit */
+        .block-container {
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            padding-top: 2rem !important;
+            max-width: 100% !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 st.title("📦 Planograma 2.0")
 st.markdown("Carga tu base de datos en Excel (hoja MATRIZ) para analizar y visualizar el pasillo.")
@@ -159,17 +173,15 @@ def generar_html_pasillo_interactivo(df):
         * {{ box-sizing: border-box; }}
         body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 12px; touch-action: pan-x pan-y pinch-zoom; }}
         
-        /* BARRAS DE SCROLL DELGADAS Y ELEGANTES */
         ::-webkit-scrollbar {{ height: 8px; width: 8px; }}
         ::-webkit-scrollbar-track {{ background: #0f172a; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb:hover {{ background: #2563eb; }}
 
         .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }}
-        .filter-group {{ display: flex; flex-direction: column; gap: 4px; }}
+        .filter-group {{ display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }}
         .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
-        .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 6px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; outline: none; min-width: 140px; }}
-        .filter-input {{ min-width: 200px; }}
+        .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 6px 10px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; outline: none; width: 100%; min-width: 140px; }}
         .filter-select option {{ background: #ffffff; color: #0f172a; }}
         .filter-select option:disabled {{ color: #94a3b8; font-style: italic; }}
         .btn-group {{ display: flex; gap: 8px; margin-left: auto; }}
@@ -210,7 +222,6 @@ def generar_html_pasillo_interactivo(df):
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         .shelf-caras-count {{ background: rgba(0, 0, 0, 0.4); padding: 1px 6px; border-radius: 3px; color: #93c5fd; font-size: 0.65rem; }}
         
-        /* Habilitar scroll delgado en bandejas */
         .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px; min-height: 125px; overflow-x: auto; padding-bottom: 8px; }}
         
         .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 110px; position: relative; transition: all 0.2s; cursor: pointer; }}
@@ -237,8 +248,8 @@ def generar_html_pasillo_interactivo(df):
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
         @media (max-width: 768px) {{
-            .filter-panel {{ flex-direction: column; align-items: stretch; }}
-            .btn-group {{ justify-content: space-between; width: 100%; margin-top: 8px; }}
+            .filter-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
+            .btn-group {{ justify-content: space-between; width: 100%; margin-top: 4px; }}
             .bay-column {{ flex: 0 0 85vw; }}
             .nav-btn {{ width: 35px; font-size: 1.2rem; }}
             .sku-card {{ min-width: 100px; }}
@@ -306,7 +317,7 @@ def generar_html_pasillo_interactivo(df):
         
         <div class="btn-group">
           <button id="resetBtn" class="filter-btn-reset">Restablecer</button>
-          <button type="button" class="filter-btn-print" onclick="window.print()">🖨️ Imprimir B/N</button>
+          <button type="button" class="filter-btn-print" onclick="window.print()">🖨️ Imprimir</button>
         </div>
       </div>
 
@@ -338,7 +349,7 @@ def generar_html_pasillo_interactivo(df):
       </div>
 
       <div class="legend-panel">
-        <span class="legend-title">📍 Leyenda Interactiva (Resalta productos sin desarmar el mueble)</span>
+        <span class="legend-title">📍 Leyenda Interactiva (Filtra módulos y resalta productos)</span>
         <div class="legend-chips">
           <button class="legend-chip" data-filter="bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
           <button class="legend-chip" data-filter="sin-stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
@@ -382,7 +393,6 @@ def generar_html_pasillo_interactivo(df):
 
           let cTot=0, cBloq=0, cSin=0, cBajo=0, cOk=0, cCob=0, cTop=0;
 
-          // 1. EVALUAR TARJETAS Y APLICAR ESTILOS
           document.querySelectorAll('.sku-card').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
@@ -422,6 +432,7 @@ def generar_html_pasillo_interactivo(df):
                  else passesLegend = (cat === currentLegendFilter);
              }}
 
+             // Si pasa el filtro, evaluamos leyenda
              if (matchBrand && matchSearch) {{
                  if (currentLegendFilter) {{
                      if (passesLegend) {{
@@ -449,7 +460,6 @@ def generar_html_pasillo_interactivo(df):
           document.getElementById('t-cob').textContent = cCob;
           document.getElementById('t-top').textContent = cTop;
 
-          // 2. RECONSTRUIR CASCADAS
           if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
           if (selectedBay !== 'ALL' && !availableBays.has(selectedBay)) selectedBay = 'ALL';
           if (selectedLevel !== 'ALL' && !availableLevels.has(selectedLevel)) selectedLevel = 'ALL';
@@ -463,12 +473,12 @@ def generar_html_pasillo_interactivo(df):
           levelSelect.innerHTML = '';
           allLevels.forEach(opt => {{ if(opt.val === 'ALL' || availableLevels.has(opt.val)) levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel)); }});
 
-          // 3. OCULTAR MÓDULOS (Filtra Cuerpos Completos)
+          // OCULTAMIENTO INTELIGENTE DE MÓDULOS 
           document.querySelectorAll('.bay-column').forEach(bay => {{
             const bayNum = bay.getAttribute('data-module');
             const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
             
-            // Un módulo es visible si pasa el filtro principal y tiene al menos una tarjeta resaltada (o no atenuada)
+            // Un módulo es visible si tiene al menos una tarjeta resaltada o NO atenuada.
             const hasMatch = Array.from(bay.querySelectorAll('.sku-card')).some(card => {{
                 if (currentLegendFilter) return card.classList.contains('highlighted');
                 return !card.classList.contains('dimmed');
@@ -477,7 +487,7 @@ def generar_html_pasillo_interactivo(df):
             bay.classList.toggle('hidden', !(passesBayFilter && hasMatch));
           }});
 
-          // 4. BANDEJAS (Mantiene la estructura del cuerpo intacta, no oculta bandejas por legenda)
+          // Restaurar todas las bandejas del módulo visible para no "desarmar" el mueble
           document.querySelectorAll('.shelf-row').forEach(shelf => {{
             const shelfLevel = shelf.getAttribute('data-level');
             const passesLevelFilter = (selectedLevel === 'ALL' || selectedLevel === shelfLevel);
@@ -587,12 +597,23 @@ if archivo_excel is not None:
 
         st.success(f"✅ Archivo cargado correctamente. Se procesaron {len(df)} SKUs.")
         
-        # --- SISTEMA DE PESTAÑAS ---
         tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard y Reporte Excel"])
         
         with tab1:
+            # BOTÓN EMULADOR DE CELULAR
+            st.markdown("##### Control de Vista")
+            mobile_preview = st.toggle("📱 Simular Vista Móvil (Celular)")
+            
             html_pasillo = generar_html_pasillo_interactivo(df)
-            components.html(html_pasillo, height=1500, scrolling=True)
+            
+            if mobile_preview:
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col2:
+                    st.markdown("<div style='border: 14px solid #1e293b; border-radius: 40px; padding: 5px; background: #000; box-shadow: 0 20px 40px rgba(0,0,0,0.5);'>", unsafe_allow_html=True)
+                    components.html(html_pasillo, height=800, scrolling=True)
+                    st.markdown("</div>", unsafe_allow_html=True)
+            else:
+                components.html(html_pasillo, height=1300, scrolling=True)
             
         with tab2:
             st.markdown("### 📈 Desempeño por Módulo (Cuerpo)")
@@ -627,7 +648,6 @@ if archivo_excel is not None:
             else:
                 ventas_mod = ventas_mod.sort_values('Modulo_Ord')
 
-            # --- GRÁFICO PLOTLY AVANZADO ---
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             
             fig.add_trace(
