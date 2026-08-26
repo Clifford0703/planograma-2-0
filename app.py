@@ -324,70 +324,99 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
         .filter-btn-fullscreen {{ background: #3b82f6; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
         
+        /* LEYENDA */
         .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }}
         .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-right: 8px; }}
         .legend-chips {{ display: flex; flex-wrap: wrap; gap: 8px; }}
         .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
-        /* CONTENEDOR TÁCTIL PRINCIPAL */
+        /* CONTENEDOR PRINCIPAL DEL PLANOGRAMA */
         .aisle-wrapper {{ 
-          display: block; 
+          display: flex;
+          flex-direction: column;
           width: 100%; 
           position: relative; 
           flex-grow: 1; 
           height: auto;
           min-height: 480px;
-          overflow: visible;
           background: #0b1324;
           border-radius: 8px;
           border: 1.5px solid #1e293b;
           touch-action: pan-y;
           padding: 0;
+          overflow: hidden;
+        }}
+
+        /* LEYENDA FIJA SUPERIOR EXCLUSIVA EN PANTALLA COMPLETA */
+        .fullscreen-legend-bar {{
+          display: none;
+          position: sticky;
+          top: 0;
+          left: 0;
+          right: 0;
+          background: rgba(15, 23, 42, 0.96);
+          border-bottom: 2px solid #3b82f6;
+          padding: 6px 12px;
+          z-index: 1000;
+          backdrop-filter: blur(6px);
+          align-items: center;
+          gap: 8px;
+          overflow-x: auto;
+          white-space: nowrap;
         }}
         
-        /* MODO PANTALLA COMPLETA */
+        /* ESTILOS ACTIVOS EN PANTALLA COMPLETA */
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
           background: #070d19 !important;
-          padding: 20px !important;
           width: 100vw !important;
           height: 100vh !important;
           overflow-y: auto !important;
+          padding: 0 !important;
+          border: none !important;
+        }}
+        .aisle-wrapper:fullscreen .fullscreen-legend-bar, 
+        .aisle-wrapper:-webkit-full-screen .fullscreen-legend-bar {{
+          display: flex !important;
         }}
 
-        /* FLECHAS FLOTANTES FIJAS EN EL CENTRO DEL CUADRO */
+        /* FLECHAS FLOTANTES FIJAS EN EL CENTRO EXACTO DEL VIEWPORT (DESKTOP) */
         .nav-btn {{ 
-          position: absolute;
+          position: fixed;
           top: 50%;
           transform: translateY(-50%);
-          background: rgba(17, 28, 48, 0.88); 
+          background: rgba(17, 28, 48, 0.90); 
           color: #60a5fa; 
           border: 2px solid #3b82f6; 
           border-radius: 50%; 
-          width: 44px; 
-          height: 44px;
-          font-size: 1.4rem; 
+          width: 46px; 
+          height: 46px;
+          font-size: 1.5rem; 
           font-weight: 900; 
           cursor: pointer; 
-          z-index: 100; 
+          z-index: 9999; 
           display: flex; 
           align-items: center; 
           justify-content: center; 
-          box-shadow: 0 4px 15px rgba(0,0,0,0.7); 
-          backdrop-filter: blur(5px);
+          box-shadow: 0 4px 18px rgba(0,0,0,0.8); 
+          backdrop-filter: blur(6px);
           transition: all 0.2s ease;
         }}
-        .nav-btn:hover {{ background: #1e3a8a; color: #ffffff; transform: translateY(-50%) scale(1.08); }}
-        .nav-btn-prev {{ left: 10px; }}
-        .nav-btn-next {{ right: 10px; }}
+        .nav-btn:hover {{ background: #1e3a8a; color: #ffffff; transform: translateY(-50%) scale(1.1); }}
+        .nav-btn-prev {{ left: 16px; }}
+        .nav-btn-next {{ right: 16px; }}
         .nav-btn:disabled {{ opacity: 0; pointer-events: none; }}
         
         .zoom-layer {{
-          display: block;
+          display: flex;
           width: 100%;
           height: auto;
-          transform-origin: 0 0;
+          min-height: 100%;
+          transform-origin: 50% 0;
           will-change: transform;
+          justify-content: center;
+          align-items: flex-start;
+          transition: transform 0.2s ease-out;
         }}
 
         .aisle-container {{ 
@@ -462,11 +491,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        /* MODAL COMPLETAMENTE CENTRADO EN LA PANTALLA */
+        /* MODAL CENTRADO FIJO Y GLOBAL */
         .modal-overlay {{ 
           position: fixed; 
           inset: 0; 
-          background: rgba(0,0,0,0.82); 
+          background: rgba(0,0,0,0.85); 
           display: flex; 
           align-items: center; 
           justify-content: center; 
@@ -479,7 +508,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .modal-content {{ 
           background: #1e293b; 
           color: #fff; 
-          padding: 24px; 
+          padding: 22px; 
           border-radius: 10px; 
           width: 90%; 
           max-width: 440px; 
@@ -495,11 +524,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* --- VISTA MÓVIL (VERTICAL Y HORIZONTAL) --- */
+        /* --- VISTA MÓVIL ESTRICTA (SIN FLECHAS / FIT COMPLETO) --- */
         @media (max-width: 768px) {{
             .nav-btn {{ display: none !important; }}
             .aisle-container {{ 
-              padding: 10px 4px !important; 
+              padding: 8px 4px !important; 
               touch-action: pan-x pan-y !important;
             }}
             .kpi-container {{
@@ -518,23 +547,15 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
               scroll-snap-align: center !important;
             }}
             .bay-shelves {{
-              gap: 12px !important;
-              padding: 6px !important;
+              gap: 10px !important;
+              padding: 4px !important;
             }}
             .shelf-products {{
-              min-height: 80px !important;
+              min-height: 75px !important;
               padding: 2px !important;
             }}
-            .sku-card {{ min-width: 75px !important; padding: 3px !important; }}
-            .sku-images-wrapper img {{ height: 75px !important; max-width: 42px !important; }}
-        }}
-
-        /* ORIENTACIÓN HORIZONTAL (LANDSCAPE) */
-        @media (max-width: 950px) and (orientation: landscape) {{
-          .aisle-wrapper {{ min-height: 380px !important; height: auto !important; }}
-          .bay-column {{ height: auto !important; width: 100% !important; }}
-          .bay-shelves {{ gap: 10px !important; padding: 4px !important; }}
-          .shelf-products {{ min-height: 70px !important; }}
+            .sku-card {{ min-width: 70px !important; padding: 3px !important; }}
+            .sku-images-wrapper img {{ height: 70px !important; max-width: 38px !important; }}
         }}
 
         @media print {{
@@ -640,6 +661,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
 
         <!-- CONTENEDOR CON FLECHAS FLOTANTES FIJAS -->
         <div class="aisle-wrapper" id="aisleWrapper">
+          <!-- BARRA DE LEYENDA FIJA EN MODO PANTALLA COMPLETA -->
+          <div class="fullscreen-legend-bar">
+            <span style="font-size: 0.70rem; font-weight: 800; color: #93c5fd; text-transform: uppercase;">📍 LEYENDA:</span>
+            <div class="legend-chips">
+              <button class="legend-chip" data-filter="Bloqueado" style="--bg: #FFC7CE; --tc: #9C0006; font-size: 0.60rem; padding: 3px 8px;">Bloqueado</button>
+              <button class="legend-chip" data-filter="Sin Stock" style="--bg: #F4B084; --tc: #833C0C; font-size: 0.60rem; padding: 3px 8px;">Sin Stock</button>
+              <button class="legend-chip" data-filter="Stock Bajo" style="--bg: #FFFF99; --tc: #8A5A00; font-size: 0.60rem; padding: 3px 8px;">Stock 1-5</button>
+              <button class="legend-chip" data-filter="Stock OK" style="--bg: #C6EFCE; --tc: #006100; font-size: 0.60rem; padding: 3px 8px;">Stock >5</button>
+              <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 1.5px solid #ef4444; font-size: 0.60rem; padding: 3px 8px;">Cob ≥30</button>
+              <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 1.5px solid #FFC000; font-size: 0.60rem; padding: 3px 8px;">★ TOP</button>
+            </div>
+            <button id="exitFsBtn" style="margin-left: auto; background: #ef4444; border: none; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.65rem; cursor: pointer;">✕ Salir</button>
+          </div>
+
           <button class="nav-btn nav-btn-prev" id="btnPrev" title="Cuerpo Anterior">❮</button>
           <div class="zoom-layer" id="zoomLayer">
             <div class="aisle-container" id="aisleContainer">
@@ -659,8 +694,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         const btnPrev = document.getElementById('btnPrev');
         const btnNext = document.getElementById('btnNext');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const exitFsBtn = document.getElementById('exitFsBtn');
         
-        let scale = 1, minScale = 0.7, maxScale = 3.5;
+        let scale = 1, minScale = 0.5, maxScale = 3.5;
         let posX = 0, posY = 0;
         let startX = 0, startY = 0;
         let initialDist = 0;
@@ -675,6 +711,26 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
         }}
 
+        // AUTO-FIT INTELIGENTE DE CUERPO EN DOBLE TOQUE
+        function autoFitCuerpo(targetBay) {{
+          const bay = targetBay || document.querySelector('.bay-column:not(.hidden)');
+          if (bay) {{
+            const viewportW = window.innerWidth;
+            const viewportH = window.innerHeight;
+            const bayW = bay.offsetWidth || bay.scrollWidth;
+            const bayH = bay.offsetHeight || bay.scrollHeight;
+
+            if (bayW > 0 && bayH > 0) {{
+              const scaleW = (viewportW - 16) / bayW;
+              const scaleH = (viewportH - 60) / bayH;
+              scale = Math.min(scaleW, scaleH, 1.0);
+              posX = 0;
+              posY = 0;
+              updateZoom();
+            }}
+          }}
+        }}
+
         aisleWrapper.addEventListener('touchstart', (e) => {{
           if (e.touches.length === 1) {{
             if (scale > 1) {{
@@ -684,9 +740,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
             }}
             const now = new Date().getTime();
             if (now - lastTap < 300 && now - lastTap > 0) {{
-              if (scale > 1.2) {{ scale = 1; posX = 0; posY = 0; }}
-              else {{ scale = 1.8; }}
-              updateZoom();
+              // DOBLE TOQUE: AUTO-AJUSTE PERFECTO EN LA PANTALLA
+              if (scale < 0.95 || scale > 1.05) {{
+                scale = 1; posX = 0; posY = 0; updateZoom();
+              }} else {{
+                const clickedBay = e.target.closest('.bay-column');
+                autoFitCuerpo(clickedBay);
+              }}
             }}
             lastTap = now;
           }} else if (e.touches.length === 2) {{
@@ -717,8 +777,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         function updateScrollButtons() {{
           requestAnimationFrame(() => {{
             const maxScroll = container.scrollWidth - container.clientWidth;
-            btnPrev.disabled = container.scrollLeft <= 5;
-            btnNext.disabled = container.scrollLeft >= maxScroll - 5;
+            btnPrev.disabled = container.scrollLeft <= 10;
+            btnNext.disabled = container.scrollLeft >= maxScroll - 10;
           }});
         }}
 
@@ -741,7 +801,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         container.addEventListener('scroll', updateScrollButtons);
         window.addEventListener('resize', updateScrollButtons);
 
-        // BOTÓN PANTALLA COMPLETA
+        // PANTALLA COMPLETA
         fullscreenBtn.addEventListener('click', () => {{
           if (!document.fullscreenElement) {{
             if (aisleWrapper.requestFullscreen) aisleWrapper.requestFullscreen();
@@ -753,8 +813,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           }}
         }});
 
+        exitFsBtn.addEventListener('click', () => {{
+          if (document.exitFullscreen) document.exitFullscreen();
+          fullscreenBtn.textContent = "⛶ Pantalla Completa";
+        }});
+
         document.addEventListener('fullscreenchange', () => {{
           if (!document.fullscreenElement) fullscreenBtn.textContent = "⛶ Pantalla Completa";
+          scale = 1; posX = 0; posY = 0; updateZoom();
         }});
 
         // --- FILTROS Y LÓGICA DE SKUS ---
@@ -840,11 +906,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
              const cod = card.getAttribute('data-cod');
              
              const isTop = topNSkusSet.has(cod);
-             if(isTop) {{
-                 card.classList.add('is-top');
-             }} else {{
-                 card.classList.remove('is-top');
-             }}
+             if(isTop) card.classList.add('is-top');
+             else card.classList.remove('is-top');
 
              const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
              const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
@@ -953,16 +1016,17 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
             window.print();
         }});
 
+        // LEYENDA (DUAL SYNC: PANEL + FULLSCREEN BAR)
         document.querySelectorAll('.legend-chip').forEach(chip => {{
             chip.addEventListener('click', () => {{
                 const filter = chip.getAttribute('data-filter');
                 if (currentLegendFilter === filter) {{
                     currentLegendFilter = null;
-                    chip.classList.remove('active');
+                    document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
                 }} else {{
                     document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
+                    document.querySelectorAll(`.legend-chip[data-filter="${{filter}}"]`).forEach(c => c.classList.add('active'));
                     currentLegendFilter = filter;
-                    chip.classList.add('active');
                 }}
                 applyFilters();
             }});
@@ -988,6 +1052,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           applyFilters();
         }});
 
+        // MODAL PRODUCTO
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         document.querySelectorAll('.sku-item').forEach(card => {{
@@ -1248,7 +1313,7 @@ if df_raw is not None:
             )
             es_realograma = ("Realograma" in modo_vista)
         with col_view2:
-            st.markdown("<div style='text-align: right; font-size: 0.82rem; color: #94a3b8; margin-top: 5px;'>👆 <i>Pellizca con 2 dedos para Zoom y arrastra libremente en móvil.</i></div>", unsafe_allow_html=True)
+            st.markdown("<div style='text-align: right; font-size: 0.82rem; color: #94a3b8; margin-top: 5px;'>👆 <i>Pellizca para Zoom o haz <b>doble toque</b> para auto-encajar el cuerpo en la pantalla.</i></div>", unsafe_allow_html=True)
             
         st.markdown("---")
         
