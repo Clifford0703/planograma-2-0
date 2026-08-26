@@ -334,7 +334,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
-        /* CONTENEDOR PRINCIPAL AJUSTADO AL TAMAÑO EXACTO */
+        /* CONTENEDOR PRINCIPAL AJUSTADO */
         .aisle-wrapper {{ 
           display: flex;
           flex-direction: column;
@@ -932,7 +932,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
              const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchCat && matchBay && matchLevel && catjer) availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchBay && matchLevel && catjer) availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
@@ -1097,11 +1097,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
                 
                 // Compensación dinámica según nivel (Niveles altos bajan, niveles bajos suben)
                 let adjustedTop = clickY;
-                if (clickY > containerH - 260) {
+                if (clickY > containerH - 260) {{
                     adjustedTop = containerH - 260;
-                } else if (clickY < 240) {
+                }} else if (clickY < 240) {{
                     adjustedTop = 240;
-                }
+                }}
                 
                 modalContent.style.top = adjustedTop + 'px';
                 modal.classList.add('active');
@@ -1347,7 +1347,6 @@ if df_raw is not None:
         st.markdown("---")
         
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma)
-        # Altura reducida y ajustada al tamaño exacto de la góndola sin espacio negro sobrante
         components.html(html_pasillo, height=1250, scrolling=False)
             
     with tab2:
