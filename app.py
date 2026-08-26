@@ -367,7 +367,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           white-space: nowrap;
         }}
         
-        /* ESTILOS ACTIVOS EN PANTALLA COMPLETA */
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
           background: #070d19 !important;
           width: 100vw !important;
@@ -381,7 +380,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           display: flex !important;
         }}
 
-        /* FLECHAS FLOTANTES QUE ACOMPAÑAN EL NIVEL EN ESCRITORIO */
+        /* FLECHAS FLOTANTES DINÁMICAS (DESKTOP) */
         .nav-btn {{ 
           position: absolute;
           top: 300px;
@@ -492,15 +491,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        /* MODAL FLOTANTE EXACTAMENTE CENTRADO EN EL PUNTO DE CLIC */
+        /* MODAL OVERLAY Y CENTRADO VIEWPORT REAL */
         .modal-overlay {{ 
-          position: absolute; 
+          position: fixed; 
           top: 0;
           left: 0;
-          right: 0;
-          bottom: 0;
-          width: 100%;
-          height: 100%;
+          width: 100vw;
+          height: 100vh;
           background: rgba(0,0,0,0.85); 
           z-index: 999999; 
           opacity: 0; 
@@ -509,8 +506,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ 
-          position: absolute;
-          left: 50%;
+          position: fixed;
+          top: 50vh;
+          left: 50vw;
           transform: translate(-50%, -50%);
           background: #1e293b; 
           color: #fff; 
@@ -1066,7 +1064,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           applyFilters();
         }});
 
-        // MODAL PRODUCTO CENTRADO EN LA POSICIÓN DEL CLIC
+        // MODAL PRODUCTO CON CENTRADO VERTICAL INTELIGENTE Y CLAMPING
         const modal = document.getElementById('productModal');
         const modalContent = document.getElementById('modalContent');
         const closeBtn = document.querySelector('.modal-close');
@@ -1091,10 +1089,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
-                // Centrado exacto vertical según el punto donde se encuentra el cursor del usuario
-                let targetY = e.pageY || (card.getBoundingClientRect().top + window.scrollY);
-                modalContent.style.top = targetY + 'px';
+                // Centrado exacto: Calcula el centro del viewport visible actual
+                const cardRect = card.getBoundingClientRect();
+                const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
                 
+                // Si está en desktop, calculamos el punto visible centrado para que nunca se desborde
+                let idealTop = cardRect.top + (cardRect.height / 2);
+                if (idealTop < 250) idealTop = 250;
+                if (idealTop > viewportHeight - 250) idealTop = viewportHeight - 250;
+                
+                modalContent.style.top = idealTop + 'px';
                 modal.classList.add('active');
             }});
         }});
