@@ -322,28 +322,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         
         .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
         .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
-        
-        /* CHECKBOX VISTA CELULAR */
-        .mobile-checkbox-label {{
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          background: #1e3a8a;
-          border: 1.5px solid #3b82f6;
-          padding: 6px 12px;
-          border-radius: 4px;
-          color: #ffffff;
-          font-weight: 700;
-          font-size: 0.75rem;
-          cursor: pointer;
-          user-select: none;
-        }}
-        .mobile-checkbox-label input[type="checkbox"] {{
-          accent-color: #f59e0b;
-          width: 16px;
-          height: 16px;
-          cursor: pointer;
-        }}
+        .filter-btn-fullscreen {{ background: #3b82f6; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
         
         .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }}
         .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-right: 8px; }}
@@ -367,30 +346,40 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           padding: 0;
         }}
         
-        /* FLECHAS FIJAS A LOS EXTREMOS EN ESCRITORIO */
+        /* MODO PANTALLA COMPLETA */
+        .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
+          background: #070d19 !important;
+          padding: 20px !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          overflow-y: auto !important;
+        }}
+
+        /* FLECHAS FLOTANTES FIJAS EN EL CENTRO DEL CUADRO */
         .nav-btn {{ 
           position: absolute;
           top: 50%;
           transform: translateY(-50%);
-          background: rgba(30, 58, 138, 0.85); 
-          color: white; 
+          background: rgba(17, 28, 48, 0.88); 
+          color: #60a5fa; 
           border: 2px solid #3b82f6; 
-          border-radius: 8px; 
+          border-radius: 50%; 
           width: 44px; 
-          height: 60px;
-          font-size: 1.8rem; 
-          font-weight: bold; 
+          height: 44px;
+          font-size: 1.4rem; 
+          font-weight: 900; 
           cursor: pointer; 
           z-index: 100; 
           display: flex; 
           align-items: center; 
           justify-content: center; 
-          box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
-          backdrop-filter: blur(4px);
-          transition: all 0.2s;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.7); 
+          backdrop-filter: blur(5px);
+          transition: all 0.2s ease;
         }}
-        .nav-btn-prev {{ left: 8px; }}
-        .nav-btn-next {{ right: 8px; }}
+        .nav-btn:hover {{ background: #1e3a8a; color: #ffffff; transform: translateY(-50%) scale(1.08); }}
+        .nav-btn-prev {{ left: 10px; }}
+        .nav-btn-next {{ right: 10px; }}
         .nav-btn:disabled {{ opacity: 0; pointer-events: none; }}
         
         .zoom-layer {{
@@ -473,19 +462,46 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        .modal-overlay {{ position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 99999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
+        /* MODAL COMPLETAMENTE CENTRADO EN LA PANTALLA */
+        .modal-overlay {{ 
+          position: fixed; 
+          inset: 0; 
+          background: rgba(0,0,0,0.82); 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          z-index: 999999; 
+          opacity: 0; 
+          pointer-events: none; 
+          transition: opacity 0.2s ease; 
+        }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
-        .modal-content {{ background: #1e293b; color: #fff; padding: 22px; border-radius: 8px; width: 90%; max-width: 420px; max-height: 85vh; overflow-y: auto; border: 2px solid #3b82f6; }}
+        .modal-content {{ 
+          background: #1e293b; 
+          color: #fff; 
+          padding: 24px; 
+          border-radius: 10px; 
+          width: 90%; 
+          max-width: 440px; 
+          max-height: 85vh; 
+          overflow-y: auto; 
+          border: 2px solid #3b82f6; 
+          box-shadow: 0 10px 40px rgba(0,0,0,0.9); 
+          position: relative;
+          margin: auto;
+        }}
         .modal-close {{ position: absolute; top: 10px; right: 15px; font-size: 1.8rem; cursor: pointer; color: #94a3b8; font-weight: bold; line-height: 1; }}
         .m-row {{ border-bottom: 1px solid #334155; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.85rem; }}
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* --- MODO MÓVIL: SIN FLECHAS, SWIPE CON DEDOS Y AJUSTE 100% --- */
-        .mobile-mode-active .nav-btn,
+        /* --- VISTA MÓVIL (VERTICAL Y HORIZONTAL) --- */
         @media (max-width: 768px) {{
             .nav-btn {{ display: none !important; }}
-            .aisle-container {{ padding: 10px 4px !important; }}
+            .aisle-container {{ 
+              padding: 10px 4px !important; 
+              touch-action: pan-x pan-y !important;
+            }}
             .kpi-container {{
               display: grid !important;
               grid-template-columns: repeat(2, 1fr) !important;
@@ -499,6 +515,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
               width: 100% !important;
               max-width: 100% !important;
               height: auto !important;
+              scroll-snap-align: center !important;
             }}
             .bay-shelves {{
               gap: 12px !important;
@@ -510,6 +527,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
             }}
             .sku-card {{ min-width: 75px !important; padding: 3px !important; }}
             .sku-images-wrapper img {{ height: 75px !important; max-width: 42px !important; }}
+        }}
+
+        /* ORIENTACIÓN HORIZONTAL (LANDSCAPE) */
+        @media (max-width: 950px) and (orientation: landscape) {{
+          .aisle-wrapper {{ min-height: 380px !important; height: auto !important; }}
+          .bay-column {{ height: auto !important; width: 100% !important; }}
+          .bay-shelves {{ gap: 10px !important; padding: 4px !important; }}
+          .shelf-products {{ min-height: 70px !important; }}
         }}
 
         @media print {{
@@ -595,9 +620,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           <div class="filter-group"><span class="filter-label">📦 Cuerpo</span><select id="baySelect" class="filter-select"><option value="ALL">Todos</option>{options_cuerpos}</select></div>
           <div class="filter-group"><span class="filter-label">📶 Nivel</span><select id="levelSelect" class="filter-select"><option value="ALL">Todos</option>{options_niveles}</select></div>
           <div class="btn-group">
-            <label class="mobile-checkbox-label">
-              <input type="checkbox" id="mobileCheckbox"> 📱 Vista Móvil (Ajuste Auto)
-            </label>
+            <button id="fullscreenBtn" class="filter-btn-fullscreen" title="Expandir a Pantalla Completa">⛶ Pantalla Completa</button>
             <button id="resetBtn" class="filter-btn-reset">Restablecer</button>
             <button type="button" id="printBayBtn" class="filter-btn-print" title="Imprime el cuerpo visible optimizado en A4">🖨️ Imprimir</button>
           </div>
@@ -615,7 +638,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           </div>
         </div>
 
-        <!-- CONTENEDOR MULTITOUCH CON FLECHAS FIJAS -->
+        <!-- CONTENEDOR CON FLECHAS FLOTANTES FIJAS -->
         <div class="aisle-wrapper" id="aisleWrapper">
           <button class="nav-btn nav-btn-prev" id="btnPrev" title="Cuerpo Anterior">❮</button>
           <div class="zoom-layer" id="zoomLayer">
@@ -635,8 +658,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         const container = document.getElementById('aisleContainer');
         const btnPrev = document.getElementById('btnPrev');
         const btnNext = document.getElementById('btnNext');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
         
-        let scale = 1, minScale = 0.8, maxScale = 3.5;
+        let scale = 1, minScale = 0.7, maxScale = 3.5;
         let posX = 0, posY = 0;
         let startX = 0, startY = 0;
         let initialDist = 0;
@@ -717,12 +741,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         container.addEventListener('scroll', updateScrollButtons);
         window.addEventListener('resize', updateScrollButtons);
 
-        // --- CHECKBOX MODO MÓVIL ---
-        const mobileCheckbox = document.getElementById('mobileCheckbox');
-        mobileCheckbox.addEventListener('change', () => {{
-          document.body.classList.toggle('mobile-mode-active', mobileCheckbox.checked);
-          scale = 1; posX = 0; posY = 0; updateZoom();
-          applyFilters();
+        // BOTÓN PANTALLA COMPLETA
+        fullscreenBtn.addEventListener('click', () => {{
+          if (!document.fullscreenElement) {{
+            if (aisleWrapper.requestFullscreen) aisleWrapper.requestFullscreen();
+            else if (aisleWrapper.webkitRequestFullscreen) aisleWrapper.webkitRequestFullscreen();
+            fullscreenBtn.textContent = "✕ Salir Pantalla Completa";
+          }} else {{
+            if (document.exitFullscreen) document.exitFullscreen();
+            fullscreenBtn.textContent = "⛶ Pantalla Completa";
+          }}
+        }});
+
+        document.addEventListener('fullscreenchange', () => {{
+          if (!document.fullscreenElement) fullscreenBtn.textContent = "⛶ Pantalla Completa";
         }});
 
         // --- FILTROS Y LÓGICA DE SKUS ---
@@ -987,8 +1019,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         setTimeout(() => {{
           applyFilters();
           if (window.innerWidth <= 768) {{
-            mobileCheckbox.checked = true;
-            document.body.classList.add('mobile-mode-active');
+            if (baySelect.value === 'ALL') {{
+              const firstVisible = document.querySelector('.bay-column:not(.hidden)');
+              if (firstVisible) baySelect.value = firstVisible.getAttribute('data-module');
+            }}
             applyFilters();
           }}
         }}, 100);
@@ -1214,7 +1248,7 @@ if df_raw is not None:
             )
             es_realograma = ("Realograma" in modo_vista)
         with col_view2:
-            st.markdown("<div style='text-align: right; font-size: 0.82rem; color: #94a3b8; margin-top: 5px;'>👆 <i>Pellizca con 2 dedos para Zoom y arrastra para recorrer la góndola.</i></div>", unsafe_allow_html=True)
+            st.markdown("<div style='text-align: right; font-size: 0.82rem; color: #94a3b8; margin-top: 5px;'>👆 <i>Pellizca con 2 dedos para Zoom y arrastra libremente en móvil.</i></div>", unsafe_allow_html=True)
             
         st.markdown("---")
         
