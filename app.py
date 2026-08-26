@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 import io
+import time
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
@@ -17,15 +18,15 @@ st.set_page_config(
 st.markdown("""
     <style>
         .block-container {
-            padding-left: 1.5rem !important;
-            padding-right: 1.5rem !important;
-            padding-top: 2rem !important; 
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            padding-top: 1.2rem !important; 
             max-width: 100% !important;
         }
-        .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; }
-        .fin-kpi-card { flex: 1; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 18px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
-        .fin-kpi-title { font-size: 0.80rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
-        .fin-kpi-val { font-size: 2.0rem; font-weight: 900; color: #ffffff; line-height: 1; }
+        .fin-kpi-container { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .fin-kpi-card { flex: 1; min-width: 180px; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 14px 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
+        .fin-kpi-title { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
+        .fin-kpi-val { font-size: 1.7rem; font-weight: 900; color: #ffffff; line-height: 1; }
         .fin-kpi-card.green-theme { border-left-color: #10b981; }
         .fin-kpi-card.purple-theme { border-left-color: #8b5cf6; }
         
@@ -34,21 +35,33 @@ st.markdown("""
             padding: 30px;
             border-radius: 10px;
             border: 1px solid #1e3a8a;
-            max-width: 450px;
-            margin: 60px auto;
+            max-width: 420px;
+            margin: 40px auto;
             box-shadow: 0 8px 16px rgba(0,0,0,0.5);
         }
     </style>
 """, unsafe_allow_html=True)
 
-# --- CAPA DE SEGURIDAD (LOGIN SIMPLE) ---
+# --- CAPA DE SEGURIDAD CON TIMEOUT DE 60 MINUTOS ---
+TIEMPO_EXPIRACION_SEGUNDOS = 60 * 60  # 60 minutos = 3600 seg
+
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
+if "ultimo_acceso" not in st.session_state:
+    st.session_state.ultimo_acceso = 0
+
+# Validación de expiración de sesión
+if st.session_state.autenticado:
+    tiempo_transcurrido = time.time() - st.session_state.ultimo_acceso
+    if tiempo_transcurrido > TIEMPO_EXPIRACION_SEGUNDOS:
+        st.session_state.autenticado = False
+        st.session_state.ultimo_acceso = 0
+        st.warning("⏳ Tu sesión ha expirado por inactividad (60 min). Ingresa nuevamente.")
 
 def login_form():
     st.markdown("<div class='login-card'>", unsafe_allow_html=True)
     st.markdown("<h2 style='text-align: center; color: #fff; margin-top: 0;'>🔒 Acceso Planograma 2.0</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 0.85rem;'>Ingresa tus credenciales corporativas</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 0.85rem;'>Ingresa tus credenciales corporativas (Sesión: 60 min)</p>", unsafe_allow_html=True)
     
     usuario = st.text_input("Usuario:", key="user_input")
     password = st.text_input("Contraseña:", type="password", key="pass_input")
@@ -56,6 +69,7 @@ def login_form():
     if st.button("Iniciar Sesión", type="primary", use_container_width=True):
         if usuario == "S003" and password == "S0032026":
             st.session_state.autenticado = True
+            st.session_state.ultimo_acceso = time.time()
             st.rerun()
         else:
             st.error("❌ Credenciales incorrectas. Verifica usuario o contraseña.")
@@ -64,6 +78,9 @@ def login_form():
 if not st.session_state.autenticado:
     login_form()
     st.stop()
+
+# Actualiza el timer en cada interacción
+st.session_state.ultimo_acceso = time.time()
 
 # --- FUNCIONES DE APOYO Y LIMPIEZA ---
 def safe_float(val, default=0.0):
@@ -105,8 +122,8 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR HTML INTERACTIVO ---
-def generar_html_pasillo_interactivo(df, es_realograma=True):
+# --- GENERADOR HTML INTERACTIVO (OPTIMIZADO PARA MÓVIL Y PINCH-TO-ZOOM) ---
+def generar_html_pasillo_interactivo(df, es_realograma=False):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
     df['TieneOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').notna()
@@ -267,139 +284,249 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
     <html lang="es">
     <head>
       <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+      <!-- VIEWPORT OPTIMIZADO PARA CELULAR: Permite Zoom Natural y Pinch-to-Zoom -->
+      <meta name="viewport" content="width=device-width, initial-scale=0.85, minimum-scale=0.25, maximum-scale=5.0, user-scalable=yes">
       <style>
         * {{ box-sizing: border-box; }}
-        body, html {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 0; height: 100vh; overflow: hidden; }}
+        body, html {{ 
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+          background-color: #070d19; 
+          color: #fff; 
+          margin: 0; 
+          padding: 0; 
+          width: 100%;
+          min-height: 100vh;
+          touch-action: manipulation;
+        }}
         
-        .main-container {{ padding: 12px; height: 100%; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }}
+        .main-container {{ 
+          padding: 8px; 
+          width: 100%; 
+          display: flex; 
+          flex-direction: column; 
+        }}
 
-        ::-webkit-scrollbar {{ height: 10px; width: 10px; }}
+        ::-webkit-scrollbar {{ height: 6px; width: 6px; }}
         ::-webkit-scrollbar-track {{ background: #0f172a; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
-        ::-webkit-scrollbar-thumb:hover {{ background: #2563eb; }}
 
-        .kpi-container {{ display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; flex-shrink: 0; }}
-        .kpi-card {{ flex: 1; min-width: 120px; background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }}
-        .kpi-title {{ font-size: 0.65rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; margin-bottom: 4px; display: block; letter-spacing: 0.5px; }}
-        .kpi-val {{ font-size: 1.6rem; font-weight: 900; line-height: 1; display: block; }}
+        .kpi-container {{ 
+          display: flex; 
+          gap: 8px; 
+          margin-bottom: 8px; 
+          overflow-x: auto; 
+          padding-bottom: 4px; 
+          flex-shrink: 0; 
+          scroll-snap-type: x mandatory;
+        }}
+        .kpi-card {{ 
+          flex: 0 0 115px; 
+          background: #111c30; 
+          border: 1px solid #1e3a8a; 
+          border-radius: 6px; 
+          padding: 6px 8px; 
+          text-align: center; 
+          scroll-snap-align: start;
+        }}
+        .kpi-title {{ font-size: 0.60rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; margin-bottom: 2px; display: block; }}
+        .kpi-val {{ font-size: 1.3rem; font-weight: 900; line-height: 1; display: block; }}
         
-        .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 16px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; flex-shrink: 0; }}
-        .filter-group {{ display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }}
-        .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
-        .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 5px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; outline: none; width: 100%; min-width: 130px; }}
-        .btn-group {{ display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }}
+        .filter-panel {{ 
+          background: #111c30; 
+          border: 1px solid #1e3a8a; 
+          border-radius: 6px; 
+          padding: 8px 10px; 
+          margin-bottom: 8px; 
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+          gap: 6px; 
+          align-items: flex-end; 
+        }}
+        .filter-group {{ display: flex; flex-direction: column; gap: 2px; }}
+        .filter-label {{ font-size: 0.65rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
+        .filter-select, .filter-input {{ 
+          background: #ffffff; 
+          border: 1.5px solid #3b82f6; 
+          color: #0f172a; 
+          padding: 4px 6px; 
+          border-radius: 4px; 
+          font-size: 0.80rem; 
+          font-weight: 600; 
+          outline: none; 
+          width: 100%; 
+        }}
+        .btn-group {{ display: flex; gap: 6px; grid-column: 1 / -1; margin-top: 4px; }}
         
-        .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
-        .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
+        .filter-btn-reset, .filter-btn-print {{ 
+          flex: 1;
+          border: none; 
+          color: white; 
+          font-weight: 700; 
+          font-size: 0.72rem; 
+          padding: 6px 10px; 
+          border-radius: 4px; 
+          cursor: pointer; 
+          text-align: center;
+        }}
+        .filter-btn-reset {{ background: #ef4444; }}
+        .filter-btn-print {{ background: #10b981; }}
         
-        .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }}
-        .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-right: 8px; }}
-        .legend-chips {{ display: flex; flex-wrap: wrap; gap: 8px; }}
-        .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
-        .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
+        .legend-panel {{ 
+          background: #111c30; 
+          border: 1px solid #1e3a8a; 
+          border-radius: 6px; 
+          padding: 6px 10px; 
+          margin-bottom: 8px; 
+          display: flex; 
+          align-items: center; 
+          gap: 6px; 
+          overflow-x: auto;
+        }}
+        .legend-title {{ font-size: 0.68rem; font-weight: 700; color: #93c5fd; white-space: nowrap; }}
+        .legend-chips {{ display: flex; gap: 6px; flex-shrink: 0; }}
+        .legend-chip {{ 
+          background: var(--bg); 
+          color: var(--tc); 
+          border: var(--bd, 1px solid transparent); 
+          font-weight: 700; 
+          font-size: 0.65rem; 
+          padding: 4px 8px; 
+          border-radius: 15px; 
+          cursor: pointer; 
+          white-space: nowrap;
+        }}
+        .legend-chip.active {{ transform: scale(1.05); border: 2px solid #3b82f6 !important; }}
         
-        .aisle-wrapper {{ display: flex; align-items: stretch; gap: 8px; width: 100%; position: relative; flex-grow: 1; min-height: 500px; }}
-        .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
-        .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
+        /* CONTENEDOR DEL PLANOGRAMA / ZOOM Y SCROLL MULTITOUCH */
+        .aisle-wrapper {{ 
+          display: flex; 
+          align-items: stretch; 
+          gap: 6px; 
+          width: 100%; 
+          position: relative; 
+          touch-action: pan-x pan-y pinch-zoom;
+        }}
+        .nav-btn {{ 
+          background: #1e3a8a; 
+          color: white; 
+          border: 1px solid #3b82f6; 
+          border-radius: 6px; 
+          width: 28px; 
+          font-size: 1.1rem; 
+          font-weight: bold; 
+          cursor: pointer; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          flex-shrink: 0; 
+        }}
+        .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; }}
         
-        .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; align-items: stretch; }}
+        .aisle-container {{ 
+          display: flex; 
+          flex-direction: row; 
+          gap: 12px; 
+          background: #0f172a; 
+          border: 1px solid #1e293b; 
+          border-radius: 8px; 
+          padding: 10px; 
+          overflow-x: auto; 
+          overflow-y: hidden; 
+          scroll-behavior: smooth; 
+          scroll-snap-type: x mandatory; 
+          flex-grow: 1; 
+          touch-action: pan-x pan-y pinch-zoom;
+        }}
         
-        .bay-column {{ flex: 0 0 100%; width: 100%; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; height: max-content; scroll-snap-align: start; padding-bottom: 20px; }}
+        .bay-column {{ 
+          flex: 0 0 88vw; 
+          max-width: 480px; 
+          background: #111c30; 
+          border: 1.5px solid #1e293b; 
+          border-radius: 6px; 
+          display: flex; 
+          flex-direction: column; 
+          scroll-snap-align: center; 
+          padding-bottom: 12px; 
+        }}
         .bay-column.hidden {{ display: none !important; }}
         
-        .bay-title {{ background: #1e3a8a; padding: 6px 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
-        .bay-subcat {{ font-size: 0.68rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
+        .bay-title {{ 
+          background: #1e3a8a; 
+          padding: 6px 8px; 
+          font-size: 0.80rem; 
+          font-weight: 700; 
+          text-align: center; 
+          border-bottom: 2px solid #3b82f6; 
+          border-radius: 4px 4px 0 0; 
+        }}
+        .bay-subcat {{ font-size: 0.65rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; }}
         
-        .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 25px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }}
-        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 15px; transition: all 0.3s; }}
+        .bay-shelves {{ 
+          padding: 6px; 
+          display: flex; 
+          flex-direction: column; 
+          gap: 16px; 
+          flex-grow: 1; 
+        }}
+        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 8px; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px 12px; min-height: 125px; overflow-x: auto; padding-bottom: 8px; align-items: flex-end; justify-content: flex-start; }}
-        .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); z-index: 1; }}
+        .shelf-products {{ 
+          display: flex; 
+          flex-direction: row; 
+          gap: 3px; 
+          padding: 4px 6px; 
+          min-height: 90px; 
+          overflow-x: auto; 
+          align-items: flex-end; 
+          justify-content: flex-start; 
+        }}
+        .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); }}
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
         
-        .shelf-base {{ height: 12px; background: linear-gradient(180deg, #fde047 0%, #ca8a04 100%); border-radius: 2px; box-shadow: 0 4px 6px rgba(0,0,0,0.6); display: flex; justify-content: center; position: relative; z-index: 5; margin-top: -2px; border-top: 1px solid #fef08a; border-bottom: 2px solid #854d0e; }}
-        .shelf-name-tag {{ position: absolute; top: 10px; background: rgba(0,0,0,0.7); color: #fef08a; font-size: 0.55rem; padding: 1px 6px; border-radius: 0 0 4px 4px; font-weight: 800; letter-spacing: 0.5px; }}
+        .shelf-base {{ height: 10px; background: linear-gradient(180deg, #fde047 0%, #ca8a04 100%); border-radius: 2px; position: relative; border-bottom: 2px solid #854d0e; }}
+        .shelf-name-tag {{ position: absolute; top: 8px; background: rgba(0,0,0,0.7); color: #fef08a; font-size: 0.50rem; padding: 1px 4px; border-radius: 0 0 3px 3px; font-weight: 800; }}
         
-        .sku-group {{ display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; transition: all 0.2s; z-index: 10; padding: 0 2px; flex-shrink: 0; }}
+        .sku-group {{ display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; flex-shrink: 0; }}
         .sku-images-wrapper {{ display: flex; flex-direction: row; align-items: flex-end; gap: 1px; }}
-        .sku-images-wrapper img {{ height: 95px; width: auto; max-width: 60px; object-fit: contain; filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.5)); transition: transform 0.2s; }}
-        .sku-group:hover .sku-images-wrapper img {{ transform: translateY(-4px); filter: drop-shadow(4px 8px 8px rgba(0,0,0,0.7)); }}
+        .sku-images-wrapper img {{ height: 80px; width: auto; max-width: 50px; object-fit: contain; }}
         
-        .sku-fleje {{ background: #ffffff; color: #000; border: 1px solid #64748b; font-size: 0.50rem; display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; z-index: 15; box-shadow: 0 2px 4px rgba(0,0,0,0.5); width: max-content; padding: 1px 2px; }}
-        .fleje-ean {{ font-weight: 600; font-family: monospace; letter-spacing: -0.5px; }}
-        .fleje-caras {{ font-weight: 900; background: #e2e8f0; width: 100%; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 1px; color: #1e293b; }}
+        .sku-fleje {{ background: #ffffff; color: #000; border: 1px solid #64748b; font-size: 0.45rem; display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; width: max-content; padding: 1px 2px; }}
+        .fleje-ean {{ font-weight: 600; font-family: monospace; }}
+        .fleje-caras {{ font-weight: 900; background: #e2e8f0; width: 100%; text-align: center; color: #1e293b; }}
         
-        .alerta-bloqueado .sku-images-wrapper img {{ filter: grayscale(100%) opacity(0.4) drop-shadow(0 0 2px #fff); }}
-        .alerta-sinstock .sku-images-wrapper img {{ filter: drop-shadow(0 0 10px #ef4444) drop-shadow(0 0 5px #ef4444); }}
-        .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 8px #f59e0b); }}
-        .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -15px; right: -5px; font-size: 1.1rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); z-index: 30; animation: float 2s ease-in-out infinite; }}
-        @keyframes float {{ 0% {{transform: translateY(0px);}} 50% {{transform: translateY(-4px);}} 100% {{transform: translateY(0px);}} }}
+        .alerta-bloqueado .sku-images-wrapper img {{ filter: grayscale(100%) opacity(0.4); }}
+        .alerta-sinstock .sku-images-wrapper img {{ filter: drop-shadow(0 0 8px #ef4444); }}
+        .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
+        .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -12px; right: -4px; font-size: 1rem; }}
         
-        .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; cursor: pointer; align-items: stretch; flex-shrink: 0; }}
-        .sku-pos {{ position: absolute; top: 4px; left: 4px; background: #0f172a; color: #fff; font-size: 0.6rem; font-weight: 800; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 2px; }}
-        .sku-caras-tag {{ position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.9); color: #000; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 2px; }}
-        .sku-details {{ margin-top: 18px; display: flex; flex-direction: column; gap: 3px; text-align: center; overflow: hidden; }}
-        .sku-brand-text {{ font-size: 0.65rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-        .sku-name-text {{ font-size: 0.70rem; font-weight: 700; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }}
-        .sku-bottom-bar {{ margin-top: 4px; border-top: 1px dashed; padding-top: 2px; display: flex; justify-content: space-between; align-items: center; gap: 4px; }}
-        .sku-ean-code {{ font-size: 0.60rem; font-family: monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }}
-        .sku-cap-val {{ font-size: 0.65rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; flex-shrink: 0; }}
-        .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
-        .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
+        .sku-card {{ border-radius: 4px; padding: 4px; display: flex; flex-direction: column; justify-content: space-between; min-width: 80px; position: relative; cursor: pointer; flex-shrink: 0; }}
+        .sku-pos {{ position: absolute; top: 2px; left: 2px; background: #0f172a; color: #fff; font-size: 0.55rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; }}
+        .sku-caras-tag {{ position: absolute; top: 2px; right: 2px; background: rgba(255,255,255,0.9); color: #000; font-size: 0.50rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; }}
+        .sku-details {{ margin-top: 14px; display: flex; flex-direction: column; gap: 2px; text-align: center; }}
+        .sku-brand-text {{ font-size: 0.58rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+        .sku-name-text {{ font-size: 0.62rem; font-weight: 700; line-height: 1.1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }}
+        .sku-bottom-bar {{ margin-top: 3px; border-top: 1px dashed; padding-top: 2px; display: flex; justify-content: space-between; align-items: center; }}
+        .sku-ean-code {{ font-size: 0.55rem; font-family: monospace; font-weight: 800; }}
+        .sku-cap-val {{ font-size: 0.58rem; font-weight: 800; }}
+        .shelf-bottom-rail {{ height: 6px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 2px 2px; margin-top: 2px; }}
+        .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 3px 6px; font-size: 0.62rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        .modal-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); display: flex; align-items: flex-start; justify-content: center; z-index: 99999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
+        /* MODAL RESPONSIVE */
+        .modal-overlay {{ position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 99999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
-        .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.9); border: 2px solid #3b82f6; transition: margin-top 0.1s; }}
-        .modal-close {{ position: absolute; top: 10px; right: 15px; font-size: 1.8rem; cursor: pointer; color: #94a3b8; font-weight: bold; line-height: 1; }}
-        .m-row {{ border-bottom: 1px solid #334155; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.85rem; }}
+        .modal-content {{ background: #1e293b; color: #fff; padding: 18px; border-radius: 8px; width: 92%; max-width: 400px; max-height: 85vh; overflow-y: auto; position: relative; border: 2px solid #3b82f6; }}
+        .modal-close {{ position: absolute; top: 8px; right: 12px; font-size: 1.6rem; cursor: pointer; color: #94a3b8; font-weight: bold; }}
+        .m-row {{ border-bottom: 1px solid #334155; padding: 5px 0; display: flex; justify-content: space-between; font-size: 0.80rem; }}
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        @media print {{
-          @page {{ size: A4 portrait; margin: 5mm; }}
-          body, html, .main-container {{ background-color: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; height: 100% !important; overflow: hidden !important; }}
-          .filter-panel, .legend-panel, .modal-overlay, .nav-btn, .kpi-container, .top-panel {{ display: none !important; }}
-          .aisle-wrapper {{ display: block !important; width: 100% !important; height: 100% !important; border: none !important; }}
-          .aisle-container {{ display: block !important; width: 100% !important; height: 100% !important; background: transparent !important; border: none !important; padding: 0 !important; overflow: visible !important; }}
-          .bay-column {{ background: #fff !important; border: 3px solid #000 !important; width: 195mm !important; height: 280mm !important; max-width: 100% !important; page-break-inside: avoid; margin: 0 auto !important; display: flex !important; flex-direction: column !important; }}
-          .bay-column.hidden {{ display: none !important; }}
-          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding: 10px !important; font-size: 20pt !important; display: block; text-align: center; }}
-          .bay-subcat {{ color: #334155 !important; font-size: 14pt !important; display: block; }}
-          .bay-shelves {{ padding: 5px !important; gap: 15px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; justify-content: space-evenly !important; overflow: visible !important; height: 100% !important; }}
-          .shelf-row {{ background: transparent !important; display: flex !important; flex-direction: column !important; justify-content: flex-end !important; flex-grow: 1 !important; margin-bottom: 0 !important; padding-top: 5px !important; }}
-          .shelf-products {{ flex-grow: 0 !important; padding: 2px !important; gap: 2px !important; display: flex !important; align-items: flex-end !important; justify-content: center !important; overflow: visible !important; }}
-          .sku-images-wrapper img {{ height: 110px !important; max-width: 45px !important; filter: none !important; }}
-          .sku-fleje {{ font-size: 7pt !important; padding: 2px !important; margin-top: 1px !important; border: 1px solid #000 !important; }}
-          .fleje-ean {{ font-size: 7pt !important; font-weight: bold !important; }}
-          .fleje-caras {{ font-size: 8pt !important; font-weight: 900 !important; color: #000 !important; background: transparent !important; border-top: 1px solid #000 !important; }}
-          .shelf-base {{ height: 10px !important; background: #eab308 !important; border-bottom: 3px solid #000 !important; border-top: 1px solid #000 !important; box-shadow: none !important; margin-top: 0 !important; }}
-          .shelf-name-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; border-top: none !important; font-size: 8pt !important; top: 8px !important; padding: 1px 4px !important; font-weight: bold !important; }}
-          .top-badge::after {{ font-size: 14pt !important; top: -15px !important; filter: none !important; }}
-          .sku-card {{ background: #fff !important; border: 2px solid #000 !important; color: #000 !important; padding: 4px !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; flex-basis: 0 !important; flex-grow: 1 !important; min-width: unset !important; }}
-          .sku-pos, .sku-caras-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-size: 9pt !important; width: auto !important; height: auto !important; padding: 2px 4px !important; font-weight: bold !important; }}
-          .sku-details {{ margin-top: 15px !important; }}
-          .sku-brand-text {{ font-size: 10pt !important; color: #000 !important; display: block; font-weight: bold !important; }}
-          .sku-name-text {{ font-size: 11pt !important; color: #000 !important; -webkit-line-clamp: 4 !important; line-height: 1.2 !important; font-weight: bold !important; }}
-          .sku-bottom-bar {{ border-top: 2px dashed #000 !important; margin-top: auto !important; padding-top: 4px !important; }}
-          .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 9pt !important; }}
-          .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 5px solid #000 !important; font-size: 14pt !important; padding: 4px 8px !important; font-weight: 900 !important; }}
-          .shelf-caras-count {{ background: #e2e8f0 !important; color: #000 !important; font-size: 12pt !important; }}
-        }}
-
-        @media (max-width: 768px) {{
-            .kpi-container {{ flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-bottom: 8px; }}
-            .kpi-card {{ flex: 0 0 140px; }}
-            .legend-chips {{ flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; justify-content: flex-start; }}
-            .legend-chip {{ flex: 0 0 auto; }}
-            .filter-panel, .top-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
-            .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
-            .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
-            .aisle-wrapper {{ height: calc(100vh - 120px); min-height: 400px; }}
-            .bay-column {{ flex: 0 0 95vw !important; min-width: 300px; margin-right: 5px; height: 100%; padding-bottom: 10px; }}
-            .sku-images-wrapper img {{ height: 75px; max-width: 40px; }}
-            .sku-card {{ min-width: 80px; }}
+        /* AJUSTES PARA PANTALLAS GRANDES */
+        @media (min-width: 769px) {{
+          .bay-column {{ flex: 0 0 100%; max-width: 100%; }}
+          .filter-panel {{ grid-template-columns: repeat(5, 1fr) auto; }}
+          .btn-group {{ grid-column: auto; }}
         }}
       </style>
     </head>
@@ -409,7 +536,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
         <div id="productModal" class="modal-overlay">
           <div class="modal-content">
             <span class="modal-close">&times;</span>
-            <h3 id="m-name" style="margin-top: 0; font-size: 1.1rem; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; line-height: 1.3;">Producto</h3>
+            <h3 id="m-name" style="margin-top: 0; font-size: 1.0rem; border-bottom: 2px solid #3b82f6; padding-bottom: 6px; line-height: 1.2;">Producto</h3>
             <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod"></span></div>
             <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
             <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
@@ -424,58 +551,58 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
           </div>
         </div>
 
-        <div class="top-panel" style="background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; flex-shrink: 0;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 1.2rem;">🏆</span>
-              <label style="color: #93c5fd; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; margin: 0;">Resaltar TOP Ventas:</label>
-              <input type="number" id="topNInput" value="5" min="1" max="500" style="background: #ffffff; border: 2px solid #3b82f6; border-radius: 4px; padding: 4px 8px; width: 70px; font-weight: bold; color: #0f172a; outline: none;">
-              <span style="color: #94a3b8; font-size: 0.8rem; font-weight: bold;">SKUs</span>
+        <div class="top-panel" style="background: #111c30; border: 1px solid #1e3a8a; border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 1.1rem;">🏆</span>
+              <label style="color: #93c5fd; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; margin: 0;">TOP Ventas:</label>
+              <input type="number" id="topNInput" value="5" min="1" max="500" style="background: #ffffff; border: 1.5px solid #3b82f6; border-radius: 4px; padding: 2px 6px; width: 55px; font-weight: bold; color: #0f172a; outline: none; font-size: 0.8rem;">
+              <span style="color: #94a3b8; font-size: 0.75rem; font-weight: bold;">SKUs</span>
           </div>
-          <div id="topNInfo" style="color: #cbd5e1; font-size: 0.85rem; background: rgba(59,130,246,0.1); padding: 8px 12px; border-radius: 4px; border-left: 4px solid #3b82f6; flex-grow: 1;">
+          <div id="topNInfo" style="color: #cbd5e1; font-size: 0.75rem; background: rgba(59,130,246,0.1); padding: 4px 8px; border-radius: 4px; border-left: 3px solid #3b82f6; flex-grow: 1;">
               💡 Calculando...
           </div>
         </div>
 
         <div class="kpi-container">
-          <div class="kpi-card" style="border-bottom: 4px solid #3b82f6;"><span class="kpi-title">Total SKUs</span><span class="kpi-val" id="t-total" style="color: #fff;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 4px solid #FFC7CE;"><span class="kpi-title">Bloqueados</span><span class="kpi-val" id="t-bloq" style="color: #FFC7CE;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 4px solid #F4B084;"><span class="kpi-title">Sin Stock (0)</span><span class="kpi-val" id="t-sin" style="color: #F4B084;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 4px solid #FFFF99;"><span class="kpi-title">Stock Bajo (1-5)</span><span class="kpi-val" id="t-bajo" style="color: #FFFF99;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 4px solid #C6EFCE;"><span class="kpi-title">Stock OK (>5)</span><span class="kpi-val" id="t-ok" style="color: #C6EFCE;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 4px solid #ef4444;"><span class="kpi-title">Cob. Alta (≥30)</span><span class="kpi-val" id="t-cob" style="color: #ef4444;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 4px solid #fbbf24;"><span class="kpi-title">★ Top Ventas</span><span class="kpi-val" id="t-top" style="color: #fbbf24;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #3b82f6;"><span class="kpi-title">Total SKUs</span><span class="kpi-val" id="t-total" style="color: #fff;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #FFC7CE;"><span class="kpi-title">Bloqueados</span><span class="kpi-val" id="t-bloq" style="color: #FFC7CE;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #F4B084;"><span class="kpi-title">Sin Stock</span><span class="kpi-val" id="t-sin" style="color: #F4B084;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #FFFF99;"><span class="kpi-title">Stock Bajo</span><span class="kpi-val" id="t-bajo" style="color: #FFFF99;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #C6EFCE;"><span class="kpi-title">Stock OK</span><span class="kpi-val" id="t-ok" style="color: #C6EFCE;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #ef4444;"><span class="kpi-title">Cob. Alta</span><span class="kpi-val" id="t-cob" style="color: #ef4444;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #fbbf24;"><span class="kpi-title">★ Top</span><span class="kpi-val" id="t-top" style="color: #fbbf24;">0</span></div>
         </div>
 
         <div class="filter-panel">
-          <div class="filter-group"><span class="filter-label">🔍 Buscar Producto</span><input type="text" id="searchInput" class="filter-input" placeholder="Nombre o EAN..."></div>
+          <div class="filter-group"><span class="filter-label">🔍 Buscar</span><input type="text" id="searchInput" class="filter-input" placeholder="Nombre o EAN..."></div>
           <div class="filter-group"><span class="filter-label">🏷️ Marca</span><select id="brandSelect" class="filter-select"><option value="ALL">Todas</option>{options_marcas}</select></div>
           <div class="filter-group"><span class="filter-label">📂 Categoría</span><select id="catSelect" class="filter-select"><option value="ALL">Todas</option>{options_categorias}</select></div>
           <div class="filter-group"><span class="filter-label">📦 Cuerpo</span><select id="baySelect" class="filter-select"><option value="ALL">Todos</option>{options_cuerpos}</select></div>
           <div class="filter-group"><span class="filter-label">📶 Nivel</span><select id="levelSelect" class="filter-select"><option value="ALL">Todos</option>{options_niveles}</select></div>
           <div class="btn-group">
             <button id="resetBtn" class="filter-btn-reset">Restablecer</button>
-            <button type="button" id="printBayBtn" class="filter-btn-print" title="Imprime el cuerpo visible optimizado en A4">🖨️ Imprimir Cuerpo</button>
+            <button type="button" id="printBayBtn" class="filter-btn-print">🖨️ Imprimir</button>
           </div>
         </div>
 
         <div class="legend-panel">
-          <span class="legend-title">📍 Leyenda Interactiva</span>
+          <span class="legend-title">📍 Leyenda:</span>
           <div class="legend-chips">
             <button class="legend-chip" data-filter="Bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
             <button class="legend-chip" data-filter="Sin Stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
-            <button class="legend-chip" data-filter="Stock Bajo" style="--bg: #FFFF99; --tc: #8A5A00;">Stock 1 a 5</button>
-            <button class="legend-chip" data-filter="Stock OK" style="--bg: #C6EFCE; --tc: #006100;">Stock > 5</button>
-            <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 2px solid #ef4444;">Cobertura Alta</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 2px solid #FFC000;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="Stock Bajo" style="--bg: #FFFF99; --tc: #8A5A00;">Stock 1-5</button>
+            <button class="legend-chip" data-filter="Stock OK" style="--bg: #C6EFCE; --tc: #006100;">Stock >5</button>
+            <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 2px solid #ef4444;">Cob ≥30</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 2px solid #FFC000;">★ TOP</button>
           </div>
         </div>
 
         <div class="aisle-wrapper">
-          <button class="nav-btn" id="btnPrev" title="Cuerpo Anterior">❮</button>
+          <button class="nav-btn" id="btnPrev">❮</button>
           <div class="aisle-container" id="aisleContainer">
             {html_cuerpos}
           </div>
-          <button class="nav-btn" id="btnNext" title="Cuerpo Siguiente">❯</button>
+          <button class="nav-btn" id="btnNext">❯</button>
         </div>
 
       </div>
@@ -542,7 +669,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
           }}
 
           let pct = totalVentasFiltered > 0 ? (topVentasSum / totalVentasFiltered) * 100 : 0;
-          document.getElementById('topNInfo').innerHTML = "💡 Has resaltado el <b>TOP " + topNSkusSet.size + "</b> de esta vista. Concentran el <b style='color:#10b981; font-size:1rem;'>" + pct.toFixed(2) + "%</b> de la venta mostrada (S/ " + totalVentasFiltered.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}}) + ").";
+          document.getElementById('topNInfo').innerHTML = "💡 <b>TOP " + topNSkusSet.size + "</b> concentra el <b style='color:#10b981; font-size:0.9rem;'>" + pct.toFixed(1) + "%</b> de la venta (S/ " + totalVentasFiltered.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}}) + ").";
 
           let availableBrands = new Set();
           let availableCats = new Set();
@@ -550,7 +677,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
           let availableLevels = new Set();
           
           let setTot = new Set(), setBloq = new Set(), setSin = new Set(), setBajo = new Set(), setOk = new Set(), setCob = new Set(), setTop = new Set();
-          let visibleBaysCount = 0;
 
           document.querySelectorAll('.sku-item').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
@@ -566,7 +692,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
              const isTop = topNSkusSet.has(cod);
              if(isTop) {{
                  card.classList.add('is-top');
-                 if(card.classList.contains('sku-card')) card.style.border = "3px solid #FFC000";
+                 if(card.classList.contains('sku-card')) card.style.border = "2px solid #FFC000";
              }} else {{
                  card.classList.remove('is-top');
                  if(card.classList.contains('sku-card')) card.style.border = "1px solid #7f7f7f";
@@ -735,11 +861,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
-                const modalContent = document.querySelector('.modal-content');
-                let topPos = e.pageY - 220; 
-                if (topPos < 20) topPos = 20; 
-                modalContent.style.marginTop = topPos + 'px';
-                
                 modal.classList.add('active');
             }});
         }});
@@ -755,11 +876,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
         }}
         btnPrev.addEventListener('click', () => {{
             const visibleModule = container.querySelector('.bay-column:not(.hidden)');
-            if(visibleModule) container.scrollBy({{ left: -(visibleModule.offsetWidth + 16), behavior: 'smooth' }});
+            if(visibleModule) container.scrollBy({{ left: -(visibleModule.offsetWidth + 12), behavior: 'smooth' }});
         }});
         btnNext.addEventListener('click', () => {{
             const visibleModule = container.querySelector('.bay-column:not(.hidden)');
-            if(visibleModule) container.scrollBy({{ left: (visibleModule.offsetWidth + 16), behavior: 'smooth' }});
+            if(visibleModule) container.scrollBy({{ left: (visibleModule.offsetWidth + 12), behavior: 'smooth' }});
         }});
         container.addEventListener('scroll', updateScrollButtons);
         window.addEventListener('resize', updateScrollButtons);
@@ -816,38 +937,36 @@ df_fotos_raw = None
 info_hora = None
 error_nube = None
 
-# --- HEADER CON TÍTULO, BOTÓN Y CIERRE DE SESIÓN ---
-col_head1, col_head2, col_head3, col_head4 = st.columns([4, 1.5, 3.5, 1])
+# --- HEADER RESPONSIVE CON ACCIONES ---
+col_head1, col_head2, col_head3, col_head4 = st.columns([3.5, 1.5, 3.5, 1.5])
 
 with col_head1:
-    st.markdown("<h1 style='margin: 0; padding: 0; font-size: 2.1rem; color: #fff;'>📦 Planograma 2.0</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 style='margin: 0; padding: 0; font-size: 1.8rem; color: #fff;'>🏪 Planograma 2.0</h2>", unsafe_allow_html=True)
     
 with col_head2:
-    st.markdown("<div style='margin-top: 5px;'>", unsafe_allow_html=True)
     if st.button("🔄 Actualizar", use_container_width=True):
         st.cache_data.clear()
+        st.session_state.ultimo_acceso = time.time()
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
 with col_head3:
     header_time_placeholder = st.empty()
 
 with col_head4:
-    st.markdown("<div style='margin-top: 5px;'>", unsafe_allow_html=True)
     if st.button("🚪 Salir", use_container_width=True, help="Cerrar sesión segura"):
         st.session_state.autenticado = False
+        st.session_state.ultimo_acceso = 0
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
-st.markdown("<div style='border-bottom: 2px solid #1e3a8a; padding-bottom: 5px; margin-bottom: 15px;'><span style='color: #93c5fd; font-size: 0.9rem;'>Análisis interactivo de pasillos y rentabilidad de tienda</span></div>", unsafe_allow_html=True)
+st.markdown("<div style='border-bottom: 2px solid #1e3a8a; padding-bottom: 3px; margin-bottom: 10px;'><span style='color: #93c5fd; font-size: 0.82rem;'>Análisis interactivo de pasillos y rentabilidad de tienda</span></div>", unsafe_allow_html=True)
 
-with st.spinner("Sincronizando base de datos central, jerarquías e imágenes..."):
+with st.spinner("Sincronizando bases de datos..."):
     df_nube, df_aux_nube, df_jer_nube, df_fotos_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE, URL_JERARQUIA, URL_FOTOS)
 
 header_time_placeholder.markdown(f"""
-    <div style="text-align: right; margin-top: 5px;">
-        <div style="font-size: 0.92rem; color: #cbd5e1;">Desarrollado por <b>Alfredo HM</b></div>
-        <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">Última actualización: {info_hora if info_hora else 'No disponible'}</div>
+    <div style="text-align: right; margin-top: 2px;">
+        <div style="font-size: 0.85rem; color: #cbd5e1;">Desarrollado por <b>Alfredo HM</b></div>
+        <div style="font-size: 0.70rem; color: #64748b;">Actualizado: {info_hora if info_hora else 'No disponible'}</div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -857,7 +976,7 @@ if df_nube is not None:
     df_jer_raw = df_jer_nube
     df_fotos_raw = df_fotos_nube
 else:
-    st.warning("⚠️ No se pudo conectar a la Nube. Puedes subir el archivo MATRIZ manualmente.")
+    st.warning("⚠️ No se pudo conectar a la Nube. Sube el archivo MATRIZ manualmente.")
     archivo_manual = st.file_uploader("📥 Subir archivo Excel del Planograma (.xlsx, .xlsb)", type=["xlsx", "xls", "xlsb"])
     if archivo_manual:
         motor = "pyxlsb" if archivo_manual.name.endswith(".xlsb") else None
@@ -879,7 +998,7 @@ else:
             if "Bandeja" in df_raw.columns and "EAN" in df_raw.columns:
                 df_raw = df_raw.dropna(subset=["Bandeja", "EAN"], how="all")
         except Exception as e:
-            st.error(f"Error al leer el archivo manual: {e}")
+            st.error(f"Error al leer el archivo: {e}")
 
 if df_raw is not None:
     
@@ -976,16 +1095,19 @@ if df_raw is not None:
     tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard Analítico Financiero"])
     
     with tab1:
-        st.markdown("### ⚙️ Control de Visualización")
-        col_view1, _ = st.columns([1.5, 2])
-        with col_view1:
-            modo_vista = st.radio("Modo de Vista:", ["🖼️ Realograma (Imágenes)", "📦 Bloques (Colores)"], horizontal=True, label_visibility="collapsed")
-            es_realograma = ("Realograma" in modo_vista)
+        # VISTA PREDETERMINADA: 📦 Bloques (Colores) -> index=1
+        modo_vista = st.radio(
+            "Modo de Vista:", 
+            ["🖼️ Realograma (Imágenes)", "📦 Bloques (Colores)"], 
+            index=1, 
+            horizontal=True, 
+            label_visibility="collapsed"
+        )
+        es_realograma = ("Realograma" in modo_vista)
             
-        st.markdown("---")
-        
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma)
-        components.html(html_pasillo, height=2200, scrolling=False)
+        # Altura adaptable con scroll encapsulado dentro del iframe
+        components.html(html_pasillo, height=1300, scrolling=True)
             
     with tab2:
         top_n_fijo = 5
@@ -1003,11 +1125,11 @@ if df_raw is not None:
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card">
-                    <span class="fin-kpi-title">Ventas Totales (Acumuladas)</span>
+                    <span class="fin-kpi-title">Ventas Totales</span>
                     <span class="fin-kpi-val">S/ {ventas_globales:,.2f}</span>
                 </div>
                 <div class="fin-kpi-card green-theme">
-                    <span class="fin-kpi-title">Margen Total (Acumulado)</span>
+                    <span class="fin-kpi-title">Margen Total</span>
                     <span class="fin-kpi-val">S/ {margen_global:,.2f}</span>
                 </div>
                 <div class="fin-kpi-card purple-theme">
@@ -1015,18 +1137,14 @@ if df_raw is not None:
                     <span class="fin-kpi-val">{margen_pct_global*100:.1f}%</span>
                 </div>
                 <div class="fin-kpi-card">
-                    <span class="fin-kpi-title">SKUs Únicos en Mueble</span>
+                    <span class="fin-kpi-title">SKUs Únicos</span>
                     <span class="fin-kpi-val">{total_skus_activos}</span>
                 </div>
             </div>
         """, unsafe_allow_html=True)
         
-        st.markdown("---")
-        
         cats_disponibles = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
-        col_seg_cat, _ = st.columns([2, 2])
-        with col_seg_cat:
-            cat_seleccionada = st.selectbox("🎯 Filtrar Dashboard por Categoría:", ["Todas las Categorías"] + cats_disponibles)
+        cat_seleccionada = st.selectbox("🎯 Filtrar Dashboard por Categoría:", ["Todas las Categorías"] + cats_disponibles)
         
         df_dash_base = df_base.copy()
         if cat_seleccionada != "Todas las Categorías":
@@ -1034,7 +1152,7 @@ if df_raw is not None:
             
         df_dash_unicos = df_dash_base.drop_duplicates(subset=['COD REAL']).copy()
 
-        col_graf_izq, col_graf_der = st.columns([6.5, 3.5])
+        col_graf_izq, col_graf_der = st.columns([6, 4])
         
         with col_graf_izq:
             st.markdown("##### 📈 Ventas y Rentabilidad por Cuerpo")
@@ -1057,9 +1175,9 @@ if df_raw is not None:
             
             def crear_etiqueta_eje(c_num):
                 cat_nombre = cat_por_cuerpo.get(c_num, "")
-                if cat_nombre and len(cat_nombre) > 18:
-                    cat_nombre = cat_nombre[:16] + ".."
-                return f"Cuerpo {int(c_num)}<br><sub>{cat_nombre}</sub>" if cat_nombre else f"Cuerpo {int(c_num)}"
+                if cat_nombre and len(cat_nombre) > 16:
+                    cat_nombre = cat_nombre[:14] + ".."
+                return f"C{int(c_num)}<br><sub>{cat_nombre}</sub>" if cat_nombre else f"C{int(c_num)}"
 
             ventas_cuerpo['Cuerpo_Label'] = ventas_cuerpo['Cuerpo_Ord'].apply(crear_etiqueta_eje)
             ventas_cuerpo['Margen_Pct'] = ventas_cuerpo.apply(
@@ -1067,12 +1185,10 @@ if df_raw is not None:
                 axis=1
             )
             
-            col_ord, _ = st.columns([1.5, 2.5])
-            with col_ord:
-                orden_grafico = st.selectbox("Ordenar por:", 
-                    ["Cuerpo (Secuencial)", "Mayor a Menor Venta", "Mayor Margen (%)"],
-                    label_visibility="collapsed"
-                )
+            orden_grafico = st.selectbox("Ordenar por:", 
+                ["Cuerpo (Secuencial)", "Mayor a Menor Venta", "Mayor Margen (%)"],
+                label_visibility="collapsed"
+            )
             
             if orden_grafico == "Mayor a Menor Venta": ventas_cuerpo = ventas_cuerpo.sort_values('Venta_Total', ascending=False)
             elif orden_grafico == "Mayor Margen (%)": ventas_cuerpo = ventas_cuerpo.sort_values('Margen_Pct', ascending=False)
@@ -1084,12 +1200,12 @@ if df_raw is not None:
                 go.Bar(
                     x=ventas_cuerpo['Cuerpo_Label'], 
                     y=ventas_cuerpo['Venta_Total'],
-                    name="Ventas Totales (S/)",
+                    name="Ventas (S/)",
                     text=ventas_cuerpo['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
                     textposition='auto',
-                    textfont=dict(color='#ffffff', size=11, weight='bold'),
-                    marker=dict(color='rgba(59, 130, 246, 0.75)', line=dict(color='#3b82f6', width=2)),
-                    hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata}<extra></extra>",
+                    textfont=dict(color='#ffffff', size=10, weight='bold'),
+                    marker=dict(color='rgba(59, 130, 246, 0.75)', line=dict(color='#3b82f6', width=1.5)),
+                    hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs: %{customdata}<extra></extra>",
                     customdata=ventas_cuerpo['SKUs_Total']
                 ), secondary_y=False
             )
@@ -1102,9 +1218,9 @@ if df_raw is not None:
                     mode="lines+markers+text",
                     text=ventas_cuerpo['Margen_Pct'].apply(lambda x: f"{x*100:,.1f}%"),
                     textposition='top center',
-                    textfont=dict(color='#10b981', size=12, weight='bold'),
-                    marker=dict(color="#10b981", size=9, symbol='circle', line=dict(color='#ffffff', width=2)),
-                    line=dict(color="#10b981", width=3.5, shape='spline'),
+                    textfont=dict(color='#10b981', size=11, weight='bold'),
+                    marker=dict(color="#10b981", size=7, symbol='circle'),
+                    line=dict(color="#10b981", width=2.5),
                     hovertemplate="<b>%{x}</b><br>Margen: %{text}<extra></extra>"
                 ), secondary_y=True
             )
@@ -1112,9 +1228,9 @@ if df_raw is not None:
             fig.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
-                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color='#cbd5e1')),
-                margin=dict(t=10, b=30, l=10, r=10),
-                xaxis=dict(showgrid=False, color='#cbd5e1', tickfont=dict(size=11, weight='bold')),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color='#cbd5e1', size=10)),
+                margin=dict(t=10, b=20, l=10, r=10),
+                xaxis=dict(showgrid=False, color='#cbd5e1', tickfont=dict(size=10, weight='bold')),
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor='rgba(255,255,255,0.1)', color='#cbd5e1', zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color='#10b981', zeroline=False)
             )
@@ -1140,38 +1256,39 @@ if df_raw is not None:
                 labels=df_pie[vista_anillo], 
                 values=df_pie['Venta_Num'], 
                 hole=0.48,
-                textinfo='label+percent',
+                textinfo='percent',
                 textposition='inside',
                 insidetextorientation='horizontal',
-                textfont=dict(size=13, color='#ffffff', family='Arial Black'),
+                textfont=dict(size=11, color='#ffffff', family='Arial Black'),
                 marker=dict(colors=['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#14b8a6'], 
-                            line=dict(color='#0f172a', width=2))
+                            line=dict(color='#0f172a', width=1.5))
             )])
             
             fig_pie.update_layout(
-                showlegend=False,
+                showlegend=True,
+                legend=dict(font=dict(color='#cbd5e1', size=9), orientation='v'),
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                margin=dict(t=10, b=10, l=10, r=10),
-                annotations=[dict(text=f'<b>S/ {ventas_dash_total/1000:,.1f}K</b>', x=0.5, y=0.5, font_size=18, showarrow=False, font_color='#ffffff')]
+                margin=dict(t=5, b=5, l=5, r=5),
+                annotations=[dict(text=f'<b>S/ {ventas_dash_total/1000:,.1f}K</b>', x=0.5, y=0.5, font_size=15, showarrow=False, font_color='#ffffff')]
             )
             fig_pie.update_traces(hovertemplate="<b>%{label}</b><br>Ventas: S/ %{value:,.2f}<br>Participación: %{percent}<extra></extra>")
             
             st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
 
         st.markdown("---")
-        st.markdown("### ⚖️ Análisis Fair Share: Participación de Espacio vs Rendimiento Financiero")
+        st.markdown("### ⚖️ Fair Share: Espacio vs Rendimiento")
         
-        col_fs_dim, col_fs_met = st.columns([2, 2])
+        col_fs_dim, col_fs_met = st.columns([1, 1])
         with col_fs_dim:
             dim_fs = st.selectbox(
-                "Segmentar Fair Share por:", 
+                "Segmentar por:", 
                 ["Categoría", "Sección", "Departamento", "Grupo de artículo", "Marca"],
                 key="fs_dim_select"
             )
         with col_fs_met:
             metrica_espacio = st.radio(
-                "Métrica de Espacio Físico a Comparar:",
+                "Métrica Espacio:",
                 ["Caras (Facings)", "Total Unidades en Bandeja"],
                 horizontal=True,
                 key="fs_met_radio"
@@ -1200,41 +1317,26 @@ if df_raw is not None:
             df_fs = df_fs.sort_values(by='Pct_Ventas', ascending=False)
             
             fig_fs = go.Figure()
-            
             fig_fs.add_trace(go.Bar(
-                x=df_fs[dim_fs],
-                y=df_fs['Pct_Espacio'],
-                name=f"% Espacio ({'Caras' if metrica_espacio == 'Caras (Facings)' else 'Unid. Bandeja'})",
+                x=df_fs[dim_fs], y=df_fs['Pct_Espacio'],
+                name=f"% Espacio",
                 text=df_fs['Pct_Espacio'].apply(lambda x: f"{x*100:.1f}%"),
                 textposition='auto',
-                textfont=dict(color='#ffffff', size=11, weight='bold'),
-                marker=dict(color='rgba(59, 130, 246, 0.85)', line=dict(color='#3b82f6', width=2)),
-                hovertemplate="<b>%{x}</b><br>% Espacio: %{y:.1%}<br>Total Físico: %{customdata:,.0f}<extra></extra>",
-                customdata=df_fs['Espacio_Total']
+                marker=dict(color='rgba(59, 130, 246, 0.85)')
             ))
-            
             fig_fs.add_trace(go.Bar(
-                x=df_fs[dim_fs],
-                y=df_fs['Pct_Ventas'],
-                name="% Ventas (Monto S/)",
+                x=df_fs[dim_fs], y=df_fs['Pct_Ventas'],
+                name="% Ventas",
                 text=df_fs['Pct_Ventas'].apply(lambda x: f"{x*100:.1f}%"),
                 textposition='auto',
-                textfont=dict(color='#ffffff', size=11, weight='bold'),
-                marker=dict(color='rgba(16, 185, 129, 0.85)', line=dict(color='#10b981', width=2)),
-                hovertemplate="<b>%{x}</b><br>% Ventas: %{y:.1%}<br>Ventas S/: %{customdata:,.2f}<extra></extra>",
-                customdata=df_fs['Ventas_Total']
+                marker=dict(color='rgba(16, 185, 129, 0.85)')
             ))
-
             fig_fs.add_trace(go.Bar(
-                x=df_fs[dim_fs],
-                y=df_fs['Pct_Margen'],
-                name="% Margen (Ganancia S/)",
+                x=df_fs[dim_fs], y=df_fs['Pct_Margen'],
+                name="% Margen",
                 text=df_fs['Pct_Margen'].apply(lambda x: f"{x*100:.1f}%"),
                 textposition='auto',
-                textfont=dict(color='#ffffff', size=11, weight='bold'),
-                marker=dict(color='rgba(245, 158, 11, 0.85)', line=dict(color='#f59e0b', width=2)),
-                hovertemplate="<b>%{x}</b><br>% Margen: %{y:.1%}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
-                customdata=df_fs['Margen_Total']
+                marker=dict(color='rgba(245, 158, 11, 0.85)')
             ))
             
             fig_fs.update_layout(
@@ -1242,94 +1344,77 @@ if df_raw is not None:
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
-                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color='#cbd5e1')),
-                margin=dict(t=20, b=40, l=10, r=10),
-                xaxis=dict(showgrid=False, color='#cbd5e1', tickfont=dict(size=11, weight='bold')),
-                yaxis=dict(title="Participación Relativa (%)", showgrid=True, gridcolor='rgba(255,255,255,0.08)', color='#cbd5e1', tickformat=".0%")
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color='#cbd5e1', size=10)),
+                margin=dict(t=10, b=30, l=10, r=10),
+                xaxis=dict(showgrid=False, color='#cbd5e1', tickfont=dict(size=10, weight='bold')),
+                yaxis=dict(title="Participación (%)", showgrid=True, gridcolor='rgba(255,255,255,0.08)', color='#cbd5e1', tickformat=".0%")
             )
-            
             fig_fs.update_xaxes(fixedrange=True)
             fig_fs.update_yaxes(fixedrange=True)
             st.plotly_chart(fig_fs, use_container_width=True, config={'displayModeBar': False})
             
-            col_diag1, col_diag2 = st.columns(2)
             subdimensionados = df_fs[df_fs['Brecha_Share'] > 0.03]
             sobredimensionados = df_fs[df_fs['Brecha_Share'] < -0.03]
             
-            with col_diag1:
-                if not subdimensionados.empty:
-                    top_sub = subdimensionados.iloc[0]
-                    st.success(f"🚀 **Oportunidad de Crecimiento:** `{top_sub[dim_fs]}` genera el **{top_sub['Pct_Ventas']*100:.1f}%** de las ventas pero solo ocupa el **{top_sub['Pct_Espacio']*100:.1f}%** del espacio físico.")
-                else:
-                    st.info("✅ La asignación de espacio físico está equilibrada frente a las ventas.")
-                    
-            with col_diag2:
-                if not sobredimensionados.empty:
-                    top_sobre = sobredimensionados.sort_values(by='Brecha_Share', ascending=True).iloc[0]
-                    st.warning(f"⚠️ **Alerta de Sobreasignación:** `{top_sobre[dim_fs]}` consume el **{top_sobre['Pct_Espacio']*100:.1f}%** del espacio pero solo aporta el **{top_sobre['Pct_Ventas']*100:.1f}%** de las ventas.")
-                else:
-                    st.info("✅ No se detectan sobreasignaciones críticas de espacio físico.")
+            if not subdimensionados.empty:
+                top_sub = subdimensionados.iloc[0]
+                st.success(f"🚀 **Oportunidad:** `{top_sub[dim_fs]}` genera el **{top_sub['Pct_Ventas']*100:.1f}%** de venta y solo ocupa **{top_sub['Pct_Espacio']*100:.1f}%** de espacio.")
+            if not sobredimensionados.empty:
+                top_sobre = sobredimensionados.sort_values(by='Brecha_Share', ascending=True).iloc[0]
+                st.warning(f"⚠️ **Sobreasignación:** `{top_sobre[dim_fs]}` ocupa el **{top_sobre['Pct_Espacio']*100:.1f}%** de espacio pero solo aporta **{top_sobre['Pct_Ventas']*100:.1f}%** de venta.")
             
         st.markdown("---")
+        st.markdown("### 📋 Reporte Detallado")
         
-        st.markdown("### 📋 Reporte Detallado (SKUs Únicos)")
+        filtro_reporte = st.selectbox("Filtrar Tabla:", [
+            "Todos los SKUs",
+            "Bloqueados (Estado B)",
+            "Sin Stock (Stock = 0)",
+            "Stock Bajo (Stock 1 a 5)",
+            "Cobertura Alta (≥ 30)"
+        ], label_visibility="collapsed")
         
-        col_filt, col_dl = st.columns([4, 1.5])
-        with col_filt:
-            filtro_reporte = st.selectbox("Filtrar Tabla Resumen:", [
-                "Todos los SKUs",
-                "Bloqueados (Estado B)",
-                "Sin Stock (Stock = 0)",
-                "Stock Bajo (Stock 1 a 5)",
-                "Cobertura Alta (≥ 30)"
-            ], label_visibility="collapsed")
-        
-        with col_dl:
-            buffer = io.BytesIO()
-            df_agrupado = df_base.copy()
-            def formatear_ubicacion(val):
-                val_str = str(val).strip()
-                if '.' in val_str:
-                    partes = val_str.split('.')
-                    return f"C{partes[0]} (N{partes[1]})"
-                return f"Cuerpo {val_str}"
-            df_agrupado['Ubic_Txt'] = df_agrupado['Bandeja'].apply(formatear_ubicacion)
-            ubicaciones_map = df_agrupado.groupby('COD REAL')['Ubic_Txt'].apply(
-                lambda x: ", ".join(sorted(list(set(x.dropna()))))
-            ).to_dict()
+        buffer = io.BytesIO()
+        df_agrupado = df_base.copy()
+        def formatear_ubicacion(val):
+            val_str = str(val).strip()
+            if '.' in val_str:
+                partes = val_str.split('.')
+                return f"C{partes[0]} (N{partes[1]})"
+            return f"Cuerpo {val_str}"
+        df_agrupado['Ubic_Txt'] = df_agrupado['Bandeja'].apply(formatear_ubicacion)
+        ubicaciones_map = df_agrupado.groupby('COD REAL')['Ubic_Txt'].apply(
+            lambda x: ", ".join(sorted(list(set(x.dropna()))))
+        ).to_dict()
 
-            df_rep = df_unicos.copy()
-            df_rep['Ubicación(es)'] = df_rep['COD REAL'].map(ubicaciones_map)
+        df_rep = df_unicos.copy()
+        df_rep['Ubicación(es)'] = df_rep['COD REAL'].map(ubicaciones_map)
+        
+        if filtro_reporte == "Bloqueados (Estado B)":
+            df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
+        elif filtro_reporte == "Sin Stock (Stock = 0)":
+            df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
+        elif filtro_reporte == "Stock Bajo (Stock 1 a 5)":
+            df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
+        elif filtro_reporte == "Cobertura Alta (≥ 30)":
+            df_rep = df_rep[df_rep['Cob_Num'] >= 30]
             
-            if filtro_reporte == "Bloqueados (Estado B)":
-                df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
-            elif filtro_reporte == "Sin Stock (Stock = 0)":
-                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
-            elif filtro_reporte == "Stock Bajo (Stock 1 a 5)":
-                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
-            elif filtro_reporte == "Cobertura Alta (≥ 30)":
-                df_rep = df_rep[df_rep['Cob_Num'] >= 30]
-                
-            col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
-            cols_to_show = [
-                'COD REAL', 'EAN', col_desc, 'Ubicación(es)', 
-                'Departamento', 'Sección', 'Categoría', 'Grupo de artículo', 
-                'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen'
-            ]
-            cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
+        col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
+        cols_to_show = [
+            'COD REAL', 'EAN', col_desc, 'Ubicación(es)', 
+            'Departamento', 'Sección', 'Categoría', 'Grupo de artículo', 
+            'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen'
+        ]
+        cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
 
-            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-                df_rep[cols_to_show].to_excel(writer, index=False, sheet_name='Reporte_SKUs')
-                
-            st.markdown("<div style='margin-top: 15px;'>", unsafe_allow_html=True)
-            st.download_button(
-                label="📥 Descargar a Excel (.xlsx)",
-                data=buffer.getvalue(),
-                file_name="reporte_planograma_skus_unicos.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True
-            )
-            st.markdown("</div>", unsafe_allow_html=True)
+        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+            df_rep[cols_to_show].to_excel(writer, index=False, sheet_name='Reporte_SKUs')
             
-        st.markdown("<p style='font-size: 0.85rem; color: #94a3b8; margin-top: -10px;'>💡 También puedes usar el ícono nativo de descarga que aparece al pasar el cursor sobre la esquina derecha de la tabla.</p>", unsafe_allow_html=True)
+        st.download_button(
+            label="📥 Descargar a Excel (.xlsx)",
+            data=buffer.getvalue(),
+            file_name="reporte_planograma_skus_unicos.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
         st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True)
