@@ -19,18 +19,51 @@ st.markdown("""
         .block-container {
             padding-left: 1.5rem !important;
             padding-right: 1.5rem !important;
-            padding-top: 3.5rem !important; 
+            padding-top: 2rem !important; 
             max-width: 100% !important;
         }
-        
         .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; }
         .fin-kpi-card { flex: 1; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 18px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
         .fin-kpi-title { font-size: 0.80rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
         .fin-kpi-val { font-size: 2.0rem; font-weight: 900; color: #ffffff; line-height: 1; }
         .fin-kpi-card.green-theme { border-left-color: #10b981; }
         .fin-kpi-card.purple-theme { border-left-color: #8b5cf6; }
+        
+        .login-card {
+            background-color: #111c30;
+            padding: 30px;
+            border-radius: 10px;
+            border: 1px solid #1e3a8a;
+            max-width: 450px;
+            margin: 60px auto;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+        }
     </style>
 """, unsafe_allow_html=True)
+
+# --- CAPA DE SEGURIDAD (LOGIN SIMPLE) ---
+if "autenticado" not in st.session_state:
+    st.session_state.autenticado = False
+
+def login_form():
+    st.markdown("<div class='login-card'>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #fff; margin-top: 0;'>🔒 Acceso Planograma 2.0</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 0.85rem;'>Ingresa tus credenciales corporativas</p>", unsafe_allow_html=True)
+    
+    usuario = st.text_input("Usuario:", key="user_input")
+    password = st.text_input("Contraseña:", type="password", key="pass_input")
+    
+    if st.button("Iniciar Sesión", type="primary", use_container_width=True):
+        if usuario == "S003" and password == "S0032026":
+            st.session_state.autenticado = True
+            st.rerun()
+        else:
+            st.error("❌ Credenciales incorrectas. Verifica usuario o contraseña.")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+if not st.session_state.autenticado:
+    login_form()
+    st.stop()
 
 # --- FUNCIONES DE APOYO Y LIMPIEZA ---
 def safe_float(val, default=0.0):
@@ -143,7 +176,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
                 cob_fmt = f"{cob_val:.2f}"
                 estilo_cobertura = "color: red; font-weight: bold;" if cob_val >= 30 else ""
                 
-                # --- GENERACIÓN CONDICIONAL (IMAGEN VS BLOQUE) ---
                 if es_realograma:
                     link_foto = str(it.get("Links de fotos", ""))
                     if link_foto in ['nan', '', 'None']:
@@ -260,7 +292,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
         
         .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
         .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
-        .filter-btn-fs {{ background: #8b5cf6; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
         
         .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }}
         .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-right: 8px; }}
@@ -281,16 +312,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
         .bay-subcat {{ font-size: 0.68rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
         
         .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 25px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }}
-        
         .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 15px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        /* CORRECCIÓN SCROLL Y ALINEACIÓN DE PRODUCTOS */
         .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px 12px; min-height: 125px; overflow-x: auto; padding-bottom: 8px; align-items: flex-end; justify-content: flex-start; }}
         .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); z-index: 1; }}
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
         
-        /* ESTILOS REALOGRAMA (IMÁGENES) */
         .shelf-base {{ height: 12px; background: linear-gradient(180deg, #fde047 0%, #ca8a04 100%); border-radius: 2px; box-shadow: 0 4px 6px rgba(0,0,0,0.6); display: flex; justify-content: center; position: relative; z-index: 5; margin-top: -2px; border-top: 1px solid #fef08a; border-bottom: 2px solid #854d0e; }}
         .shelf-name-tag {{ position: absolute; top: 10px; background: rgba(0,0,0,0.7); color: #fef08a; font-size: 0.55rem; padding: 1px 6px; border-radius: 0 0 4px 4px; font-weight: 800; letter-spacing: 0.5px; }}
         
@@ -309,7 +337,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -15px; right: -5px; font-size: 1.1rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); z-index: 30; animation: float 2s ease-in-out infinite; }}
         @keyframes float {{ 0% {{transform: translateY(0px);}} 50% {{transform: translateY(-4px);}} 100% {{transform: translateY(0px);}} }}
         
-        /* ESTILOS CAJAS DE COLORES (OLD VIEW) */
         .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; cursor: pointer; align-items: stretch; flex-shrink: 0; }}
         .sku-pos {{ position: absolute; top: 4px; left: 4px; background: #0f172a; color: #fff; font-size: 0.6rem; font-weight: 800; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 2px; }}
         .sku-caras-tag {{ position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.9); color: #000; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 2px; }}
@@ -322,7 +349,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        /* TARJETA MODAL DINÁMICA CENTRADA AL CLIC */
         .modal-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); display: flex; align-items: flex-start; justify-content: center; z-index: 99999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.9); border: 2px solid #3b82f6; transition: margin-top 0.1s; }}
@@ -331,37 +357,26 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* --- IMPRESIÓN A4 VERTICAL PERFECTO PANTALLA COMPLETA --- */
         @media print {{
           @page {{ size: A4 portrait; margin: 5mm; }}
           body, html, .main-container {{ background-color: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; height: 100% !important; overflow: hidden !important; }}
-          
           .filter-panel, .legend-panel, .modal-overlay, .nav-btn, .kpi-container, .top-panel {{ display: none !important; }}
-          
           .aisle-wrapper {{ display: block !important; width: 100% !important; height: 100% !important; border: none !important; }}
           .aisle-container {{ display: block !important; width: 100% !important; height: 100% !important; background: transparent !important; border: none !important; padding: 0 !important; overflow: visible !important; }}
-          
           .bay-column {{ background: #fff !important; border: 3px solid #000 !important; width: 195mm !important; height: 280mm !important; max-width: 100% !important; page-break-inside: avoid; margin: 0 auto !important; display: flex !important; flex-direction: column !important; }}
           .bay-column.hidden {{ display: none !important; }}
           .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding: 10px !important; font-size: 20pt !important; display: block; text-align: center; }}
           .bay-subcat {{ color: #334155 !important; font-size: 14pt !important; display: block; }}
-          
           .bay-shelves {{ padding: 5px !important; gap: 15px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; justify-content: space-evenly !important; overflow: visible !important; height: 100% !important; }}
           .shelf-row {{ background: transparent !important; display: flex !important; flex-direction: column !important; justify-content: flex-end !important; flex-grow: 1 !important; margin-bottom: 0 !important; padding-top: 5px !important; }}
-          
           .shelf-products {{ flex-grow: 0 !important; padding: 2px !important; gap: 2px !important; display: flex !important; align-items: flex-end !important; justify-content: center !important; overflow: visible !important; }}
-          
           .sku-images-wrapper img {{ height: 110px !important; max-width: 45px !important; filter: none !important; }}
           .sku-fleje {{ font-size: 7pt !important; padding: 2px !important; margin-top: 1px !important; border: 1px solid #000 !important; }}
           .fleje-ean {{ font-size: 7pt !important; font-weight: bold !important; }}
           .fleje-caras {{ font-size: 8pt !important; font-weight: 900 !important; color: #000 !important; background: transparent !important; border-top: 1px solid #000 !important; }}
-          
           .shelf-base {{ height: 10px !important; background: #eab308 !important; border-bottom: 3px solid #000 !important; border-top: 1px solid #000 !important; box-shadow: none !important; margin-top: 0 !important; }}
           .shelf-name-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; border-top: none !important; font-size: 8pt !important; top: 8px !important; padding: 1px 4px !important; font-weight: bold !important; }}
-          
           .top-badge::after {{ font-size: 14pt !important; top: -15px !important; filter: none !important; }}
-          
-          /* SI ESTÁ EN MODO CAJAS */
           .sku-card {{ background: #fff !important; border: 2px solid #000 !important; color: #000 !important; padding: 4px !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; flex-basis: 0 !important; flex-grow: 1 !important; min-width: unset !important; }}
           .sku-pos, .sku-caras-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-size: 9pt !important; width: auto !important; height: auto !important; padding: 2px 4px !important; font-weight: bold !important; }}
           .sku-details {{ margin-top: 15px !important; }}
@@ -373,19 +388,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
           .shelf-caras-count {{ background: #e2e8f0 !important; color: #000 !important; font-size: 12pt !important; }}
         }}
 
-        /* 📱 FIX RESPONSIVO PARA MÓVILES */
         @media (max-width: 768px) {{
             .kpi-container {{ flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-bottom: 8px; }}
             .kpi-card {{ flex: 0 0 140px; }}
             .legend-chips {{ flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; justify-content: flex-start; }}
             .legend-chip {{ flex: 0 0 auto; }}
-            
             .filter-panel, .top-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
             .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
             .nav-btn {{ width: 22px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
             .aisle-wrapper {{ height: calc(100vh - 120px); min-height: 400px; }}
             .bay-column {{ flex: 0 0 95vw !important; min-width: 300px; margin-right: 5px; height: 100%; padding-bottom: 10px; }}
-            
             .sku-images-wrapper img {{ height: 75px; max-width: 40px; }}
             .sku-card {{ min-width: 80px; }}
         }}
@@ -723,7 +735,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=True):
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
-                /* POSICIONAMIENTO DINÁMICO AL CLIC (Rastreo del cursor) */
                 const modalContent = document.querySelector('.modal-content');
                 let topPos = e.pageY - 220; 
                 if (topPos < 20) topPos = 20; 
@@ -805,7 +816,8 @@ df_fotos_raw = None
 info_hora = None
 error_nube = None
 
-col_head1, col_head2, col_head3 = st.columns([5, 1.5, 4.5])
+# --- HEADER CON TÍTULO, BOTÓN Y CIERRE DE SESIÓN ---
+col_head1, col_head2, col_head3, col_head4 = st.columns([4, 1.5, 3.5, 1])
 
 with col_head1:
     st.markdown("<h1 style='margin: 0; padding: 0; font-size: 2.1rem; color: #fff;'>📦 Planograma 2.0</h1>", unsafe_allow_html=True)
@@ -819,6 +831,13 @@ with col_head2:
 
 with col_head3:
     header_time_placeholder = st.empty()
+
+with col_head4:
+    st.markdown("<div style='margin-top: 5px;'>", unsafe_allow_html=True)
+    if st.button("🚪 Salir", use_container_width=True, help="Cerrar sesión segura"):
+        st.session_state.autenticado = False
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<div style='border-bottom: 2px solid #1e3a8a; padding-bottom: 5px; margin-bottom: 15px;'><span style='color: #93c5fd; font-size: 0.9rem;'>Análisis interactivo de pasillos y rentabilidad de tienda</span></div>", unsafe_allow_html=True)
 
@@ -958,7 +977,7 @@ if df_raw is not None:
     
     with tab1:
         st.markdown("### ⚙️ Control de Visualización")
-        col_view1, col_view2 = st.columns([1, 2])
+        col_view1, _ = st.columns([1.5, 2])
         with col_view1:
             modo_vista = st.radio("Modo de Vista:", ["🖼️ Realograma (Imágenes)", "📦 Bloques (Colores)"], horizontal=True, label_visibility="collapsed")
             es_realograma = ("Realograma" in modo_vista)
@@ -1253,9 +1272,10 @@ if df_raw is not None:
             
         st.markdown("---")
         
+        st.markdown("### 📋 Reporte Detallado (SKUs Únicos)")
+        
         col_filt, col_dl = st.columns([4, 1.5])
         with col_filt:
-            st.markdown("### 📋 Reporte Detallado (SKUs Únicos)")
             filtro_reporte = st.selectbox("Filtrar Tabla Resumen:", [
                 "Todos los SKUs",
                 "Bloqueados (Estado B)",
