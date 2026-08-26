@@ -492,13 +492,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        /* MODAL CON CENTRADO VERTICAL ABSOLUTO ADAPTATIVO */
+        /* MODAL INTEGRADO AL CUADRO: CENTRADO ABSOLUTO DENTRO DEL CONTENEDOR */
         .modal-overlay {{ 
           position: absolute; 
           top: 0;
           left: 0;
-          right: 0;
-          bottom: 0;
           width: 100%;
           height: 100%;
           background: rgba(0,0,0,0.85); 
@@ -506,22 +504,26 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           opacity: 0; 
           pointer-events: none; 
           transition: opacity 0.2s ease; 
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 15px;
+          box-sizing: border-box;
         }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ 
-          position: absolute;
-          left: 50%;
-          transform: translate(-50%, -50%);
           background: #1e293b; 
           color: #fff; 
           padding: 22px; 
           border-radius: 10px; 
-          width: 90%; 
+          width: 92%; 
           max-width: 440px; 
-          max-height: 85vh; 
+          max-height: 85%; 
           overflow-y: auto; 
           border: 2px solid #3b82f6; 
           box-shadow: 0 10px 40px rgba(0,0,0,0.9); 
+          position: relative;
+          margin: auto;
         }}
         .modal-close {{ position: absolute; top: 10px; right: 15px; font-size: 1.8rem; cursor: pointer; color: #94a3b8; font-weight: bold; line-height: 1; }}
         .m-row {{ border-bottom: 1px solid #334155; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.85rem; }}
@@ -597,24 +599,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
     <body>
       <div class="main-container" id="mainContainer">
 
-        <div id="productModal" class="modal-overlay">
-          <div class="modal-content" id="modalContent">
-            <span class="modal-close">&times;</span>
-            <h3 id="m-name" style="margin-top: 0; font-size: 1.1rem; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; line-height: 1.3;">Producto</h3>
-            <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod"></span></div>
-            <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
-            <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
-            <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept" style="color: #cbd5e1;"></span></div>
-            <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec" style="color: #cbd5e1;"></span></div>
-            <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer" style="color: #cbd5e1;"></span></div>
-            <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga" style="color: #cbd5e1;"></span></div>
-            <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
-            <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
-            <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
-            <div class="m-row" style="border-bottom: none;"><span class="m-label" style="color: #fbbf24; font-weight: 800;">¿Es TOP Ventas?:</span><span class="m-val" id="m-top" style="color: #fbbf24; font-weight: 800;"></span></div>
-          </div>
-        </div>
-
         <div class="top-panel" style="background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; flex-shrink: 0;">
           <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 1.2rem;">🏆</span>
@@ -663,8 +647,26 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           </div>
         </div>
 
-        <!-- CONTENEDOR CON FLECHAS FLOTANTES DINÁMICAS -->
+        <!-- CONTENEDOR CON MODAL INTEGRADO Y FLECHAS DINÁMICAS -->
         <div class="aisle-wrapper" id="aisleWrapper">
+          <div id="productModal" class="modal-overlay">
+            <div class="modal-content" id="modalContent">
+              <span class="modal-close">&times;</span>
+              <h3 id="m-name" style="margin-top: 0; font-size: 1.1rem; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; line-height: 1.3;">Producto</h3>
+              <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod"></span></div>
+              <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
+              <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
+              <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept" style="color: #cbd5e1;"></span></div>
+              <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec" style="color: #cbd5e1;"></span></div>
+              <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer" style="color: #cbd5e1;"></span></div>
+              <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga" style="color: #cbd5e1;"></span></div>
+              <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
+              <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
+              <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
+              <div class="m-row" style="border-bottom: none;"><span class="m-label" style="color: #fbbf24; font-weight: 800;">¿Es TOP Ventas?:</span><span class="m-val" id="m-top" style="color: #fbbf24; font-weight: 800;"></span></div>
+            </div>
+          </div>
+
           <div class="fullscreen-legend-bar">
             <span style="font-size: 0.70rem; font-weight: 800; color: #93c5fd; text-transform: uppercase;">📍 LEYENDA:</span>
             <div class="legend-chips">
@@ -1030,7 +1032,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
             window.print();
         }});
 
-        // LEYENDA (DUAL SYNC: PANEL + FULLSCREEN BAR)
+        // LEYENDA (DUAL SYNC)
         document.querySelectorAll('.legend-chip').forEach(chip => {{
             chip.addEventListener('click', () => {{
                 const filter = chip.getAttribute('data-filter');
@@ -1066,13 +1068,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           applyFilters();
         }});
 
-        // MODAL PRODUCTO CON CENTRADO ADAPTATIVO AL MONITOR
+        // MODAL PRODUCTO CENTRADO
         const modal = document.getElementById('productModal');
-        const modalContent = document.getElementById('modalContent');
         const closeBtn = document.querySelector('.modal-close');
         
         document.querySelectorAll('.sku-item').forEach(card => {{
-            card.addEventListener('click', (e) => {{
+            card.addEventListener('click', () => {{
                 document.getElementById('m-name').textContent = card.getAttribute('data-name');
                 document.getElementById('m-cod').textContent = card.getAttribute('data-cod');
                 document.getElementById('m-ean').textContent = card.getAttribute('data-ean');
@@ -1091,19 +1092,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
-                // Algoritmo de centrado relativo en el viewport actual
-                let clickY = e.pageY || (card.getBoundingClientRect().top + window.scrollY);
-                let containerH = document.body.scrollHeight || 1200;
-                
-                // Compensación dinámica según nivel (Niveles altos bajan, niveles bajos suben)
-                let adjustedTop = clickY;
-                if (clickY > containerH - 260) {{
-                    adjustedTop = containerH - 260;
-                }} else if (clickY < 240) {{
-                    adjustedTop = 240;
-                }}
-                
-                modalContent.style.top = adjustedTop + 'px';
                 modal.classList.add('active');
             }});
         }});
@@ -1347,6 +1335,7 @@ if df_raw is not None:
         st.markdown("---")
         
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma)
+        # Altura calibrada al contenido exacto del planograma
         components.html(html_pasillo, height=1250, scrolling=False)
             
     with tab2:
