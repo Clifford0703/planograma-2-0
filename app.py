@@ -284,9 +284,23 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
       <style>
         * {{ box-sizing: border-box; }}
-        body, html {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; }}
+        body, html {{ 
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+          background-color: #070d19; 
+          color: #fff; 
+          margin: 0; 
+          padding: 0; 
+          min-height: 100vh; 
+          overflow-x: hidden; 
+        }}
         
-        .main-container {{ padding: 12px; min-height: 100vh; display: flex; flex-direction: column; }}
+        .main-container {{ 
+          padding: 10px 8px; 
+          min-height: 100vh; 
+          display: flex; 
+          flex-direction: column; 
+          box-sizing: border-box;
+        }}
 
         ::-webkit-scrollbar {{ height: 8px; width: 8px; }}
         ::-webkit-scrollbar-track {{ background: #0f172a; border-radius: 4px; }}
@@ -300,7 +314,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .kpi-val {{ font-size: 1.5rem; font-weight: 900; line-height: 1; display: block; }}
         
         /* FILTROS */
-        .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 16px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; flex-shrink: 0; }}
+        .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; flex-shrink: 0; }}
         .filter-group {{ display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }}
         .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
         .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 5px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; outline: none; width: 100%; min-width: 120px; }}
@@ -337,45 +351,50 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
-        /* CONTENEDOR TÁCTIL (PINCH-TO-ZOOM / PANEO) */
+        /* CONTENEDOR TÁCTIL PRINCIPAL */
         .aisle-wrapper {{ 
-          display: flex; 
-          align-items: stretch; 
-          gap: 8px; 
+          display: block; 
           width: 100%; 
           position: relative; 
           flex-grow: 1; 
-          min-height: 480px; 
           height: auto;
-          overflow: hidden;
+          min-height: 480px;
+          overflow: visible;
           background: #0b1324;
           border-radius: 8px;
-          border: 1px solid #1e293b;
+          border: 1.5px solid #1e293b;
           touch-action: pan-y;
+          padding: 0;
         }}
+        
+        /* FLECHAS FIJAS A LOS EXTREMOS EN ESCRITORIO */
         .nav-btn {{ 
-          background: #1e3a8a; 
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          background: rgba(30, 58, 138, 0.85); 
           color: white; 
           border: 2px solid #3b82f6; 
           border-radius: 8px; 
-          width: 42px; 
-          font-size: 1.6rem; 
+          width: 44px; 
+          height: 60px;
+          font-size: 1.8rem; 
           font-weight: bold; 
           cursor: pointer; 
-          z-index: 50; 
+          z-index: 100; 
           display: flex; 
           align-items: center; 
           justify-content: center; 
-          flex-shrink: 0; 
-          box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
-          transition: background 0.2s;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
+          backdrop-filter: blur(4px);
+          transition: all 0.2s;
         }}
-        .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; opacity: 0.4; }}
+        .nav-btn-prev {{ left: 8px; }}
+        .nav-btn-next {{ right: 8px; }}
+        .nav-btn:disabled {{ opacity: 0; pointer-events: none; }}
         
         .zoom-layer {{
-          display: flex;
-          flex-direction: row;
-          align-items: stretch;
+          display: block;
           width: 100%;
           height: auto;
           transform-origin: 0 0;
@@ -387,16 +406,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           flex-direction: row; 
           gap: 16px; 
           background: #0f172a; 
-          border: 1px solid #1e293b; 
           border-radius: 8px; 
-          padding: 16px; 
+          padding: 14px 45px; 
           overflow-x: auto; 
           overflow-y: visible; 
           scroll-behavior: smooth; 
           scroll-snap-type: x mandatory; 
-          flex-grow: 1; 
-          align-items: flex-start; 
           width: 100%; 
+          box-sizing: border-box;
         }}
         
         .bay-column {{ 
@@ -408,19 +425,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           display: flex; 
           flex-direction: column; 
           height: auto; 
-          scroll-snap-align: start; 
-          padding-bottom: 15px; 
+          scroll-snap-align: center; 
+          padding-bottom: 12px; 
+          box-sizing: border-box;
         }}
         .bay-column.hidden {{ display: none !important; }}
         
         .bay-title {{ background: #1e3a8a; padding: 8px; font-size: 0.90rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
         .bay-subcat {{ font-size: 0.70rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
         
-        .bay-shelves {{ padding: 12px; display: flex; flex-direction: column; gap: 20px; flex-grow: 1; height: auto; }}
-        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 10px; transition: all 0.3s; }}
+        .bay-shelves {{ padding: 12px; display: flex; flex-direction: column; gap: 16px; flex-grow: 1; height: auto; }}
+        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 8px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px 8px; min-height: 110px; overflow-x: auto; padding-bottom: 8px; align-items: flex-end; justify-content: flex-start; }}
+        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px 8px; min-height: 105px; overflow-x: auto; padding-bottom: 6px; align-items: flex-end; justify-content: flex-start; }}
         .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); z-index: 1; }}
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
         
@@ -442,8 +460,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -15px; right: -5px; font-size: 1.1rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); z-index: 30; animation: float 2s ease-in-out infinite; }}
         @keyframes float {{ 0% {{transform: translateY(0px);}} 50% {{transform: translateY(-4px);}} 100% {{transform: translateY(0px);}} }}
         
-        .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; cursor: pointer; align-items: stretch; flex-shrink: 0; box-shadow: none; }}
-        .sku-card.is-top {{ box-shadow: 0 0 0 2px #FFC000 !important; }}
+        .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; cursor: pointer; align-items: stretch; flex-shrink: 0; outline: none; }}
+        .sku-card.is-top {{ outline: 2px solid #FFC000 !important; outline-offset: -1px; }}
         .sku-pos {{ position: absolute; top: 4px; left: 4px; background: #0f172a; color: #fff; font-size: 0.6rem; font-weight: 800; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 2px; }}
         .sku-caras-tag {{ position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.9); color: #000; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 2px; }}
         .sku-details {{ margin-top: 18px; display: flex; flex-direction: column; gap: 3px; text-align: center; overflow: hidden; }}
@@ -463,9 +481,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* --- MODO MÓVIL: KPIS EN 2 COLUMNAS Y ENCAJE COMPLETO --- */
-        .mobile-mode-active .kpi-container,
+        /* --- MODO MÓVIL: SIN FLECHAS, SWIPE CON DEDOS Y AJUSTE 100% --- */
+        .mobile-mode-active .nav-btn,
         @media (max-width: 768px) {{
+            .nav-btn {{ display: none !important; }}
+            .aisle-container {{ padding: 10px 4px !important; }}
             .kpi-container {{
               display: grid !important;
               grid-template-columns: repeat(2, 1fr) !important;
@@ -482,15 +502,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
             }}
             .bay-shelves {{
               gap: 12px !important;
-              padding: 8px !important;
+              padding: 6px !important;
             }}
             .shelf-products {{
-              min-height: 85px !important;
-              padding: 4px !important;
+              min-height: 80px !important;
+              padding: 2px !important;
             }}
-            .sku-card {{ min-width: 85px !important; padding: 4px !important; }}
-            .sku-images-wrapper img {{ height: 75px !important; max-width: 45px !important; }}
-            .nav-btn {{ width: 34px !important; font-size: 1.3rem !important; }}
+            .sku-card {{ min-width: 75px !important; padding: 3px !important; }}
+            .sku-images-wrapper img {{ height: 75px !important; max-width: 42px !important; }}
         }}
 
         @media print {{
@@ -596,21 +615,21 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           </div>
         </div>
 
-        <!-- CONTENEDOR MULTITOUCH (PINCH-TO-ZOOM / ARRASTRAR) -->
+        <!-- CONTENEDOR MULTITOUCH CON FLECHAS FIJAS -->
         <div class="aisle-wrapper" id="aisleWrapper">
-          <button class="nav-btn" id="btnPrev" title="Cuerpo Anterior">❮</button>
+          <button class="nav-btn nav-btn-prev" id="btnPrev" title="Cuerpo Anterior">❮</button>
           <div class="zoom-layer" id="zoomLayer">
             <div class="aisle-container" id="aisleContainer">
               {html_cuerpos}
             </div>
           </div>
-          <button class="nav-btn" id="btnNext" title="Cuerpo Siguiente">❯</button>
+          <button class="nav-btn nav-btn-next" id="btnNext" title="Cuerpo Siguiente">❯</button>
         </div>
 
       </div>
 
       <script>
-        // --- MOTOR DE GESTOS MULTITÁCTIL (PINCH-TO-ZOOM Y PAN) ---
+        // --- MOTOR MULTITÁCTIL Y NAVEGACIÓN ---
         const aisleWrapper = document.getElementById('aisleWrapper');
         const zoomLayer = document.getElementById('zoomLayer');
         const container = document.getElementById('aisleContainer');
@@ -1200,7 +1219,7 @@ if df_raw is not None:
         st.markdown("---")
         
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma)
-        components.html(html_pasillo, height=1800, scrolling=True)
+        components.html(html_pasillo, height=2200, scrolling=False)
             
     with tab2:
         top_n_fijo = 5
