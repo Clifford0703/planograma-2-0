@@ -300,6 +300,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           display: flex; 
           flex-direction: column; 
           box-sizing: border-box;
+          position: relative;
         }}
 
         ::-webkit-scrollbar {{ height: 8px; width: 8px; }}
@@ -380,31 +381,31 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           display: flex !important;
         }}
 
-        /* FLECHAS FLOTANTES FIJAS EN EL CENTRO EXACTO DEL VIEWPORT (DESKTOP) */
+        /* FLECHAS FLOTANTES QUE ACOMPAÑAN EL NIVEL EN ESCRITORIO */
         .nav-btn {{ 
-          position: fixed;
-          top: 50%;
+          position: absolute;
+          top: 300px;
           transform: translateY(-50%);
-          background: rgba(17, 28, 48, 0.90); 
+          background: rgba(17, 28, 48, 0.92); 
           color: #60a5fa; 
           border: 2px solid #3b82f6; 
           border-radius: 50%; 
-          width: 46px; 
-          height: 46px;
-          font-size: 1.5rem; 
+          width: 48px; 
+          height: 48px;
+          font-size: 1.6rem; 
           font-weight: 900; 
           cursor: pointer; 
-          z-index: 9999; 
+          z-index: 100; 
           display: flex; 
           align-items: center; 
           justify-content: center; 
           box-shadow: 0 4px 18px rgba(0,0,0,0.8); 
           backdrop-filter: blur(6px);
-          transition: all 0.2s ease;
+          transition: top 0.15s ease-out, transform 0.2s, background 0.2s;
         }}
-        .nav-btn:hover {{ background: #1e3a8a; color: #ffffff; transform: translateY(-50%) scale(1.1); }}
-        .nav-btn-prev {{ left: 16px; }}
-        .nav-btn-next {{ right: 16px; }}
+        .nav-btn:hover {{ background: #1e3a8a; color: #ffffff; transform: translateY(-50%) scale(1.12); }}
+        .nav-btn-prev {{ left: 12px; }}
+        .nav-btn-next {{ right: 12px; }}
         .nav-btn:disabled {{ opacity: 0; pointer-events: none; }}
         
         .zoom-layer {{
@@ -491,14 +492,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        /* MODAL CENTRADO FIJO Y GLOBAL */
+        /* MODAL FLOTANTE EXACTAMENTE CENTRADO EN EL PUNTO DE CLIC */
         .modal-overlay {{ 
-          position: fixed; 
-          inset: 0; 
+          position: absolute; 
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          height: 100%;
           background: rgba(0,0,0,0.85); 
-          display: flex; 
-          align-items: center; 
-          justify-content: center; 
           z-index: 999999; 
           opacity: 0; 
           pointer-events: none; 
@@ -506,6 +509,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ 
+          position: absolute;
+          left: 50%;
+          transform: translate(-50%, -50%);
           background: #1e293b; 
           color: #fff; 
           padding: 22px; 
@@ -516,8 +522,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           overflow-y: auto; 
           border: 2px solid #3b82f6; 
           box-shadow: 0 10px 40px rgba(0,0,0,0.9); 
-          position: relative;
-          margin: auto;
         }}
         .modal-close {{ position: absolute; top: 10px; right: 15px; font-size: 1.8rem; cursor: pointer; color: #94a3b8; font-weight: bold; line-height: 1; }}
         .m-row {{ border-bottom: 1px solid #334155; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.85rem; }}
@@ -594,7 +598,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
       <div class="main-container" id="mainContainer">
 
         <div id="productModal" class="modal-overlay">
-          <div class="modal-content">
+          <div class="modal-content" id="modalContent">
             <span class="modal-close">&times;</span>
             <h3 id="m-name" style="margin-top: 0; font-size: 1.1rem; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; line-height: 1.3;">Producto</h3>
             <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod"></span></div>
@@ -659,9 +663,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           </div>
         </div>
 
-        <!-- CONTENEDOR CON FLECHAS FLOTANTES FIJAS -->
+        <!-- CONTENEDOR CON FLECHAS FLOTANTES DINÁMICAS -->
         <div class="aisle-wrapper" id="aisleWrapper">
-          <!-- BARRA DE LEYENDA FIJA EN MODO PANTALLA COMPLETA -->
           <div class="fullscreen-legend-bar">
             <span style="font-size: 0.70rem; font-weight: 800; color: #93c5fd; text-transform: uppercase;">📍 LEYENDA:</span>
             <div class="legend-chips">
@@ -711,7 +714,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
         }}
 
-        // AUTO-FIT INTELIGENTE DE CUERPO EN DOBLE TOQUE
+        // AUTO-FIT INTELIGENTE EN DOBLE TOQUE
         function autoFitCuerpo(targetBay) {{
           const bay = targetBay || document.querySelector('.bay-column:not(.hidden)');
           if (bay) {{
@@ -740,7 +743,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
             }}
             const now = new Date().getTime();
             if (now - lastTap < 300 && now - lastTap > 0) {{
-              // DOBLE TOQUE: AUTO-AJUSTE PERFECTO EN LA PANTALLA
               if (scale < 0.95 || scale > 1.05) {{
                 scale = 1; posX = 0; posY = 0; updateZoom();
               }} else {{
@@ -773,6 +775,18 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         }}, {{ passive: false }});
 
         aisleWrapper.addEventListener('touchend', () => {{ isTouching = false; }});
+
+        // FLECHAS FLOTANTES DINÁMICAS (SMART FOLLOW)
+        aisleWrapper.addEventListener('mousemove', (e) => {{
+          if (window.innerWidth > 768) {{
+            const rect = aisleWrapper.getBoundingClientRect();
+            let relativeY = e.clientY - rect.top;
+            if (relativeY < 50) relativeY = 50;
+            if (relativeY > aisleWrapper.offsetHeight - 50) relativeY = aisleWrapper.offsetHeight - 50;
+            btnPrev.style.top = relativeY + 'px';
+            btnNext.style.top = relativeY + 'px';
+          }}
+        }});
 
         function updateScrollButtons() {{
           requestAnimationFrame(() => {{
@@ -1052,11 +1066,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           applyFilters();
         }});
 
-        // MODAL PRODUCTO
+        // MODAL PRODUCTO CENTRADO EN LA POSICIÓN DEL CLIC
         const modal = document.getElementById('productModal');
+        const modalContent = document.getElementById('modalContent');
         const closeBtn = document.querySelector('.modal-close');
+        
         document.querySelectorAll('.sku-item').forEach(card => {{
-            card.addEventListener('click', () => {{
+            card.addEventListener('click', (e) => {{
                 document.getElementById('m-name').textContent = card.getAttribute('data-name');
                 document.getElementById('m-cod').textContent = card.getAttribute('data-cod');
                 document.getElementById('m-ean').textContent = card.getAttribute('data-ean');
@@ -1074,6 +1090,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
                 
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
+                
+                // Centrado exacto vertical según el punto donde se encuentra el cursor del usuario
+                let targetY = e.pageY || (card.getBoundingClientRect().top + window.scrollY);
+                modalContent.style.top = targetY + 'px';
                 
                 modal.classList.add('active');
             }});
