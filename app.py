@@ -21,6 +21,7 @@ st.markdown("""
             padding-left: 1.2rem !important;
             padding-right: 1.2rem !important;
             padding-top: 1.5rem !important; 
+            padding-bottom: 1rem !important;
             max-width: 100% !important;
         }
         .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -290,13 +291,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           color: #fff; 
           margin: 0; 
           padding: 0; 
-          min-height: 100vh; 
+          height: auto; 
+          min-height: 100%;
           overflow-x: hidden; 
         }}
         
         .main-container {{ 
-          padding: 10px 8px; 
-          min-height: 100vh; 
+          padding: 8px 8px 0px 8px; 
+          height: auto; 
           display: flex; 
           flex-direction: column; 
           box-sizing: border-box;
@@ -332,24 +334,24 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
-        /* CONTENEDOR PRINCIPAL DEL PLANOGRAMA */
+        /* CONTENEDOR PRINCIPAL AJUSTADO AL TAMAÑO EXACTO */
         .aisle-wrapper {{ 
           display: flex;
           flex-direction: column;
           width: 100%; 
           position: relative; 
-          flex-grow: 1; 
           height: auto;
-          min-height: 480px;
+          min-height: 400px;
           background: #0b1324;
           border-radius: 8px;
           border: 1.5px solid #1e293b;
           touch-action: pan-y;
           padding: 0;
           overflow: hidden;
+          margin-bottom: 0px;
         }}
 
-        /* LEYENDA FIJA SUPERIOR EXCLUSIVA EN PANTALLA COMPLETA */
+        /* LEYENDA EN PANTALLA COMPLETA */
         .fullscreen-legend-bar {{
           display: none;
           position: sticky;
@@ -383,7 +385,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         /* FLECHAS FLOTANTES DINÁMICAS (DESKTOP) */
         .nav-btn {{ 
           position: absolute;
-          top: 300px;
+          top: 250px;
           transform: translateY(-50%);
           background: rgba(17, 28, 48, 0.92); 
           color: #60a5fa; 
@@ -411,7 +413,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           display: flex;
           width: 100%;
           height: auto;
-          min-height: 100%;
           transform-origin: 50% 0;
           will-change: transform;
           justify-content: center;
@@ -425,7 +426,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           gap: 16px; 
           background: #0f172a; 
           border-radius: 8px; 
-          padding: 14px 45px; 
+          padding: 12px 45px 4px 45px; 
           overflow-x: auto; 
           overflow-y: visible; 
           scroll-behavior: smooth; 
@@ -444,7 +445,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           flex-direction: column; 
           height: auto; 
           scroll-snap-align: center; 
-          padding-bottom: 12px; 
+          padding-bottom: 6px; 
           box-sizing: border-box;
         }}
         .bay-column.hidden {{ display: none !important; }}
@@ -452,11 +453,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .bay-title {{ background: #1e3a8a; padding: 8px; font-size: 0.90rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
         .bay-subcat {{ font-size: 0.70rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
         
-        .bay-shelves {{ padding: 12px; display: flex; flex-direction: column; gap: 16px; flex-grow: 1; height: auto; }}
-        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 8px; transition: all 0.3s; }}
+        .bay-shelves {{ padding: 10px 10px 4px 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; height: auto; }}
+        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 6px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px 8px; min-height: 105px; overflow-x: auto; padding-bottom: 6px; align-items: flex-end; justify-content: flex-start; }}
+        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 4px 8px; min-height: 100px; overflow-x: auto; padding-bottom: 4px; align-items: flex-end; justify-content: flex-start; }}
         .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); z-index: 1; }}
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
         
@@ -491,13 +492,15 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        /* MODAL OVERLAY Y CENTRADO VIEWPORT REAL */
+        /* MODAL CON CENTRADO VERTICAL ABSOLUTO ADAPTATIVO */
         .modal-overlay {{ 
-          position: fixed; 
+          position: absolute; 
           top: 0;
           left: 0;
-          width: 100vw;
-          height: 100vh;
+          right: 0;
+          bottom: 0;
+          width: 100%;
+          height: 100%;
           background: rgba(0,0,0,0.85); 
           z-index: 999999; 
           opacity: 0; 
@@ -506,9 +509,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ 
-          position: fixed;
-          top: 50vh;
-          left: 50vw;
+          position: absolute;
+          left: 50%;
           transform: translate(-50%, -50%);
           background: #1e293b; 
           color: #fff; 
@@ -526,11 +528,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* --- VISTA MÓVIL ESTRICTA (SIN FLECHAS / FIT COMPLETO) --- */
+        /* --- VISTA MÓVIL ESTRICTA --- */
         @media (max-width: 768px) {{
             .nav-btn {{ display: none !important; }}
             .aisle-container {{ 
-              padding: 8px 4px !important; 
+              padding: 8px 4px 2px 4px !important; 
               touch-action: pan-x pan-y !important;
             }}
             .kpi-container {{
@@ -774,7 +776,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
 
         aisleWrapper.addEventListener('touchend', () => {{ isTouching = false; }});
 
-        // FLECHAS FLOTANTES DINÁMICAS (SMART FOLLOW)
+        // FLECHAS FLOTANTES DINÁMICAS
         aisleWrapper.addEventListener('mousemove', (e) => {{
           if (window.innerWidth > 768) {{
             const rect = aisleWrapper.getBoundingClientRect();
@@ -930,7 +932,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
              const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchBay && matchLevel && catjer) availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchCat && matchBay && matchLevel && catjer) availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
@@ -1064,7 +1066,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           applyFilters();
         }});
 
-        // MODAL PRODUCTO CON CENTRADO VERTICAL INTELIGENTE Y CLAMPING
+        // MODAL PRODUCTO CON CENTRADO ADAPTATIVO AL MONITOR
         const modal = document.getElementById('productModal');
         const modalContent = document.getElementById('modalContent');
         const closeBtn = document.querySelector('.modal-close');
@@ -1089,16 +1091,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
-                // Centrado exacto: Calcula el centro del viewport visible actual
-                const cardRect = card.getBoundingClientRect();
-                const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+                // Algoritmo de centrado relativo en el viewport actual
+                let clickY = e.pageY || (card.getBoundingClientRect().top + window.scrollY);
+                let containerH = document.body.scrollHeight || 1200;
                 
-                // Si está en desktop, calculamos el punto visible centrado para que nunca se desborde
-                let idealTop = cardRect.top + (cardRect.height / 2);
-                if (idealTop < 250) idealTop = 250;
-                if (idealTop > viewportHeight - 250) idealTop = viewportHeight - 250;
+                // Compensación dinámica según nivel (Niveles altos bajan, niveles bajos suben)
+                let adjustedTop = clickY;
+                if (clickY > containerH - 260) {
+                    adjustedTop = containerH - 260;
+                } else if (clickY < 240) {
+                    adjustedTop = 240;
+                }
                 
-                modalContent.style.top = idealTop + 'px';
+                modalContent.style.top = adjustedTop + 'px';
                 modal.classList.add('active');
             }});
         }});
@@ -1342,7 +1347,8 @@ if df_raw is not None:
         st.markdown("---")
         
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma)
-        components.html(html_pasillo, height=2200, scrolling=False)
+        # Altura reducida y ajustada al tamaño exacto de la góndola sin espacio negro sobrante
+        components.html(html_pasillo, height=1250, scrolling=False)
             
     with tab2:
         top_n_fijo = 5
