@@ -18,9 +18,9 @@ st.set_page_config(
 st.markdown("""
     <style>
         .block-container {
-            padding-left: 1.5rem !important;
-            padding-right: 1.5rem !important;
-            padding-top: 2rem !important; 
+            padding-left: 1.2rem !important;
+            padding-right: 1.2rem !important;
+            padding-top: 1.5rem !important; 
             max-width: 100% !important;
         }
         .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -42,8 +42,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- CAPA DE SEGURIDAD (LOGIN + SESIÓN DE 60 MINUTOS) ---
-TIEMPO_EXPIRACION_SEGUNDOS = 60 * 60  # 60 minutos (3600 seg)
+# --- CAPA DE SEGURIDAD (SESIÓN 60 MINUTOS) ---
+TIEMPO_EXPIRACION_SEGUNDOS = 60 * 60  # 60 minutos
 
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
@@ -119,7 +119,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR HTML INTERACTIVO CON PINCH-TO-ZOOM Y BOTÓN DE VISTA CELULAR ---
+# --- GENERADOR HTML INTERACTIVO ---
 def generar_html_pasillo_interactivo(df, es_realograma=False):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -288,26 +288,48 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         
         .main-container {{ padding: 12px; height: 100%; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }}
 
-        ::-webkit-scrollbar {{ height: 10px; width: 10px; }}
+        ::-webkit-scrollbar {{ height: 8px; width: 8px; }}
         ::-webkit-scrollbar-track {{ background: #0f172a; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb:hover {{ background: #2563eb; }}
 
-        .kpi-container {{ display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; flex-shrink: 0; }}
-        .kpi-card {{ flex: 1; min-width: 120px; background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }}
+        /* KPI CONTAINER */
+        .kpi-container {{ display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; flex-shrink: 0; }}
+        .kpi-card {{ flex: 1; min-width: 120px; background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }}
         .kpi-title {{ font-size: 0.65rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; margin-bottom: 4px; display: block; letter-spacing: 0.5px; }}
-        .kpi-val {{ font-size: 1.6rem; font-weight: 900; line-height: 1; display: block; }}
+        .kpi-val {{ font-size: 1.5rem; font-weight: 900; line-height: 1; display: block; }}
         
+        /* FILTROS */
         .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 16px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; flex-shrink: 0; }}
         .filter-group {{ display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }}
         .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
-        .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 5px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; outline: none; width: 100%; min-width: 130px; }}
-        .btn-group {{ display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }}
+        .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 5px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; outline: none; width: 100%; min-width: 120px; }}
+        .btn-group {{ display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; align-items: center; }}
         
         .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
         .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
-        .filter-btn-mobile {{ background: #8b5cf6; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
-        .filter-btn-mobile.active {{ background: #f59e0b; color: #000; }}
+        
+        /* CHECKBOX VISTA CELULAR */
+        .mobile-checkbox-label {{
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          background: #1e3a8a;
+          border: 1.5px solid #3b82f6;
+          padding: 6px 12px;
+          border-radius: 4px;
+          color: #ffffff;
+          font-weight: 700;
+          font-size: 0.75rem;
+          cursor: pointer;
+          user-select: none;
+        }}
+        .mobile-checkbox-label input[type="checkbox"] {{
+          accent-color: #f59e0b;
+          width: 16px;
+          height: 16px;
+          cursor: pointer;
+        }}
         
         .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }}
         .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-right: 8px; }}
@@ -315,7 +337,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
-        /* CONTENEDOR TÁCTIL (ZOOM CON 2 DEDOS + PANEO) */
+        /* CONTENEDOR TÁCTIL (PINCH-TO-ZOOM / PANEO) */
         .aisle-wrapper {{ 
           display: flex; 
           align-items: stretch; 
@@ -323,7 +345,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           width: 100%; 
           position: relative; 
           flex-grow: 1; 
-          min-height: 500px; 
+          min-height: 520px; 
           overflow: hidden;
           background: #0b1324;
           border-radius: 8px;
@@ -397,36 +419,41 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
-        /* CONTROLES FLOTANTES DE ZOOM */
-        .zoom-hud {{
-          position: absolute;
-          bottom: 15px;
-          right: 15px;
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          z-index: 60;
-        }}
-        .hud-btn {{
-          background: #1e3a8a;
-          color: white;
-          border: 1.5px solid #3b82f6;
-          border-radius: 50%;
-          width: 36px;
-          height: 36px;
-          font-size: 1.2rem;
-          font-weight: bold;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+        /* --- MODO MÓVIL: KPIS EN 2 COLUMNAS Y ENCAJE COMPLETO --- */
+        .mobile-mode-active .kpi-container,
+        @media (max-width: 768px) {{
+            .kpi-container {{
+              display: grid !important;
+              grid-template-columns: repeat(2, 1fr) !important;
+              gap: 8px !important;
+              overflow-x: visible !important;
+            }}
+            .kpi-card {{ min-width: unset !important; }}
+            .kpi-card:last-child {{ grid-column: 1 / -1 !important; }}
+            .bay-column {{
+              flex: 0 0 100% !important;
+              width: 100% !important;
+              max-width: 100% !important;
+              height: 100% !important;
+            }}
+            .bay-shelves {{
+              gap: 10px !important;
+              padding: 5px !important;
+              justify-content: space-evenly !important;
+            }}
+            .shelf-products {{
+              min-height: 70px !important;
+              padding: 2px !important;
+            }}
+            .sku-card {{ min-width: 70px !important; padding: 3px !important; }}
+            .sku-images-wrapper img {{ height: 70px !important; max-width: 40px !important; }}
+            .nav-btn {{ width: 28px !important; font-size: 1.2rem !important; }}
         }}
 
         @media print {{
           @page {{ size: A4 portrait; margin: 5mm; }}
           body, html, .main-container {{ background-color: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; height: 100% !important; overflow: hidden !important; }}
-          .filter-panel, .legend-panel, .modal-overlay, .nav-btn, .kpi-container, .top-panel, .zoom-hud {{ display: none !important; }}
+          .filter-panel, .legend-panel, .modal-overlay, .nav-btn, .kpi-container, .top-panel {{ display: none !important; }}
           .aisle-wrapper {{ display: block !important; width: 100% !important; height: 100% !important; border: none !important; }}
           .aisle-container {{ display: block !important; width: 100% !important; height: 100% !important; background: transparent !important; border: none !important; padding: 0 !important; overflow: visible !important; }}
           .bay-column {{ background: #fff !important; border: 3px solid #000 !important; width: 195mm !important; height: 280mm !important; max-width: 100% !important; page-break-inside: avoid; margin: 0 auto !important; display: flex !important; flex-direction: column !important; }}
@@ -452,27 +479,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 9pt !important; }}
           .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 5px solid #000 !important; font-size: 14pt !important; padding: 4px 8px !important; font-weight: 900 !important; }}
           .shelf-caras-count {{ background: #e2e8f0 !important; color: #000 !important; font-size: 12pt !important; }}
-        }}
-
-        @media (max-width: 768px) {{
-            .kpi-container {{ flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; padding-bottom: 8px; }}
-            .kpi-card {{ flex: 0 0 135px; }}
-            .legend-chips {{ flex-wrap: nowrap; overflow-x: auto; padding-bottom: 8px; justify-content: flex-start; }}
-            .legend-chip {{ flex: 0 0 auto; }}
-            .filter-panel, .top-panel {{ flex-direction: column; align-items: stretch; gap: 8px; }}
-            .btn-group {{ justify-content: center; width: 100%; margin-top: 4px; }}
-            .nav-btn {{ width: 26px; font-size: 1.2rem; border-width: 1px; padding: 0; }}
-            .aisle-wrapper {{ height: calc(100vh - 120px); min-height: 400px; }}
-            .bay-column {{ flex: 0 0 95vw !important; min-width: 300px; margin-right: 5px; height: 100%; padding-bottom: 10px; }}
-            .sku-images-wrapper img {{ height: 80px; max-width: 45px; }}
-            .sku-card {{ min-width: 80px; }}
-        }}
-
-        /* ESTILOS ACTIVADOS AL CLICAR 'VISTA CELULAR' */
-        .mobile-mode-active .bay-column {{
-          flex: 0 0 96vw !important;
-          max-width: 480px !important;
-          margin: 0 auto !important;
         }}
       </style>
     </head>
@@ -509,6 +515,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           </div>
         </div>
 
+        <!-- TARJETAS KPIS -->
         <div class="kpi-container">
           <div class="kpi-card" style="border-bottom: 4px solid #3b82f6;"><span class="kpi-title">Total SKUs</span><span class="kpi-val" id="t-total" style="color: #fff;">0</span></div>
           <div class="kpi-card" style="border-bottom: 4px solid #FFC7CE;"><span class="kpi-title">Bloqueados</span><span class="kpi-val" id="t-bloq" style="color: #FFC7CE;">0</span></div>
@@ -526,9 +533,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           <div class="filter-group"><span class="filter-label">📦 Cuerpo</span><select id="baySelect" class="filter-select"><option value="ALL">Todos</option>{options_cuerpos}</select></div>
           <div class="filter-group"><span class="filter-label">📶 Nivel</span><select id="levelSelect" class="filter-select"><option value="ALL">Todos</option>{options_niveles}</select></div>
           <div class="btn-group">
-            <button id="toggleMobileBtn" class="filter-btn-mobile" title="Alterna entre visualización de escritorio y móvil">📱 Vista Celular</button>
+            <label class="mobile-checkbox-label">
+              <input type="checkbox" id="mobileCheckbox"> 📱 Vista Móvil (Ajuste Auto)
+            </label>
             <button id="resetBtn" class="filter-btn-reset">Restablecer</button>
-            <button type="button" id="printBayBtn" class="filter-btn-print" title="Imprime el cuerpo visible optimizado en A4">🖨️ Imprimir Cuerpo</button>
+            <button type="button" id="printBayBtn" class="filter-btn-print" title="Imprime el cuerpo visible optimizado en A4">🖨️ Imprimir</button>
           </div>
         </div>
 
@@ -544,7 +553,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           </div>
         </div>
 
-        <!-- CONTENEDOR MULTITOUCH PINCH-TO-ZOOM -->
+        <!-- CONTENEDOR MULTITOUCH (PINCH-TO-ZOOM / ARRASTRAR) -->
         <div class="aisle-wrapper" id="aisleWrapper">
           <button class="nav-btn" id="btnPrev" title="Cuerpo Anterior">❮</button>
           <div class="zoom-layer" id="zoomLayer">
@@ -553,21 +562,15 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
             </div>
           </div>
           <button class="nav-btn" id="btnNext" title="Cuerpo Siguiente">❯</button>
-          
-          <div class="zoom-hud">
-            <button class="hud-btn" id="hudZoomIn" title="Acercar">+</button>
-            <button class="hud-btn" id="hudZoomOut" title="Alejar">−</button>
-            <button class="hud-btn" id="hudZoomReset" style="font-size:0.9rem;" title="Reiniciar Zoom">↺</button>
-          </div>
         </div>
 
       </div>
 
       <script>
-        // --- MOTOR DE GESTOS MULTITÁCTIL (PINCH-TO-ZOOM / ARRASTRAR) ---
+        // --- MOTOR DE GESTOS MULTITÁCTIL (PINCH-TO-ZOOM / ARRASTRE SIN BOTONES) ---
         const aisleWrapper = document.getElementById('aisleWrapper');
         const zoomLayer = document.getElementById('zoomLayer');
-        let scale = 1, minScale = 0.6, maxScale = 4.0;
+        let scale = 1, minScale = 0.5, maxScale = 4.0;
         let posX = 0, posY = 0;
         let startX = 0, startY = 0;
         let initialDist = 0;
@@ -591,7 +594,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
             // Doble toque (Double tap) para zoom inteligente
             const now = new Date().getTime();
             if (now - lastTap < 300 && now - lastTap > 0) {{
-              if (scale > 1.2) {{ scale = 1; posX = 0; posY = 0; }}
+              if (scale > 1.1) {{ scale = 1; posX = 0; posY = 0; }}
               else {{ scale = 1.8; }}
               updateZoom();
             }}
@@ -621,28 +624,40 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
 
         aisleWrapper.addEventListener('touchend', () => {{ isTouching = false; }});
 
-        document.getElementById('hudZoomIn').addEventListener('click', () => {{ scale = Math.min(scale + 0.3, maxScale); updateZoom(); }});
-        document.getElementById('hudZoomOut').addEventListener('click', () => {{ scale = Math.max(scale - 0.3, minScale); updateZoom(); }});
-        document.getElementById('hudZoomReset').addEventListener('click', () => {{ scale = 1; posX = 0; posY = 0; updateZoom(); }});
+        // --- CHECKBOX MODO MÓVIL Y AJUSTE AUTOMÁTICO AL TAMAÑO PROYECTADO ---
+        const mobileCheckbox = document.getElementById('mobileCheckbox');
+        
+        function fitBayToScreen() {{
+          const visibleBay = document.querySelector('.bay-column:not(.hidden)');
+          if (visibleBay && aisleWrapper) {{
+            const wrapperW = aisleWrapper.clientWidth;
+            const wrapperH = aisleWrapper.clientHeight;
+            const bayW = visibleBay.scrollWidth || visibleBay.offsetWidth;
+            const bayH = visibleBay.scrollHeight || visibleBay.offsetHeight;
+            
+            if (bayW > 0 && bayH > 0) {{
+              const scaleX = (wrapperW - 10) / bayW;
+              const scaleY = (wrapperH - 10) / bayH;
+              scale = Math.min(scaleX, scaleY, 1.0);
+              posX = Math.max(0, (wrapperW - (bayW * scale)) / 2);
+              posY = 0;
+              updateZoom();
+            }}
+          }}
+        }}
 
-        // --- BOTÓN TOGGLE VISTA CELULAR ---
-        const toggleMobileBtn = document.getElementById('toggleMobileBtn');
-        let mobileMode = false;
-        toggleMobileBtn.addEventListener('click', () => {{
-          mobileMode = !mobileMode;
-          document.body.classList.toggle('mobile-mode-active', mobileMode);
-          toggleMobileBtn.classList.toggle('active', mobileMode);
-          toggleMobileBtn.textContent = mobileMode ? '🖥️ Vista Escritorio' : '📱 Vista Celular';
-          
-          if (mobileMode) {{
-            // Selecciona el primer cuerpo visible para enfocar en pantalla de móvil
+        mobileCheckbox.addEventListener('change', () => {{
+          document.body.classList.toggle('mobile-mode-active', mobileCheckbox.checked);
+          if (mobileCheckbox.checked) {{
             if (baySelect.value === 'ALL') {{
               const firstVisible = document.querySelector('.bay-column:not(.hidden)');
-              if (firstVisible) {{
-                baySelect.value = firstVisible.getAttribute('data-module');
-                applyFilters();
-              }}
+              if (firstVisible) baySelect.value = firstVisible.getAttribute('data-module');
             }}
+            applyFilters();
+            setTimeout(fitBayToScreen, 120);
+          }} else {{
+            scale = 1; posX = 0; posY = 0; updateZoom();
+            applyFilters();
           }}
         }});
 
@@ -829,6 +844,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           }});
           
           updateScrollButtons();
+          if (mobileCheckbox.checked) setTimeout(fitBayToScreen, 50);
         }}
 
         printBayBtn.addEventListener('click', () => {{
@@ -875,6 +891,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           levelSelect.innerHTML = ''; allLevels.forEach(o => levelSelect.add(new Option(o.text, o.val)));
           brandSelect.value = 'ALL'; catSelect.value = 'ALL'; baySelect.value = 'ALL'; levelSelect.value = 'ALL';
           topNInput.value = 5;
+          scale = 1; posX = 0; posY = 0; updateZoom();
           applyFilters();
         }});
 
@@ -927,8 +944,23 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
             if(visibleModule) container.scrollBy({{ left: (visibleModule.offsetWidth + 16), behavior: 'smooth' }});
         }});
         container.addEventListener('scroll', updateScrollButtons);
-        window.addEventListener('resize', updateScrollButtons);
-        setTimeout(applyFilters, 100);
+        window.addEventListener('resize', () => {{
+          updateScrollButtons();
+          if (mobileCheckbox.checked) fitBayToScreen();
+        }});
+        setTimeout(() => {{
+          applyFilters();
+          if (window.innerWidth <= 768) {{
+            mobileCheckbox.checked = true;
+            document.body.classList.add('mobile-mode-active');
+            if (baySelect.value === 'ALL') {{
+              const firstVisible = document.querySelector('.bay-column:not(.hidden)');
+              if (firstVisible) baySelect.value = firstVisible.getAttribute('data-module');
+            }}
+            applyFilters();
+            setTimeout(fitBayToScreen, 150);
+          }}
+        }}, 100);
       </script>
     </body>
     </html>
@@ -980,7 +1012,7 @@ df_fotos_raw = None
 info_hora = None
 error_nube = None
 
-# --- HEADER CON TÍTULO Y ACCIONES ---
+# --- HEADER PRINCIPAL ---
 col_head1, col_head2, col_head3, col_head4 = st.columns([4, 1.5, 3.5, 1])
 
 with col_head1:
@@ -1151,7 +1183,7 @@ if df_raw is not None:
             )
             es_realograma = ("Realograma" in modo_vista)
         with col_view2:
-            st.markdown("<div style='text-align: right; font-size: 0.82rem; color: #94a3b8; margin-top: 5px;'>💡 <i>En pantallas táctiles puedes usar 2 dedos para hacer Zoom y arrastrar la góndola libremente.</i></div>", unsafe_allow_html=True)
+            st.markdown("<div style='text-align: right; font-size: 0.82rem; color: #94a3b8; margin-top: 5px;'>👆 <i>Pellizca con 2 dedos para Zoom y arrastra para recorrer la góndola.</i></div>", unsafe_allow_html=True)
             
         st.markdown("---")
         
