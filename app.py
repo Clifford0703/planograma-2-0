@@ -43,7 +43,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- CAPA DE SEGURIDAD (SESIÓN 60 MINUTOS) ---
-TIEMPO_EXPIRACION_SEGUNDOS = 60 * 60  # 60 minutos
+TIEMPO_EXPIRACION_SEGUNDOS = 60 * 60
 
 if "autenticado" not in st.session_state:
     st.session_state.autenticado = False
@@ -284,9 +284,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
       <style>
         * {{ box-sizing: border-box; }}
-        body, html {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 0; height: 100vh; overflow: hidden; }}
+        body, html {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #070d19; color: #fff; margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden; }}
         
-        .main-container {{ padding: 12px; height: 100%; display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden; }}
+        .main-container {{ padding: 12px; min-height: 100vh; display: flex; flex-direction: column; }}
 
         ::-webkit-scrollbar {{ height: 8px; width: 8px; }}
         ::-webkit-scrollbar-track {{ background: #0f172a; border-radius: 4px; }}
@@ -345,39 +345,82 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           width: 100%; 
           position: relative; 
           flex-grow: 1; 
-          min-height: 520px; 
+          min-height: 480px; 
+          height: auto;
           overflow: hidden;
           background: #0b1324;
           border-radius: 8px;
           border: 1px solid #1e293b;
-          touch-action: none;
+          touch-action: pan-y;
         }}
-        .nav-btn {{ background: #1e3a8a; color: white; border: 2px solid #3b82f6; border-radius: 8px; width: 40px; font-size: 1.5rem; font-weight: bold; cursor: pointer; z-index: 50; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }}
-        .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; box-shadow: none; }}
+        .nav-btn {{ 
+          background: #1e3a8a; 
+          color: white; 
+          border: 2px solid #3b82f6; 
+          border-radius: 8px; 
+          width: 42px; 
+          font-size: 1.6rem; 
+          font-weight: bold; 
+          cursor: pointer; 
+          z-index: 50; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          flex-shrink: 0; 
+          box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+          transition: background 0.2s;
+        }}
+        .nav-btn:disabled {{ background: #0f172a; border-color: #334155; color: #475569; cursor: not-allowed; opacity: 0.4; }}
         
         .zoom-layer {{
           display: flex;
           flex-direction: row;
           align-items: stretch;
           width: 100%;
-          height: 100%;
+          height: auto;
           transform-origin: 0 0;
           will-change: transform;
         }}
 
-        .aisle-container {{ display: flex; flex-direction: row; gap: 16px; background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 16px; overflow-x: auto; overflow-y: hidden; scroll-behavior: smooth; scroll-snap-type: x mandatory; flex-grow: 1; align-items: stretch; width: 100%; }}
+        .aisle-container {{ 
+          display: flex; 
+          flex-direction: row; 
+          gap: 16px; 
+          background: #0f172a; 
+          border: 1px solid #1e293b; 
+          border-radius: 8px; 
+          padding: 16px; 
+          overflow-x: auto; 
+          overflow-y: visible; 
+          scroll-behavior: smooth; 
+          scroll-snap-type: x mandatory; 
+          flex-grow: 1; 
+          align-items: flex-start; 
+          width: 100%; 
+        }}
         
-        .bay-column {{ flex: 0 0 100%; width: 100%; background: #111c30; border: 1.5px solid #1e293b; border-radius: 6px; display: flex; flex-direction: column; height: max-content; scroll-snap-align: start; padding-bottom: 20px; }}
+        .bay-column {{ 
+          flex: 0 0 100%; 
+          width: 100%; 
+          background: #111c30; 
+          border: 1.5px solid #1e293b; 
+          border-radius: 6px; 
+          display: flex; 
+          flex-direction: column; 
+          height: auto; 
+          scroll-snap-align: start; 
+          padding-bottom: 15px; 
+        }}
         .bay-column.hidden {{ display: none !important; }}
         
-        .bay-title {{ background: #1e3a8a; padding: 6px 8px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
-        .bay-subcat {{ font-size: 0.68rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
+        .bay-title {{ background: #1e3a8a; padding: 8px; font-size: 0.90rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
+        .bay-subcat {{ font-size: 0.70rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
         
-        .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 25px; flex-grow: 1; overflow-y: auto; overflow-x: hidden; }}
-        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 15px; transition: all 0.3s; }}
+        .bay-shelves {{ padding: 12px; display: flex; flex-direction: column; gap: 20px; flex-grow: 1; height: auto; }}
+        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 10px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px 12px; min-height: 125px; overflow-x: auto; padding-bottom: 8px; align-items: flex-end; justify-content: flex-start; }}
+        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px 8px; min-height: 110px; overflow-x: auto; padding-bottom: 8px; align-items: flex-end; justify-content: flex-start; }}
         .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); z-index: 1; }}
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
         
@@ -386,7 +429,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         
         .sku-group {{ display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; transition: all 0.2s; z-index: 10; padding: 0 2px; flex-shrink: 0; }}
         .sku-images-wrapper {{ display: flex; flex-direction: row; align-items: flex-end; gap: 1px; }}
-        .sku-images-wrapper img {{ height: 95px; width: auto; max-width: 60px; object-fit: contain; filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.5)); transition: transform 0.2s; }}
+        .sku-images-wrapper img {{ height: 90px; width: auto; max-width: 60px; object-fit: contain; filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.5)); transition: transform 0.2s; }}
         .sku-group:hover .sku-images-wrapper img {{ transform: translateY(-4px); filter: drop-shadow(4px 8px 8px rgba(0,0,0,0.7)); }}
         
         .sku-fleje {{ background: #ffffff; color: #000; border: 1px solid #64748b; font-size: 0.50rem; display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; z-index: 15; box-shadow: 0 2px 4px rgba(0,0,0,0.5); width: max-content; padding: 1px 2px; }}
@@ -399,7 +442,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -15px; right: -5px; font-size: 1.1rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); z-index: 30; animation: float 2s ease-in-out infinite; }}
         @keyframes float {{ 0% {{transform: translateY(0px);}} 50% {{transform: translateY(-4px);}} 100% {{transform: translateY(0px);}} }}
         
-        .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; cursor: pointer; align-items: stretch; flex-shrink: 0; }}
+        .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; cursor: pointer; align-items: stretch; flex-shrink: 0; box-shadow: none; }}
+        .sku-card.is-top {{ box-shadow: 0 0 0 2px #FFC000 !important; }}
         .sku-pos {{ position: absolute; top: 4px; left: 4px; background: #0f172a; color: #fff; font-size: 0.6rem; font-weight: 800; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 2px; }}
         .sku-caras-tag {{ position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.9); color: #000; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 2px; }}
         .sku-details {{ margin-top: 18px; display: flex; flex-direction: column; gap: 3px; text-align: center; overflow: hidden; }}
@@ -411,9 +455,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        .modal-overlay {{ position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); display: flex; align-items: flex-start; justify-content: center; z-index: 99999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
+        .modal-overlay {{ position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 99999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
-        .modal-content {{ background: #1e293b; color: #fff; padding: 24px; border-radius: 8px; width: 90%; max-width: 450px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.9); border: 2px solid #3b82f6; transition: margin-top 0.1s; }}
+        .modal-content {{ background: #1e293b; color: #fff; padding: 22px; border-radius: 8px; width: 90%; max-width: 420px; max-height: 85vh; overflow-y: auto; border: 2px solid #3b82f6; }}
         .modal-close {{ position: absolute; top: 10px; right: 15px; font-size: 1.8rem; cursor: pointer; color: #94a3b8; font-weight: bold; line-height: 1; }}
         .m-row {{ border-bottom: 1px solid #334155; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.85rem; }}
         .m-label {{ font-weight: 700; color: #93c5fd; }}
@@ -434,20 +478,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
               flex: 0 0 100% !important;
               width: 100% !important;
               max-width: 100% !important;
-              height: 100% !important;
+              height: auto !important;
             }}
             .bay-shelves {{
-              gap: 10px !important;
-              padding: 5px !important;
-              justify-content: space-evenly !important;
+              gap: 12px !important;
+              padding: 8px !important;
             }}
             .shelf-products {{
-              min-height: 70px !important;
-              padding: 2px !important;
+              min-height: 85px !important;
+              padding: 4px !important;
             }}
-            .sku-card {{ min-width: 70px !important; padding: 3px !important; }}
-            .sku-images-wrapper img {{ height: 70px !important; max-width: 40px !important; }}
-            .nav-btn {{ width: 28px !important; font-size: 1.2rem !important; }}
+            .sku-card {{ min-width: 85px !important; padding: 4px !important; }}
+            .sku-images-wrapper img {{ height: 75px !important; max-width: 45px !important; }}
+            .nav-btn {{ width: 34px !important; font-size: 1.3rem !important; }}
         }}
 
         @media print {{
@@ -567,10 +610,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
       </div>
 
       <script>
-        // --- MOTOR DE GESTOS MULTITÁCTIL (PINCH-TO-ZOOM / ARRASTRE SIN BOTONES) ---
+        // --- MOTOR DE GESTOS MULTITÁCTIL (PINCH-TO-ZOOM Y PAN) ---
         const aisleWrapper = document.getElementById('aisleWrapper');
         const zoomLayer = document.getElementById('zoomLayer');
-        let scale = 1, minScale = 0.5, maxScale = 4.0;
+        const container = document.getElementById('aisleContainer');
+        const btnPrev = document.getElementById('btnPrev');
+        const btnNext = document.getElementById('btnNext');
+        
+        let scale = 1, minScale = 0.8, maxScale = 3.5;
         let posX = 0, posY = 0;
         let startX = 0, startY = 0;
         let initialDist = 0;
@@ -587,14 +634,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
 
         aisleWrapper.addEventListener('touchstart', (e) => {{
           if (e.touches.length === 1) {{
-            isTouching = true;
-            startX = e.touches[0].clientX - posX;
-            startY = e.touches[0].clientY - posY;
-            
-            // Doble toque (Double tap) para zoom inteligente
+            if (scale > 1) {{
+              isTouching = true;
+              startX = e.touches[0].clientX - posX;
+              startY = e.touches[0].clientY - posY;
+            }}
             const now = new Date().getTime();
             if (now - lastTap < 300 && now - lastTap > 0) {{
-              if (scale > 1.1) {{ scale = 1; posX = 0; posY = 0; }}
+              if (scale > 1.2) {{ scale = 1; posX = 0; posY = 0; }}
               else {{ scale = 1.8; }}
               updateZoom();
             }}
@@ -624,41 +671,39 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
 
         aisleWrapper.addEventListener('touchend', () => {{ isTouching = false; }});
 
-        // --- CHECKBOX MODO MÓVIL Y AJUSTE AUTOMÁTICO AL TAMAÑO PROYECTADO ---
-        const mobileCheckbox = document.getElementById('mobileCheckbox');
-        
-        function fitBayToScreen() {{
-          const visibleBay = document.querySelector('.bay-column:not(.hidden)');
-          if (visibleBay && aisleWrapper) {{
-            const wrapperW = aisleWrapper.clientWidth;
-            const wrapperH = aisleWrapper.clientHeight;
-            const bayW = visibleBay.scrollWidth || visibleBay.offsetWidth;
-            const bayH = visibleBay.scrollHeight || visibleBay.offsetHeight;
-            
-            if (bayW > 0 && bayH > 0) {{
-              const scaleX = (wrapperW - 10) / bayW;
-              const scaleY = (wrapperH - 10) / bayH;
-              scale = Math.min(scaleX, scaleY, 1.0);
-              posX = Math.max(0, (wrapperW - (bayW * scale)) / 2);
-              posY = 0;
-              updateZoom();
-            }}
-          }}
+        function updateScrollButtons() {{
+          requestAnimationFrame(() => {{
+            const maxScroll = container.scrollWidth - container.clientWidth;
+            btnPrev.disabled = container.scrollLeft <= 5;
+            btnNext.disabled = container.scrollLeft >= maxScroll - 5;
+          }});
         }}
 
+        btnPrev.addEventListener('click', () => {{
+          const visibleModule = container.querySelector('.bay-column:not(.hidden)');
+          if(visibleModule) {{
+            container.scrollBy({{ left: -(visibleModule.offsetWidth + 16), behavior: 'smooth' }});
+            setTimeout(updateScrollButtons, 350);
+          }}
+        }});
+        
+        btnNext.addEventListener('click', () => {{
+          const visibleModule = container.querySelector('.bay-column:not(.hidden)');
+          if(visibleModule) {{
+            container.scrollBy({{ left: (visibleModule.offsetWidth + 16), behavior: 'smooth' }});
+            setTimeout(updateScrollButtons, 350);
+          }}
+        }});
+        
+        container.addEventListener('scroll', updateScrollButtons);
+        window.addEventListener('resize', updateScrollButtons);
+
+        // --- CHECKBOX MODO MÓVIL ---
+        const mobileCheckbox = document.getElementById('mobileCheckbox');
         mobileCheckbox.addEventListener('change', () => {{
           document.body.classList.toggle('mobile-mode-active', mobileCheckbox.checked);
-          if (mobileCheckbox.checked) {{
-            if (baySelect.value === 'ALL') {{
-              const firstVisible = document.querySelector('.bay-column:not(.hidden)');
-              if (firstVisible) baySelect.value = firstVisible.getAttribute('data-module');
-            }}
-            applyFilters();
-            setTimeout(fitBayToScreen, 120);
-          }} else {{
-            scale = 1; posX = 0; posY = 0; updateZoom();
-            applyFilters();
-          }}
+          scale = 1; posX = 0; posY = 0; updateZoom();
+          applyFilters();
         }});
 
         // --- FILTROS Y LÓGICA DE SKUS ---
@@ -746,10 +791,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
              const isTop = topNSkusSet.has(cod);
              if(isTop) {{
                  card.classList.add('is-top');
-                 if(card.classList.contains('sku-card')) card.style.border = "3px solid #FFC000";
              }} else {{
                  card.classList.remove('is-top');
-                 if(card.classList.contains('sku-card')) card.style.border = "1px solid #7f7f7f";
              }}
 
              const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
@@ -844,7 +887,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           }});
           
           updateScrollButtons();
-          if (mobileCheckbox.checked) setTimeout(fitBayToScreen, 50);
         }}
 
         printBayBtn.addEventListener('click', () => {{
@@ -898,7 +940,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         document.querySelectorAll('.sku-item').forEach(card => {{
-            card.addEventListener('click', (e) => {{
+            card.addEventListener('click', () => {{
                 document.getElementById('m-name').textContent = card.getAttribute('data-name');
                 document.getElementById('m-cod').textContent = card.getAttribute('data-cod');
                 document.getElementById('m-ean').textContent = card.getAttribute('data-ean');
@@ -917,48 +959,18 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
-                const modalContent = document.querySelector('.modal-content');
-                let topPos = e.pageY - 220; 
-                if (topPos < 20) topPos = 20; 
-                modalContent.style.marginTop = topPos + 'px';
-                
                 modal.classList.add('active');
             }});
         }});
         closeBtn.addEventListener('click', () => modal.classList.remove('active'));
         window.addEventListener('click', (e) => {{ if(e.target === modal) modal.classList.remove('active'); }});
 
-        const container = document.getElementById('aisleContainer');
-        const btnPrev = document.getElementById('btnPrev');
-        const btnNext = document.getElementById('btnNext');
-        function updateScrollButtons() {{
-            btnPrev.disabled = container.scrollLeft <= 10;
-            btnNext.disabled = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
-        }}
-        btnPrev.addEventListener('click', () => {{
-            const visibleModule = container.querySelector('.bay-column:not(.hidden)');
-            if(visibleModule) container.scrollBy({{ left: -(visibleModule.offsetWidth + 16), behavior: 'smooth' }});
-        }});
-        btnNext.addEventListener('click', () => {{
-            const visibleModule = container.querySelector('.bay-column:not(.hidden)');
-            if(visibleModule) container.scrollBy({{ left: (visibleModule.offsetWidth + 16), behavior: 'smooth' }});
-        }});
-        container.addEventListener('scroll', updateScrollButtons);
-        window.addEventListener('resize', () => {{
-          updateScrollButtons();
-          if (mobileCheckbox.checked) fitBayToScreen();
-        }});
         setTimeout(() => {{
           applyFilters();
           if (window.innerWidth <= 768) {{
             mobileCheckbox.checked = true;
             document.body.classList.add('mobile-mode-active');
-            if (baySelect.value === 'ALL') {{
-              const firstVisible = document.querySelector('.bay-column:not(.hidden)');
-              if (firstVisible) baySelect.value = firstVisible.getAttribute('data-module');
-            }}
             applyFilters();
-            setTimeout(fitBayToScreen, 150);
           }}
         }}, 100);
       </script>
@@ -1188,7 +1200,7 @@ if df_raw is not None:
         st.markdown("---")
         
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma)
-        components.html(html_pasillo, height=2200, scrolling=False)
+        components.html(html_pasillo, height=1800, scrolling=True)
             
     with tab2:
         top_n_fijo = 5
