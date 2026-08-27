@@ -2,7 +2,6 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 import io
-import time
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
@@ -30,55 +29,8 @@ st.markdown("""
         .fin-kpi-val { font-size: 2.0rem; font-weight: 900; color: #ffffff; line-height: 1; }
         .fin-kpi-card.green-theme { border-left-color: #10b981; }
         .fin-kpi-card.purple-theme { border-left-color: #8b5cf6; }
-        
-        .login-card {
-            background-color: #111c30;
-            padding: 30px;
-            border-radius: 10px;
-            border: 1px solid #1e3a8a;
-            max-width: 450px;
-            margin: 60px auto;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
-        }
     </style>
 """, unsafe_allow_html=True)
-
-# --- CAPA DE SEGURIDAD (SESIÓN 60 MINUTOS) ---
-TIEMPO_EXPIRACION_SEGUNDOS = 60 * 60
-
-if "autenticado" not in st.session_state:
-    st.session_state.autenticado = False
-if "ultimo_acceso" not in st.session_state:
-    st.session_state.ultimo_acceso = 0
-
-if st.session_state.autenticado:
-    if time.time() - st.session_state.ultimo_acceso > TIEMPO_EXPIRACION_SEGUNDOS:
-        st.session_state.autenticado = False
-        st.session_state.ultimo_acceso = 0
-        st.warning("⏳ Tu sesión ha expirado por tiempo límite (60 min). Ingresa nuevamente.")
-
-def login_form():
-    st.markdown("<div class='login-card'>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align: center; color: #fff; margin-top: 0;'>🔒 Acceso Planograma 2.0</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 0.85rem;'>Ingresa tus credenciales corporativas (Sesión: 60 min)</p>", unsafe_allow_html=True)
-    
-    usuario = st.text_input("Usuario:", key="user_input")
-    password = st.text_input("Contraseña:", type="password", key="pass_input")
-    
-    if st.button("Iniciar Sesión", type="primary", use_container_width=True):
-        if usuario == "S003" and password == "S0032026":
-            st.session_state.autenticado = True
-            st.session_state.ultimo_acceso = time.time()
-            st.rerun()
-        else:
-            st.error("❌ Credenciales incorrectas. Verifica usuario o contraseña.")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-if not st.session_state.autenticado:
-    login_form()
-    st.stop()
-
-st.session_state.ultimo_acceso = time.time()
 
 # --- FUNCIONES DE APOYO Y LIMPIEZA ---
 def safe_float(val, default=0.0):
@@ -291,14 +243,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           color: #fff; 
           margin: 0; 
           padding: 0; 
-          height: auto; 
-          min-height: 100%;
+          min-height: 100%; 
           overflow-x: hidden; 
         }}
         
         .main-container {{ 
-          padding: 8px 8px 0px 8px; 
-          height: auto; 
+          padding: 8px 8px 15px 8px; 
           display: flex; 
           flex-direction: column; 
           box-sizing: border-box;
@@ -334,39 +284,38 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
-        /* CONTENEDOR PRINCIPAL AJUSTADO */
+        /* CONTENEDOR PRINCIPAL DEL PLANOGRAMA */
         .aisle-wrapper {{ 
           display: flex;
           flex-direction: column;
           width: 100%; 
           position: relative; 
           height: auto;
-          min-height: 400px;
           background: #0b1324;
           border-radius: 8px;
           border: 1.5px solid #1e293b;
           touch-action: pan-y;
           padding: 0;
-          overflow: hidden;
-          margin-bottom: 0px;
+          overflow: visible;
         }}
 
-        /* LEYENDA EN PANTALLA COMPLETA */
+        /* LEYENDA FIJA SUPERIOR AMPLIA EN PANTALLA COMPLETA */
         .fullscreen-legend-bar {{
           display: none;
           position: sticky;
           top: 0;
           left: 0;
           right: 0;
-          background: rgba(15, 23, 42, 0.96);
-          border-bottom: 2px solid #3b82f6;
-          padding: 6px 12px;
+          background: rgba(15, 23, 42, 0.98);
+          border-bottom: 3px solid #3b82f6;
+          padding: 12px 20px;
           z-index: 1000;
-          backdrop-filter: blur(6px);
+          backdrop-filter: blur(8px);
           align-items: center;
-          gap: 8px;
+          gap: 12px;
           overflow-x: auto;
           white-space: nowrap;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }}
         
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
@@ -426,7 +375,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           gap: 16px; 
           background: #0f172a; 
           border-radius: 8px; 
-          padding: 12px 45px 4px 45px; 
+          padding: 14px 45px 15px 45px; 
           overflow-x: auto; 
           overflow-y: visible; 
           scroll-behavior: smooth; 
@@ -445,7 +394,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           flex-direction: column; 
           height: auto; 
           scroll-snap-align: center; 
-          padding-bottom: 6px; 
+          padding-bottom: 12px; 
           box-sizing: border-box;
         }}
         .bay-column.hidden {{ display: none !important; }}
@@ -453,11 +402,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .bay-title {{ background: #1e3a8a; padding: 8px; font-size: 0.90rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
         .bay-subcat {{ font-size: 0.70rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
         
-        .bay-shelves {{ padding: 10px 10px 4px 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; height: auto; }}
-        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 6px; transition: all 0.3s; }}
+        .bay-shelves {{ padding: 12px; display: flex; flex-direction: column; gap: 16px; flex-grow: 1; height: auto; }}
+        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 8px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 4px 8px; min-height: 100px; overflow-x: auto; padding-bottom: 4px; align-items: flex-end; justify-content: flex-start; }}
+        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px 8px; min-height: 105px; overflow-x: auto; padding-bottom: 6px; align-items: flex-end; justify-content: flex-start; }}
         .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); z-index: 1; }}
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
         
@@ -492,7 +441,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        /* MODAL INTEGRADO AL CUADRO: CENTRADO ABSOLUTO DENTRO DEL CONTENEDOR */
+        /* MODAL OVERLAY BASADO EN LA ALTURA DEL CURSOR */
         .modal-overlay {{ 
           position: absolute; 
           top: 0;
@@ -504,26 +453,22 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           opacity: 0; 
           pointer-events: none; 
           transition: opacity 0.2s ease; 
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 15px;
-          box-sizing: border-box;
         }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ 
+          position: absolute;
+          left: 50%;
+          transform: translate(-50%, -50%);
           background: #1e293b; 
           color: #fff; 
           padding: 22px; 
           border-radius: 10px; 
-          width: 92%; 
+          width: 90%; 
           max-width: 440px; 
-          max-height: 85%; 
+          max-height: 85vh; 
           overflow-y: auto; 
           border: 2px solid #3b82f6; 
           box-shadow: 0 10px 40px rgba(0,0,0,0.9); 
-          position: relative;
-          margin: auto;
         }}
         .modal-close {{ position: absolute; top: 10px; right: 15px; font-size: 1.8rem; cursor: pointer; color: #94a3b8; font-weight: bold; line-height: 1; }}
         .m-row {{ border-bottom: 1px solid #334155; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.85rem; }}
@@ -599,6 +544,24 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
     <body>
       <div class="main-container" id="mainContainer">
 
+        <div id="productModal" class="modal-overlay">
+          <div class="modal-content" id="modalContent">
+            <span class="modal-close">&times;</span>
+            <h3 id="m-name" style="margin-top: 0; font-size: 1.1rem; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; line-height: 1.3;">Producto</h3>
+            <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod"></span></div>
+            <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
+            <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
+            <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept" style="color: #cbd5e1;"></span></div>
+            <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec" style="color: #cbd5e1;"></span></div>
+            <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer" style="color: #cbd5e1;"></span></div>
+            <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga" style="color: #cbd5e1;"></span></div>
+            <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
+            <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
+            <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
+            <div class="m-row" style="border-bottom: none;"><span class="m-label" style="color: #fbbf24; font-weight: 800;">¿Es TOP Ventas?:</span><span class="m-val" id="m-top" style="color: #fbbf24; font-weight: 800;"></span></div>
+          </div>
+        </div>
+
         <div class="top-panel" style="background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; flex-shrink: 0;">
           <div style="display: flex; align-items: center; gap: 8px;">
               <span style="font-size: 1.2rem;">🏆</span>
@@ -647,37 +610,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           </div>
         </div>
 
-        <!-- CONTENEDOR CON MODAL INTEGRADO Y FLECHAS DINÁMICAS -->
+        <!-- CONTENEDOR CON FLECHAS FLOTANTES DINÁMICAS -->
         <div class="aisle-wrapper" id="aisleWrapper">
-          <div id="productModal" class="modal-overlay">
-            <div class="modal-content" id="modalContent">
-              <span class="modal-close">&times;</span>
-              <h3 id="m-name" style="margin-top: 0; font-size: 1.1rem; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; line-height: 1.3;">Producto</h3>
-              <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod"></span></div>
-              <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
-              <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
-              <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept" style="color: #cbd5e1;"></span></div>
-              <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec" style="color: #cbd5e1;"></span></div>
-              <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer" style="color: #cbd5e1;"></span></div>
-              <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga" style="color: #cbd5e1;"></span></div>
-              <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
-              <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
-              <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
-              <div class="m-row" style="border-bottom: none;"><span class="m-label" style="color: #fbbf24; font-weight: 800;">¿Es TOP Ventas?:</span><span class="m-val" id="m-top" style="color: #fbbf24; font-weight: 800;"></span></div>
-            </div>
-          </div>
-
           <div class="fullscreen-legend-bar">
-            <span style="font-size: 0.70rem; font-weight: 800; color: #93c5fd; text-transform: uppercase;">📍 LEYENDA:</span>
+            <span style="font-size: 0.80rem; font-weight: 800; color: #93c5fd; text-transform: uppercase;">📍 LEYENDA:</span>
             <div class="legend-chips">
-              <button class="legend-chip" data-filter="Bloqueado" style="--bg: #FFC7CE; --tc: #9C0006; font-size: 0.60rem; padding: 3px 8px;">Bloqueado</button>
-              <button class="legend-chip" data-filter="Sin Stock" style="--bg: #F4B084; --tc: #833C0C; font-size: 0.60rem; padding: 3px 8px;">Sin Stock</button>
-              <button class="legend-chip" data-filter="Stock Bajo" style="--bg: #FFFF99; --tc: #8A5A00; font-size: 0.60rem; padding: 3px 8px;">Stock 1-5</button>
-              <button class="legend-chip" data-filter="Stock OK" style="--bg: #C6EFCE; --tc: #006100; font-size: 0.60rem; padding: 3px 8px;">Stock >5</button>
-              <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 1.5px solid #ef4444; font-size: 0.60rem; padding: 3px 8px;">Cob ≥30</button>
-              <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 1.5px solid #FFC000; font-size: 0.60rem; padding: 3px 8px;">★ TOP</button>
+              <button class="legend-chip" data-filter="Bloqueado" style="--bg: #FFC7CE; --tc: #9C0006; font-size: 0.70rem; padding: 5px 12px;">Bloqueado</button>
+              <button class="legend-chip" data-filter="Sin Stock" style="--bg: #F4B084; --tc: #833C0C; font-size: 0.70rem; padding: 5px 12px;">Sin Stock</button>
+              <button class="legend-chip" data-filter="Stock Bajo" style="--bg: #FFFF99; --tc: #8A5A00; font-size: 0.70rem; padding: 5px 12px;">Stock 1-5</button>
+              <button class="legend-chip" data-filter="Stock OK" style="--bg: #C6EFCE; --tc: #006100; font-size: 0.70rem; padding: 5px 12px;">Stock >5</button>
+              <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 1.5px solid #ef4444; font-size: 0.70rem; padding: 5px 12px;">Cob ≥30</button>
+              <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 1.5px solid #FFC000; font-size: 0.70rem; padding: 5px 12px;">★ TOP</button>
             </div>
-            <button id="exitFsBtn" style="margin-left: auto; background: #ef4444; border: none; color: white; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 0.65rem; cursor: pointer;">✕ Salir</button>
+            <button id="exitFsBtn" style="margin-left: auto; background: #ef4444; border: none; color: white; padding: 6px 14px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; cursor: pointer;">✕ Salir</button>
           </div>
 
           <button class="nav-btn nav-btn-prev" id="btnPrev" title="Cuerpo Anterior">❮</button>
@@ -1068,12 +1013,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           applyFilters();
         }});
 
-        // MODAL PRODUCTO CENTRADO
+        // MODAL PRODUCTO CENTRADO EN LA POSICIÓN VERTICAL DEL CURSOR
         const modal = document.getElementById('productModal');
+        const modalContent = document.getElementById('modalContent');
         const closeBtn = document.querySelector('.modal-close');
         
         document.querySelectorAll('.sku-item').forEach(card => {{
-            card.addEventListener('click', () => {{
+            card.addEventListener('click', (e) => {{
                 document.getElementById('m-name').textContent = card.getAttribute('data-name');
                 document.getElementById('m-cod').textContent = card.getAttribute('data-cod');
                 document.getElementById('m-ean').textContent = card.getAttribute('data-ean');
@@ -1091,6 +1037,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
                 
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
+                
+                // Centrado exacto vertical según la altura del cursor
+                let clickY = e.pageY || (card.getBoundingClientRect().top + window.scrollY);
+                if (clickY < 230) clickY = 230;
+                modalContent.style.top = clickY + 'px';
                 
                 modal.classList.add('active');
             }});
@@ -1160,7 +1111,7 @@ info_hora = None
 error_nube = None
 
 # --- HEADER PRINCIPAL ---
-col_head1, col_head2, col_head3, col_head4 = st.columns([4, 1.5, 3.5, 1])
+col_head1, col_head2, col_head3 = st.columns([6, 2, 2])
 
 with col_head1:
     st.markdown("<h1 style='margin: 0; padding: 0; font-size: 2.1rem; color: #fff;'>📦 Planograma 2.0</h1>", unsafe_allow_html=True)
@@ -1169,20 +1120,11 @@ with col_head2:
     st.markdown("<div style='margin-top: 5px;'>", unsafe_allow_html=True)
     if st.button("🔄 Actualizar", use_container_width=True):
         st.cache_data.clear()
-        st.session_state.ultimo_acceso = time.time()
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 with col_head3:
     header_time_placeholder = st.empty()
-
-with col_head4:
-    st.markdown("<div style='margin-top: 5px;'>", unsafe_allow_html=True)
-    if st.button("🚪 Salir", use_container_width=True, help="Cerrar sesión segura"):
-        st.session_state.autenticado = False
-        st.session_state.ultimo_acceso = 0
-        st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("<div style='border-bottom: 2px solid #1e3a8a; padding-bottom: 5px; margin-bottom: 15px;'><span style='color: #93c5fd; font-size: 0.9rem;'>Análisis interactivo de pasillos y rentabilidad de tienda</span></div>", unsafe_allow_html=True)
 
@@ -1335,8 +1277,8 @@ if df_raw is not None:
         st.markdown("---")
         
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma)
-        # Altura calibrada al contenido exacto del planograma
-        components.html(html_pasillo, height=1250, scrolling=False)
+        # Altura suficiente para mostrar los 8 niveles sin recortes
+        components.html(html_pasillo, height=2400, scrolling=False)
             
     with tab2:
         top_n_fijo = 5
