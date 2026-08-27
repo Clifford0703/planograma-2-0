@@ -17,16 +17,16 @@ st.set_page_config(
 st.markdown("""
     <style>
         .block-container {
-            padding-left: 1.2rem !important;
-            padding-right: 1.2rem !important;
-            padding-top: 1.5rem !important; 
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            padding-top: 1.2rem !important; 
             padding-bottom: 0rem !important;
             max-width: 100% !important;
         }
-        .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-        .fin-kpi-card { flex: 1; min-width: 200px; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 18px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
-        .fin-kpi-title { font-size: 0.80rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
-        .fin-kpi-val { font-size: 2.0rem; font-weight: 900; color: #ffffff; line-height: 1; }
+        .fin-kpi-container { display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
+        .fin-kpi-card { flex: 1; min-width: 180px; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 14px 18px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
+        .fin-kpi-title { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
+        .fin-kpi-val { font-size: 1.8rem; font-weight: 900; color: #ffffff; line-height: 1; }
         .fin-kpi-card.green-theme { border-left-color: #10b981; }
         .fin-kpi-card.purple-theme { border-left-color: #8b5cf6; }
     </style>
@@ -243,17 +243,17 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           color: #fff; 
           margin: 0; 
           padding: 0; 
-          height: auto; 
-          overflow-x: hidden; 
+          height: 100vh; 
+          overflow: hidden; 
         }}
         
         .main-container {{ 
-          padding: 6px 8px 0px 8px; 
-          height: auto; 
+          padding: 6px 8px; 
+          height: 100vh; 
           display: flex; 
           flex-direction: column; 
           box-sizing: border-box;
-          position: relative;
+          overflow: hidden;
         }}
 
         ::-webkit-scrollbar {{ height: 8px; width: 8px; }}
@@ -262,28 +262,28 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         ::-webkit-scrollbar-thumb:hover {{ background: #2563eb; }}
 
         /* KPI CONTAINER */
-        .kpi-container {{ display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; flex-shrink: 0; }}
-        .kpi-card {{ flex: 1; min-width: 120px; background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }}
-        .kpi-title {{ font-size: 0.65rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; margin-bottom: 4px; display: block; letter-spacing: 0.5px; }}
-        .kpi-val {{ font-size: 1.5rem; font-weight: 900; line-height: 1; display: block; }}
+        .kpi-container {{ display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; justify-content: center; flex-shrink: 0; }}
+        .kpi-card {{ flex: 1; min-width: 105px; background: #111c30; border: 1px solid #1e3a8a; border-radius: 6px; padding: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }}
+        .kpi-title {{ font-size: 0.60rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; margin-bottom: 2px; display: block; letter-spacing: 0.5px; }}
+        .kpi-val {{ font-size: 1.35rem; font-weight: 900; line-height: 1; display: block; }}
         
         /* FILTROS */
-        .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; flex-shrink: 0; }}
-        .filter-group {{ display: flex; flex-direction: column; gap: 4px; flex-grow: 1; }}
-        .filter-label {{ font-size: 0.7rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
-        .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 5px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: 600; outline: none; width: 100%; min-width: 120px; }}
-        .btn-group {{ display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; align-items: center; }}
+        .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; flex-shrink: 0; }}
+        .filter-group {{ display: flex; flex-direction: column; gap: 3px; flex-grow: 1; }}
+        .filter-label {{ font-size: 0.65rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
+        .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 4px 8px; border-radius: 4px; font-size: 0.80rem; font-weight: 600; outline: none; width: 100%; min-width: 110px; }}
+        .btn-group {{ display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; align-items: center; }}
         
-        .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
-        .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
-        .filter-btn-fullscreen {{ background: #3b82f6; border: none; color: white; font-weight: 700; font-size: 0.75rem; padding: 8px 14px; border-radius: 4px; cursor: pointer; transition: background 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }}
+        .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.72rem; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }}
+        .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.72rem; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }}
+        .filter-btn-fullscreen {{ background: #3b82f6; border: none; color: white; font-weight: 700; font-size: 0.72rem; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }}
         
         /* LEYENDA */
-        .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 8px 16px; margin-bottom: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }}
-        .legend-title {{ font-size: 0.75rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-right: 8px; }}
-        .legend-chips {{ display: flex; flex-wrap: wrap; gap: 8px; }}
-        .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.70rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
-        .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 12px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
+        .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 6px; padding: 6px 12px; margin-bottom: 8px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0; }}
+        .legend-title {{ font-size: 0.70rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-right: 6px; }}
+        .legend-chips {{ display: flex; flex-wrap: wrap; gap: 6px; }}
+        .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.65rem; padding: 4px 8px; border-radius: 16px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
+        .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 10px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
         
         /* CONTENEDOR PRINCIPAL DEL PLANOGRAMA */
         .aisle-wrapper {{ 
@@ -291,14 +291,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           flex-direction: column;
           width: 100%; 
           position: relative; 
-          height: auto;
+          flex: 1;
+          min-height: 0;
           background: #0b1324;
           border-radius: 8px;
           border: 1.5px solid #1e293b;
-          touch-action: pan-y;
           padding: 0;
-          overflow: visible;
-          margin-bottom: 0px;
+          overflow: hidden;
         }}
 
         /* LEYENDA SUPERIOR EN PANTALLA COMPLETA */
@@ -309,22 +308,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           left: 0;
           right: 0;
           background: rgba(15, 23, 42, 0.98);
-          border-bottom: 3px solid #3b82f6;
-          padding: 12px 20px;
+          border-bottom: 2px solid #3b82f6;
+          padding: 8px 16px;
           z-index: 1000;
           backdrop-filter: blur(8px);
           align-items: center;
-          gap: 12px;
+          gap: 10px;
           overflow-x: auto;
           white-space: nowrap;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.6);
         }}
         
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
           background: #070d19 !important;
           width: 100vw !important;
           height: 100vh !important;
-          overflow-y: auto !important;
           padding: 0 !important;
           border: none !important;
         }}
@@ -336,15 +333,15 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         /* FLECHAS FLOTANTES DINÁMICAS (DESKTOP) */
         .nav-btn {{ 
           position: absolute;
-          top: 250px;
+          top: 50%;
           transform: translateY(-50%);
           background: rgba(17, 28, 48, 0.92); 
           color: #60a5fa; 
           border: 2px solid #3b82f6; 
           border-radius: 50%; 
-          width: 48px; 
-          height: 48px;
-          font-size: 1.6rem; 
+          width: 44px; 
+          height: 44px;
+          font-size: 1.5rem; 
           font-weight: 900; 
           cursor: pointer; 
           z-index: 100; 
@@ -353,36 +350,38 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           justify-content: center; 
           box-shadow: 0 4px 18px rgba(0,0,0,0.8); 
           backdrop-filter: blur(6px);
-          transition: top 0.15s ease-out, transform 0.2s, background 0.2s;
+          transition: transform 0.2s, background 0.2s;
         }}
-        .nav-btn:hover {{ background: #1e3a8a; color: #ffffff; transform: translateY(-50%) scale(1.12); }}
-        .nav-btn-prev {{ left: 12px; }}
-        .nav-btn-next {{ right: 12px; }}
+        .nav-btn:hover {{ background: #1e3a8a; color: #ffffff; transform: translateY(-50%) scale(1.1); }}
+        .nav-btn-prev {{ left: 10px; }}
+        .nav-btn-next {{ right: 10px; }}
         .nav-btn:disabled {{ opacity: 0; pointer-events: none; }}
         
         .zoom-layer {{
           display: flex;
           width: 100%;
-          height: auto;
+          height: 100%;
           transform-origin: 50% 0;
           will-change: transform;
           justify-content: center;
-          align-items: flex-start;
+          align-items: stretch;
           transition: transform 0.2s ease-out;
         }}
 
+        /* SCROLL BIDIRECCIONAL COMPLETO DEL PLANOGRAMA */
         .aisle-container {{ 
           display: flex; 
           flex-direction: row; 
           gap: 16px; 
           background: #0f172a; 
           border-radius: 8px; 
-          padding: 14px 45px 6px 45px; 
+          padding: 12px 40px; 
           overflow-x: auto; 
-          overflow-y: visible; 
+          overflow-y: auto; 
           scroll-behavior: smooth; 
           scroll-snap-type: x mandatory; 
           width: 100%; 
+          height: 100%;
           box-sizing: border-box;
         }}
         
@@ -394,73 +393,73 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           border-radius: 6px; 
           display: flex; 
           flex-direction: column; 
-          height: auto; 
+          height: fit-content; 
           scroll-snap-align: center; 
-          padding-bottom: 10px; 
+          padding-bottom: 12px; 
           box-sizing: border-box;
         }}
         .bay-column.hidden {{ display: none !important; }}
         
-        .bay-title {{ background: #1e3a8a; padding: 8px; font-size: 0.90rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
-        .bay-subcat {{ font-size: 0.70rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
+        .bay-title {{ background: #1e3a8a; padding: 6px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
+        .bay-subcat {{ font-size: 0.68rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
         
-        .bay-shelves {{ padding: 12px 12px 6px 12px; display: flex; flex-direction: column; gap: 16px; flex-grow: 1; height: auto; }}
-        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 8px; transition: all 0.3s; }}
+        .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }}
+        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 6px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 6px 8px; min-height: 105px; overflow-x: auto; padding-bottom: 6px; align-items: flex-end; justify-content: flex-start; }}
+        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 4px 6px; min-height: 95px; overflow-x: auto; padding-bottom: 4px; align-items: flex-end; justify-content: flex-start; }}
         .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); z-index: 1; }}
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
         
-        .shelf-base {{ height: 12px; background: linear-gradient(180deg, #fde047 0%, #ca8a04 100%); border-radius: 2px; box-shadow: 0 4px 6px rgba(0,0,0,0.6); display: flex; justify-content: center; position: relative; z-index: 5; margin-top: -2px; border-top: 1px solid #fef08a; border-bottom: 2px solid #854d0e; }}
-        .shelf-name-tag {{ position: absolute; top: 10px; background: rgba(0,0,0,0.7); color: #fef08a; font-size: 0.55rem; padding: 1px 6px; border-radius: 0 0 4px 4px; font-weight: 800; letter-spacing: 0.5px; }}
+        .shelf-base {{ height: 10px; background: linear-gradient(180deg, #fde047 0%, #ca8a04 100%); border-radius: 2px; box-shadow: 0 4px 6px rgba(0,0,0,0.6); display: flex; justify-content: center; position: relative; z-index: 5; margin-top: -2px; border-top: 1px solid #fef08a; border-bottom: 2px solid #854d0e; }}
+        .shelf-name-tag {{ position: absolute; top: 8px; background: rgba(0,0,0,0.7); color: #fef08a; font-size: 0.50rem; padding: 1px 5px; border-radius: 0 0 4px 4px; font-weight: 800; letter-spacing: 0.5px; }}
         
         .sku-group {{ display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; transition: all 0.2s; z-index: 10; padding: 0 2px; flex-shrink: 0; }}
         .sku-images-wrapper {{ display: flex; flex-direction: row; align-items: flex-end; gap: 1px; }}
-        .sku-images-wrapper img {{ height: 90px; width: auto; max-width: 60px; object-fit: contain; filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.5)); transition: transform 0.2s; }}
+        .sku-images-wrapper img {{ height: 85px; width: auto; max-width: 55px; object-fit: contain; filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.5)); transition: transform 0.2s; }}
         .sku-group:hover .sku-images-wrapper img {{ transform: translateY(-4px); filter: drop-shadow(4px 8px 8px rgba(0,0,0,0.7)); }}
         
-        .sku-fleje {{ background: #ffffff; color: #000; border: 1px solid #64748b; font-size: 0.50rem; display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; z-index: 15; box-shadow: 0 2px 4px rgba(0,0,0,0.5); width: max-content; padding: 1px 2px; }}
+        .sku-fleje {{ background: #ffffff; color: #000; border: 1px solid #64748b; font-size: 0.48rem; display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; z-index: 15; box-shadow: 0 2px 4px rgba(0,0,0,0.5); width: max-content; padding: 1px 2px; }}
         .fleje-ean {{ font-weight: 600; font-family: monospace; letter-spacing: -0.5px; }}
         .fleje-caras {{ font-weight: 900; background: #e2e8f0; width: 100%; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 1px; color: #1e293b; }}
         
         .alerta-bloqueado .sku-images-wrapper img {{ filter: grayscale(100%) opacity(0.4) drop-shadow(0 0 2px #fff); }}
         .alerta-sinstock .sku-images-wrapper img {{ filter: drop-shadow(0 0 10px #ef4444) drop-shadow(0 0 5px #ef4444); }}
         .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 8px #f59e0b); }}
-        .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -15px; right: -5px; font-size: 1.1rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); z-index: 30; animation: float 2s ease-in-out infinite; }}
+        .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1.05rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); z-index: 30; animation: float 2s ease-in-out infinite; }}
         @keyframes float {{ 0% {{transform: translateY(0px);}} 50% {{transform: translateY(-4px);}} 100% {{transform: translateY(0px);}} }}
         
-        .sku-card {{ border-radius: 4px; padding: 6px; display: flex; flex-direction: column; justify-content: space-between; min-width: 95px; position: relative; transition: all 0.2s; cursor: pointer; align-items: stretch; flex-shrink: 0; outline: none; }}
+        .sku-card {{ border-radius: 4px; padding: 5px; display: flex; flex-direction: column; justify-content: space-between; min-width: 90px; position: relative; transition: all 0.2s; cursor: pointer; align-items: stretch; flex-shrink: 0; outline: none; }}
         .sku-card.is-top {{ outline: 2px solid #FFC000 !important; outline-offset: -1px; }}
-        .sku-pos {{ position: absolute; top: 4px; left: 4px; background: #0f172a; color: #fff; font-size: 0.6rem; font-weight: 800; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border-radius: 2px; }}
-        .sku-caras-tag {{ position: absolute; top: 4px; right: 4px; background: rgba(255,255,255,0.9); color: #000; font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 2px; }}
-        .sku-details {{ margin-top: 18px; display: flex; flex-direction: column; gap: 3px; text-align: center; overflow: hidden; }}
-        .sku-brand-text {{ font-size: 0.65rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-        .sku-name-text {{ font-size: 0.70rem; font-weight: 700; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }}
-        .sku-bottom-bar {{ margin-top: 4px; border-top: 1px dashed; padding-top: 2px; display: flex; justify-content: space-between; align-items: center; gap: 4px; }}
-        .sku-ean-code {{ font-size: 0.60rem; font-family: monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }}
-        .sku-cap-val {{ font-size: 0.65rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; flex-shrink: 0; }}
-        .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
-        .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
+        .sku-pos {{ position: absolute; top: 3px; left: 3px; background: #0f172a; color: #fff; font-size: 0.58rem; font-weight: 800; width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; border-radius: 2px; }}
+        .sku-caras-tag {{ position: absolute; top: 3px; right: 3px; background: rgba(255,255,255,0.9); color: #000; font-size: 0.52rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; }}
+        .sku-details {{ margin-top: 16px; display: flex; flex-direction: column; gap: 2px; text-align: center; overflow: hidden; }}
+        .sku-brand-text {{ font-size: 0.62rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+        .sku-name-text {{ font-size: 0.68rem; font-weight: 700; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }}
+        .sku-bottom-bar {{ margin-top: 3px; border-top: 1px dashed; padding-top: 2px; display: flex; justify-content: space-between; align-items: center; gap: 3px; }}
+        .sku-ean-code {{ font-size: 0.58rem; font-family: monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }}
+        .sku-cap-val {{ font-size: 0.62rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; flex-shrink: 0; }}
+        .shelf-bottom-rail {{ height: 6px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
+        .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 3px 6px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        /* MODAL OVERLAY Y CENTRADO SMART VIEWPORT */
+        /* MODAL 100% CENTRADO EN LA PANTALLA VISIBLE */
         .modal-overlay {{ 
-          position: absolute; 
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
+          position: fixed; 
+          inset: 0;
+          width: 100vw;
+          height: 100vh;
           background: rgba(0,0,0,0.85); 
           z-index: 999999; 
           opacity: 0; 
           pointer-events: none; 
           transition: opacity 0.2s ease; 
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
         }}
         .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
         .modal-content {{ 
-          position: absolute;
-          left: 50%;
-          transform: translate(-50%, -50%);
           background: #1e293b; 
           color: #fff; 
           padding: 22px; 
@@ -471,9 +470,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           overflow-y: auto; 
           border: 2px solid #3b82f6; 
           box-shadow: 0 10px 40px rgba(0,0,0,0.9); 
+          position: relative;
+          margin: auto;
         }}
         .modal-close {{ position: absolute; top: 10px; right: 15px; font-size: 1.8rem; cursor: pointer; color: #94a3b8; font-weight: bold; line-height: 1; }}
-        .m-row {{ border-bottom: 1px solid #334155; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.85rem; }}
+        .m-row {{ border-bottom: 1px solid #334155; padding: 6px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
@@ -481,14 +482,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         @media (max-width: 768px) {{
             .nav-btn {{ display: none !important; }}
             .aisle-container {{ 
-              padding: 8px 4px 2px 4px !important; 
+              padding: 8px 4px !important; 
               touch-action: pan-x pan-y !important;
             }}
             .kpi-container {{
               display: grid !important;
               grid-template-columns: repeat(2, 1fr) !important;
-              gap: 8px !important;
-              overflow-x: visible !important;
+              gap: 6px !important;
             }}
             .kpi-card {{ min-width: unset !important; }}
             .kpi-card:last-child {{ grid-column: 1 / -1 !important; }}
@@ -496,19 +496,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
               flex: 0 0 100% !important;
               width: 100% !important;
               max-width: 100% !important;
-              height: auto !important;
               scroll-snap-align: center !important;
             }}
-            .bay-shelves {{
-              gap: 10px !important;
-              padding: 4px !important;
-            }}
-            .shelf-products {{
-              min-height: 75px !important;
-              padding: 2px !important;
-            }}
-            .sku-card {{ min-width: 70px !important; padding: 3px !important; }}
-            .sku-images-wrapper img {{ height: 70px !important; max-width: 38px !important; }}
+            .bay-shelves {{ gap: 8px !important; padding: 4px !important; }}
+            .shelf-products {{ min-height: 70px !important; padding: 2px !important; }}
+            .sku-card {{ min-width: 68px !important; padding: 3px !important; }}
+            .sku-images-wrapper img {{ height: 68px !important; max-width: 36px !important; }}
         }}
 
         @media print {{
@@ -546,6 +539,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
     <body>
       <div class="main-container" id="mainContainer">
 
+        <!-- MODAL 100% CENTRADO EN LA PANTALLA -->
         <div id="productModal" class="modal-overlay">
           <div class="modal-content" id="modalContent">
             <span class="modal-close">&times;</span>
@@ -564,27 +558,27 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           </div>
         </div>
 
-        <div class="top-panel" style="background: #111c30; border: 1px solid #1e3a8a; border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; flex-shrink: 0;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 1.2rem;">🏆</span>
-              <label style="color: #93c5fd; font-weight: 700; font-size: 0.85rem; text-transform: uppercase; margin: 0;">Resaltar TOP Ventas:</label>
-              <input type="number" id="topNInput" value="5" min="1" max="500" style="background: #ffffff; border: 2px solid #3b82f6; border-radius: 4px; padding: 4px 8px; width: 70px; font-weight: bold; color: #0f172a; outline: none;">
-              <span style="color: #94a3b8; font-size: 0.8rem; font-weight: bold;">SKUs</span>
+        <div class="top-panel" style="background: #111c30; border: 1px solid #1e3a8a; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+              <span style="font-size: 1.1rem;">🏆</span>
+              <label style="color: #93c5fd; font-weight: 700; font-size: 0.80rem; text-transform: uppercase; margin: 0;">Resaltar TOP Ventas:</label>
+              <input type="number" id="topNInput" value="5" min="1" max="500" style="background: #ffffff; border: 2px solid #3b82f6; border-radius: 4px; padding: 2px 6px; width: 60px; font-weight: bold; color: #0f172a; outline: none; font-size: 0.85rem;">
+              <span style="color: #94a3b8; font-size: 0.75rem; font-weight: bold;">SKUs</span>
           </div>
-          <div id="topNInfo" style="color: #cbd5e1; font-size: 0.85rem; background: rgba(59,130,246,0.1); padding: 8px 12px; border-radius: 4px; border-left: 4px solid #3b82f6; flex-grow: 1;">
+          <div id="topNInfo" style="color: #cbd5e1; font-size: 0.80rem; background: rgba(59,130,246,0.1); padding: 4px 10px; border-radius: 4px; border-left: 3px solid #3b82f6; flex-grow: 1;">
               💡 Calculando...
           </div>
         </div>
 
         <!-- TARJETAS KPIS -->
         <div class="kpi-container">
-          <div class="kpi-card" style="border-bottom: 4px solid #3b82f6;"><span class="kpi-title">Total SKUs</span><span class="kpi-val" id="t-total" style="color: #fff;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 4px solid #FFC7CE;"><span class="kpi-title">Bloqueados</span><span class="kpi-val" id="t-bloq" style="color: #FFC7CE;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 4px solid #F4B084;"><span class="kpi-title">Sin Stock (0)</span><span class="kpi-val" id="t-sin" style="color: #F4B084;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 4px solid #FFFF99;"><span class="kpi-title">Stock Bajo (1-5)</span><span class="kpi-val" id="t-bajo" style="color: #FFFF99;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 4px solid #C6EFCE;"><span class="kpi-title">Stock OK (>5)</span><span class="kpi-val" id="t-ok" style="color: #C6EFCE;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 4px solid #ef4444;"><span class="kpi-title">Cob. Alta (≥30)</span><span class="kpi-val" id="t-cob" style="color: #ef4444;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 4px solid #fbbf24;"><span class="kpi-title">★ Top Ventas</span><span class="kpi-val" id="t-top" style="color: #fbbf24;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #3b82f6;"><span class="kpi-title">Total SKUs</span><span class="kpi-val" id="t-total" style="color: #fff;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #FFC7CE;"><span class="kpi-title">Bloqueados</span><span class="kpi-val" id="t-bloq" style="color: #FFC7CE;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #F4B084;"><span class="kpi-title">Sin Stock (0)</span><span class="kpi-val" id="t-sin" style="color: #F4B084;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #FFFF99;"><span class="kpi-title">Stock Bajo (1-5)</span><span class="kpi-val" id="t-bajo" style="color: #FFFF99;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #C6EFCE;"><span class="kpi-title">Stock OK (>5)</span><span class="kpi-val" id="t-ok" style="color: #C6EFCE;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #ef4444;"><span class="kpi-title">Cob. Alta (≥30)</span><span class="kpi-val" id="t-cob" style="color: #ef4444;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #fbbf24;"><span class="kpi-title">★ Top Ventas</span><span class="kpi-val" id="t-top" style="color: #fbbf24;">0</span></div>
         </div>
 
         <div class="filter-panel">
@@ -612,19 +606,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           </div>
         </div>
 
-        <!-- CONTENEDOR CON FLECHAS FLOTANTES DINÁMICAS -->
+        <!-- CONTENEDOR CON SCROLL BIDIRECCIONAL COMPLETO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           <div class="fullscreen-legend-bar">
-            <span style="font-size: 0.80rem; font-weight: 800; color: #93c5fd; text-transform: uppercase;">📍 LEYENDA:</span>
+            <span style="font-size: 0.75rem; font-weight: 800; color: #93c5fd; text-transform: uppercase;">📍 LEYENDA:</span>
             <div class="legend-chips">
-              <button class="legend-chip" data-filter="Bloqueado" style="--bg: #FFC7CE; --tc: #9C0006; font-size: 0.70rem; padding: 5px 12px;">Bloqueado</button>
-              <button class="legend-chip" data-filter="Sin Stock" style="--bg: #F4B084; --tc: #833C0C; font-size: 0.70rem; padding: 5px 12px;">Sin Stock</button>
-              <button class="legend-chip" data-filter="Stock Bajo" style="--bg: #FFFF99; --tc: #8A5A00; font-size: 0.70rem; padding: 5px 12px;">Stock 1-5</button>
-              <button class="legend-chip" data-filter="Stock OK" style="--bg: #C6EFCE; --tc: #006100; font-size: 0.70rem; padding: 5px 12px;">Stock >5</button>
-              <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 1.5px solid #ef4444; font-size: 0.70rem; padding: 5px 12px;">Cob ≥30</button>
-              <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 1.5px solid #FFC000; font-size: 0.70rem; padding: 5px 12px;">★ TOP</button>
+              <button class="legend-chip" data-filter="Bloqueado" style="--bg: #FFC7CE; --tc: #9C0006; font-size: 0.65rem; padding: 4px 10px;">Bloqueado</button>
+              <button class="legend-chip" data-filter="Sin Stock" style="--bg: #F4B084; --tc: #833C0C; font-size: 0.65rem; padding: 4px 10px;">Sin Stock</button>
+              <button class="legend-chip" data-filter="Stock Bajo" style="--bg: #FFFF99; --tc: #8A5A00; font-size: 0.65rem; padding: 4px 10px;">Stock 1-5</button>
+              <button class="legend-chip" data-filter="Stock OK" style="--bg: #C6EFCE; --tc: #006100; font-size: 0.65rem; padding: 4px 10px;">Stock >5</button>
+              <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 1.5px solid #ef4444; font-size: 0.65rem; padding: 4px 10px;">Cob ≥30</button>
+              <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 1.5px solid #FFC000; font-size: 0.65rem; padding: 4px 10px;">★ TOP</button>
             </div>
-            <button id="exitFsBtn" style="margin-left: auto; background: #ef4444; border: none; color: white; padding: 6px 14px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; cursor: pointer;">✕ Salir</button>
+            <button id="exitFsBtn" style="margin-left: auto; background: #ef4444; border: none; color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 0.70rem; cursor: pointer;">✕ Salir</button>
           </div>
 
           <button class="nav-btn nav-btn-prev" id="btnPrev" title="Cuerpo Anterior">❮</button>
@@ -667,14 +661,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         function autoFitCuerpo(targetBay) {{
           const bay = targetBay || document.querySelector('.bay-column:not(.hidden)');
           if (bay) {{
-            const viewportW = window.innerWidth;
-            const viewportH = window.innerHeight;
+            const viewportW = container.clientWidth;
+            const viewportH = container.clientHeight;
             const bayW = bay.offsetWidth || bay.scrollWidth;
             const bayH = bay.offsetHeight || bay.scrollHeight;
 
             if (bayW > 0 && bayH > 0) {{
               const scaleW = (viewportW - 16) / bayW;
-              const scaleH = (viewportH - 60) / bayH;
+              const scaleH = (viewportH - 20) / bayH;
               scale = Math.min(scaleW, scaleH, 1.0);
               posX = 0;
               posY = 0;
@@ -724,18 +718,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         }}, {{ passive: false }});
 
         aisleWrapper.addEventListener('touchend', () => {{ isTouching = false; }});
-
-        // FLECHAS FLOTANTES DINÁMICAS (SMART FOLLOW)
-        aisleWrapper.addEventListener('mousemove', (e) => {{
-          if (window.innerWidth > 768) {{
-            const rect = aisleWrapper.getBoundingClientRect();
-            let relativeY = e.clientY - rect.top;
-            if (relativeY < 50) relativeY = 50;
-            if (relativeY > aisleWrapper.offsetHeight - 50) relativeY = aisleWrapper.offsetHeight - 50;
-            btnPrev.style.top = relativeY + 'px';
-            btnNext.style.top = relativeY + 'px';
-          }}
-        }});
 
         function updateScrollButtons() {{
           requestAnimationFrame(() => {{
@@ -848,7 +830,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           }}
 
           let pct = totalVentasFiltered > 0 ? (topVentasSum / totalVentasFiltered) * 100 : 0;
-          document.getElementById('topNInfo').innerHTML = "💡 Has resaltado el <b>TOP " + topNSkusSet.size + "</b> de esta vista. Concentran el <b style='color:#10b981; font-size:1rem;'>" + pct.toFixed(2) + "%</b> de la venta mostrada (S/ " + totalVentasFiltered.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}}) + ").";
+          document.getElementById('topNInfo').innerHTML = "💡 Has resaltado el <b>TOP " + topNSkusSet.size + "</b> de esta vista. Concentran el <b style='color:#10b981; font-size:0.95rem;'>" + pct.toFixed(2) + "%</b> de la venta mostrada (S/ " + totalVentasFiltered.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}}) + ").";
 
           let availableBrands = new Set();
           let availableCats = new Set();
@@ -1015,13 +997,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           applyFilters();
         }});
 
-        // MODAL PRODUCTO CON CENTRADO DINÁMICO SMART CLAMPING
+        // MODAL PRODUCTO (SIEMPRE 100% CENTRADO EN LA PANTALLA)
         const modal = document.getElementById('productModal');
-        const modalContent = document.getElementById('modalContent');
         const closeBtn = document.querySelector('.modal-close');
         
         document.querySelectorAll('.sku-item').forEach(card => {{
-            card.addEventListener('click', (e) => {{
+            card.addEventListener('click', () => {{
                 document.getElementById('m-name').textContent = card.getAttribute('data-name');
                 document.getElementById('m-cod').textContent = card.getAttribute('data-cod');
                 document.getElementById('m-ean').textContent = card.getAttribute('data-ean');
@@ -1039,13 +1020,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
                 
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
-                
-                // Algoritmo Smart Clamping: Centrado perfecto en pantalla
-                let targetY = (e.pageY || card.getBoundingClientRect().top + window.scrollY) - 120;
-                let maxAllowedY = document.documentElement.scrollHeight - 260;
-                let minAllowedY = 250;
-                let finalY = Math.min(Math.max(minAllowedY, targetY), maxAllowedY);
-                modalContent.style.top = finalY + 'px';
                 
                 modal.classList.add('active');
             }});
@@ -1130,7 +1104,7 @@ with col_head2:
 with col_head3:
     header_time_placeholder = st.empty()
 
-st.markdown("<div style='border-bottom: 2px solid #1e3a8a; padding-bottom: 5px; margin-bottom: 15px;'><span style='color: #93c5fd; font-size: 0.9rem;'>Análisis interactivo de pasillos y rentabilidad de tienda</span></div>", unsafe_allow_html=True)
+st.markdown("<div style='border-bottom: 2px solid #1e3a8a; padding-bottom: 5px; margin-bottom: 12px;'><span style='color: #93c5fd; font-size: 0.9rem;'>Análisis interactivo de pasillos y rentabilidad de tienda</span></div>", unsafe_allow_html=True)
 
 with st.spinner("Sincronizando base de datos central, jerarquías e imágenes..."):
     df_nube, df_aux_nube, df_jer_nube, df_fotos_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE, URL_JERARQUIA, URL_FOTOS)
@@ -1281,8 +1255,8 @@ if df_raw is not None:
         st.markdown("---")
         
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma)
-        # Altura calibrada al contenido exacto: muestra todos los niveles sin espacio negro abajo
-        components.html(html_pasillo, height=1580, scrolling=False)
+        # Altura adaptable al monitor con scroll interno: cero espacio negro y modal 100% centrado
+        components.html(html_pasillo, height=840, scrolling=False)
             
     with tab2:
         top_n_fijo = 5
