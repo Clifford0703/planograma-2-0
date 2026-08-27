@@ -20,7 +20,7 @@ st.markdown("""
             padding-left: 1.2rem !important;
             padding-right: 1.2rem !important;
             padding-top: 1.5rem !important; 
-            padding-bottom: 1rem !important;
+            padding-bottom: 0rem !important;
             max-width: 100% !important;
         }
         .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -243,12 +243,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           color: #fff; 
           margin: 0; 
           padding: 0; 
-          min-height: 100%; 
+          height: auto; 
           overflow-x: hidden; 
         }}
         
         .main-container {{ 
-          padding: 8px 8px 15px 8px; 
+          padding: 6px 8px 0px 8px; 
+          height: auto; 
           display: flex; 
           flex-direction: column; 
           box-sizing: border-box;
@@ -297,9 +298,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           touch-action: pan-y;
           padding: 0;
           overflow: visible;
+          margin-bottom: 0px;
         }}
 
-        /* LEYENDA FIJA SUPERIOR AMPLIA EN PANTALLA COMPLETA */
+        /* LEYENDA SUPERIOR EN PANTALLA COMPLETA */
         .fullscreen-legend-bar {{
           display: none;
           position: sticky;
@@ -375,7 +377,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           gap: 16px; 
           background: #0f172a; 
           border-radius: 8px; 
-          padding: 14px 45px 15px 45px; 
+          padding: 14px 45px 6px 45px; 
           overflow-x: auto; 
           overflow-y: visible; 
           scroll-behavior: smooth; 
@@ -394,7 +396,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           flex-direction: column; 
           height: auto; 
           scroll-snap-align: center; 
-          padding-bottom: 12px; 
+          padding-bottom: 10px; 
           box-sizing: border-box;
         }}
         .bay-column.hidden {{ display: none !important; }}
@@ -402,7 +404,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .bay-title {{ background: #1e3a8a; padding: 8px; font-size: 0.90rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
         .bay-subcat {{ font-size: 0.70rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
         
-        .bay-shelves {{ padding: 12px; display: flex; flex-direction: column; gap: 16px; flex-grow: 1; height: auto; }}
+        .bay-shelves {{ padding: 12px 12px 6px 12px; display: flex; flex-direction: column; gap: 16px; flex-grow: 1; height: auto; }}
         .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 8px; transition: all 0.3s; }}
         .shelf-row.hidden {{ display: none !important; }}
         
@@ -441,7 +443,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .shelf-bottom-rail {{ height: 8px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 4px 8px; font-size: 0.7rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        /* MODAL OVERLAY BASADO EN LA ALTURA DEL CURSOR */
+        /* MODAL OVERLAY Y CENTRADO SMART VIEWPORT */
         .modal-overlay {{ 
           position: absolute; 
           top: 0;
@@ -723,7 +725,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
 
         aisleWrapper.addEventListener('touchend', () => {{ isTouching = false; }});
 
-        // FLECHAS FLOTANTES DINÁMICAS
+        // FLECHAS FLOTANTES DINÁMICAS (SMART FOLLOW)
         aisleWrapper.addEventListener('mousemove', (e) => {{
           if (window.innerWidth > 768) {{
             const rect = aisleWrapper.getBoundingClientRect();
@@ -1013,7 +1015,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           applyFilters();
         }});
 
-        // MODAL PRODUCTO CENTRADO EN LA POSICIÓN VERTICAL DEL CURSOR
+        // MODAL PRODUCTO CON CENTRADO DINÁMICO SMART CLAMPING
         const modal = document.getElementById('productModal');
         const modalContent = document.getElementById('modalContent');
         const closeBtn = document.querySelector('.modal-close');
@@ -1038,10 +1040,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
-                // Centrado exacto vertical según la altura del cursor
-                let clickY = e.pageY || (card.getBoundingClientRect().top + window.scrollY);
-                if (clickY < 230) clickY = 230;
-                modalContent.style.top = clickY + 'px';
+                // Algoritmo Smart Clamping: Centrado perfecto en pantalla
+                let targetY = (e.pageY || card.getBoundingClientRect().top + window.scrollY) - 120;
+                let maxAllowedY = document.documentElement.scrollHeight - 260;
+                let minAllowedY = 250;
+                let finalY = Math.min(Math.max(minAllowedY, targetY), maxAllowedY);
+                modalContent.style.top = finalY + 'px';
                 
                 modal.classList.add('active');
             }});
@@ -1277,8 +1281,8 @@ if df_raw is not None:
         st.markdown("---")
         
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma)
-        # Altura suficiente para mostrar los 8 niveles sin recortes
-        components.html(html_pasillo, height=2400, scrolling=False)
+        # Altura calibrada al contenido exacto: muestra todos los niveles sin espacio negro abajo
+        components.html(html_pasillo, height=1580, scrolling=False)
             
     with tab2:
         top_n_fijo = 5
