@@ -20,7 +20,7 @@ if "tema_actual" not in st.session_state:
 
 es_oscuro = st.session_state.tema_actual == "dark"
 
-# --- PALETA DESIGN SYSTEM UNIFICADA ---
+# --- DESIGN SYSTEM VARIABLES ---
 theme_vars = {
     "dark": {
         "bg_app": "#070d19",
@@ -36,7 +36,8 @@ theme_vars = {
         "accent_purple": "#8b5cf6",
         "accent_amber": "#fbbf24",
         "grid_color": "rgba(255, 255, 255, 0.08)",
-        "card_shadow": "0 4px 6px rgba(0,0,0,0.4)",
+        "card_shadow": "0 4px 10px rgba(0,0,0,0.4)",
+        "plotly_text": "#cbd5e1",
     },
     "light": {
         "bg_app": "#f8fafc",
@@ -52,18 +53,20 @@ theme_vars = {
         "accent_purple": "#7c3aed",
         "accent_amber": "#d97706",
         "grid_color": "rgba(0, 0, 0, 0.06)",
-        "card_shadow": "0 2px 4px rgba(0,0,0,0.06)",
+        "card_shadow": "0 2px 6px rgba(0,0,0,0.05)",
+        "plotly_text": "#334155",
     }
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS GLOBAL (CAMBIO REAL DE FONDO EN STREAMLIT)
+# INYECCIÓN CSS FORZADA (CONTROL TOTAL DEL TEMA EN STREAMLIT)
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         
-        .stApp, [data-testid="stAppViewContainer"], .main {{
+        .stApp, [data-testid="stAppViewContainer"], .main, section.main, [data-testid="stHeader"] {{
             background-color: {t["bg_app"]} !important;
+            background: {t["bg_app"]} !important;
             color: {t["text_primary"]} !important;
             font-family: 'Inter', sans-serif !important;
         }}
@@ -110,6 +113,11 @@ st.markdown(f"""
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }}
+        .fin-kpi-card:hover {{
+            border-color: {t["accent"]};
+            transform: translateY(-2px);
         }}
         
         .fin-kpi-title {{
@@ -165,6 +173,13 @@ st.markdown(f"""
             display: flex;
             align-items: center;
             gap: 6px;
+        }}
+        
+        /* SELECTBOXES Y WIDGETS EN MODO CLARO/OSCURO */
+        .stSelectbox label, .stRadio label {{
+            color: {t["text_primary"]} !important;
+            font-weight: 700 !important;
+            font-size: 0.80rem !important;
         }}
         
         /* PESTAÑAS (TABS) */
@@ -457,7 +472,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         ::-webkit-scrollbar-track {{ background: {card_bg}; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
 
-        /* BARRA SUPERIOR */
         .saas-top-bar {{
           display: flex;
           align-items: center;
@@ -479,7 +493,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           color: {text_primary};
         }}
 
-        /* KPIS */
         .kpi-container {{ 
           display: flex; 
           gap: 8px; 
@@ -501,7 +514,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .kpi-title {{ font-size: 0.62rem; font-weight: 700; color: {text_secondary}; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px; }}
         .kpi-val {{ font-size: 1.35rem; font-weight: 900; line-height: 1.1; color: {text_primary}; font-feature-settings: "tnum"; }}
         
-        /* FILTROS */
         .filter-panel {{ 
           background: {card_bg}; 
           border: 1px solid {border_col}; 
@@ -551,7 +563,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .btn-fullscreen {{ background: #3b82f61a; color: #3b82f6; border: 1px solid #3b82f633; }}
         .btn-fullscreen:hover {{ background: #3b82f6; color: #fff; }}
         
-        /* LEYENDA */
         .legend-panel {{ 
           background: {card_bg}; 
           border: 1px solid {border_col}; 
@@ -581,7 +592,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.04); box-shadow: 0 0 0 2px #3b82f6 !important; }}
         
-        /* CONTENEDOR DEL PLANOGRAMA */
         .aisle-wrapper {{ 
           display: flex;
           flex-direction: column;
@@ -1315,7 +1325,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           applyFilters();
         }});
 
-        // MODAL PRODUCTO
+        // MODAL PRODUCTO (CENTRADO NATIVO)
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         
@@ -1583,7 +1593,7 @@ if df_raw is not None:
         components.html(html_pasillo, height=840, scrolling=False)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (FORMATO EXACTO A PESTAÑA 1) ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO REDISEÑADO AL 100% ---
     # =========================================================================
     with tab2:
         ventas_globales = df_unicos['Venta_Num'].sum()
@@ -1601,7 +1611,7 @@ if df_raw is not None:
                         <span>💳</span>
                     </div>
                     <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
-                    <div class="fin-kpi-subtitle">Promedio por SKU: S/ {promedio_venta_sku:,.2f}</div>
+                    <div class="fin-kpi-subtitle">Ticket Promedio/SKU: S/ {promedio_venta_sku:,.2f}</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #10b981;">
                     <div class="fin-kpi-title">
@@ -1644,7 +1654,7 @@ if df_raw is not None:
             
         df_dash_unicos = df_dash_base.drop_duplicates(subset=['COD REAL']).copy()
 
-        # --- NIVEL 2: GRÁFICOS OPERATIVOS ---
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS CON ETIQUETAS DE ALTO CONTRASTE ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
@@ -1697,20 +1707,23 @@ if df_raw is not None:
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             
+            # Barras de Venta con color sólido de contraste y etiquetas nítidas
             fig.add_trace(
                 go.Bar(
                     x=ventas_cuerpo['Cuerpo_Label'], 
                     y=ventas_cuerpo['Venta_Total'],
                     name="Ventas Totales (S/)",
-                    text=ventas_cuerpo['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
-                    textposition='auto',
-                    textfont=dict(color='#ffffff' if es_oscuro else '#0f172a', size=10, weight='bold'),
-                    marker=dict(color='rgba(59, 130, 246, 0.85)', line=dict(color='#3b82f6', width=1.5)),
+                    text=ventas_cuerpo['Venta_Total'].apply(lambda x: f"S/ {x/1000:,.1f}K" if x >= 1000 else f"S/ {x:,.0f}"),
+                    textposition='inside',
+                    insidetextanchor='middle',
+                    textfont=dict(color='#ffffff', size=11, family='Inter', weight='bold'),
+                    marker=dict(color='#2563eb', line=dict(color='#1d4ed8', width=1.5)),
                     hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata}<extra></extra>",
                     customdata=ventas_cuerpo['SKUs_Total']
                 ), secondary_y=False
             )
 
+            # Línea de Margen (%) con etiqueta flotante resaltada
             fig.add_trace(
                 go.Scatter(
                     x=ventas_cuerpo['Cuerpo_Label'], 
@@ -1719,8 +1732,8 @@ if df_raw is not None:
                     mode="lines+markers+text",
                     text=ventas_cuerpo['Margen_Pct'].apply(lambda x: f"{x*100:,.1f}%"),
                     textposition='top center',
-                    textfont=dict(color=t["accent_green"], size=11, weight='bold'),
-                    marker=dict(color=t["accent_green"], size=8, symbol='circle', line=dict(color=t["bg_card"], width=2)),
+                    textfont=dict(color=t["accent_green"], size=11, family='Inter', weight='bold'),
+                    marker=dict(color=t["accent_green"], size=9, symbol='circle', line=dict(color=t["bg_card"], width=2)),
                     line=dict(color=t["accent_green"], width=3, shape='spline'),
                     hovertemplate="<b>%{x}</b><br>Margen: %{text}<extra></extra>"
                 ), secondary_y=True
@@ -1730,10 +1743,10 @@ if df_raw is not None:
                 paper_bgcolor='rgba(0,0,0,0)', 
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
-                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["text_secondary"], size=10)),
+                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
                 margin=dict(t=10, b=10, l=10, r=10),
-                xaxis=dict(showgrid=False, color=t["text_secondary"], tickfont=dict(size=10, weight='bold')),
-                yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["text_secondary"], zeroline=False),
+                xaxis=dict(showgrid=False, color=t["plotly_text"], tickfont=dict(size=10, weight='bold')),
+                yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["plotly_text"], zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color=t["accent_green"], zeroline=False)
             )
             
@@ -1763,21 +1776,22 @@ if df_raw is not None:
             fig_pie = go.Figure(data=[go.Pie(
                 labels=df_pie[vista_anillo], 
                 values=df_pie['Venta_Num'], 
-                hole=0.58,
-                textinfo='label+percent',
+                hole=0.60,
+                textinfo='percent',
                 textposition='inside',
                 insidetextorientation='horizontal',
                 textfont=dict(size=11, color='#ffffff', family='Inter', weight='bold'),
-                marker=dict(colors=['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#14b8a6'], 
+                marker=dict(colors=['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#db2777', '#0d9488'], 
                             line=dict(color=t["bg_card"], width=2))
             )])
             
             fig_pie.update_layout(
-                showlegend=False,
+                showlegend=True,
+                legend=dict(font=dict(color=t["plotly_text"], size=9), orientation='h', yanchor='top', y=-0.1),
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                margin=dict(t=10, b=10, l=10, r=10),
-                annotations=[dict(text=f'<b>S/ {ventas_dash_total/1000:,.1f}K</b><br><span style="font-size:9px; color:{t["text_muted"]}">TOTAL</span>', x=0.5, y=0.5, font_size=15, showarrow=False, font_color=t["text_primary"])]
+                margin=dict(t=10, b=25, l=10, r=10),
+                annotations=[dict(text=f'<b>S/ {ventas_dash_total/1000:,.1f}K</b><br><span style="font-size:8px; color:{t["text_muted"]}">TOTAL</span>', x=0.5, y=0.5, font_size=15, showarrow=False, font_color=t["text_primary"])]
             )
             fig_pie.update_traces(hovertemplate="<b>%{label}</b><br>Ventas: S/ %{value:,.2f}<br>Participación: %{percent}<extra></extra>")
             
@@ -1832,38 +1846,44 @@ if df_raw is not None:
             
             fig_fs = go.Figure()
             
+            # Barra % Espacio
             fig_fs.add_trace(go.Bar(
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Espacio'],
                 name=f"% Espacio ({'Caras' if metrica_espacio == 'Caras (Facings)' else 'Unid. Bandeja'})",
                 text=df_fs['Pct_Espacio'].apply(lambda x: f"{x*100:.1f}%"),
-                textposition='auto',
-                textfont=dict(color='#ffffff' if es_oscuro else '#0f172a', size=10, weight='bold'),
-                marker=dict(color='rgba(59, 130, 246, 0.85)', line=dict(color='#3b82f6', width=1.5)),
+                textposition='inside',
+                insidetextanchor='middle',
+                textfont=dict(color='#ffffff', size=10, family='Inter', weight='bold'),
+                marker=dict(color='#2563eb', line=dict(color='#1d4ed8', width=1)),
                 hovertemplate="<b>%{x}</b><br>% Espacio: %{y:.1%}<br>Total Físico: %{customdata:,.0f}<extra></extra>",
                 customdata=df_fs['Espacio_Total']
             ))
             
+            # Barra % Ventas
             fig_fs.add_trace(go.Bar(
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Ventas'],
                 name="% Ventas (Monto S/)",
                 text=df_fs['Pct_Ventas'].apply(lambda x: f"{x*100:.1f}%"),
-                textposition='auto',
-                textfont=dict(color='#ffffff' if es_oscuro else '#0f172a', size=10, weight='bold'),
-                marker=dict(color='rgba(16, 185, 129, 0.85)', line=dict(color='#10b981', width=1.5)),
+                textposition='inside',
+                insidetextanchor='middle',
+                textfont=dict(color='#ffffff', size=10, family='Inter', weight='bold'),
+                marker=dict(color='#059669', line=dict(color='#047857', width=1)),
                 hovertemplate="<b>%{x}</b><br>% Ventas: %{y:.1%}<br>Ventas S/: %{customdata:,.2f}<extra></extra>",
                 customdata=df_fs['Ventas_Total']
             ))
 
+            # Barra % Margen
             fig_fs.add_trace(go.Bar(
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Margen'],
                 name="% Margen (Ganancia S/)",
                 text=df_fs['Pct_Margen'].apply(lambda x: f"{x*100:.1f}%"),
-                textposition='auto',
-                textfont=dict(color='#ffffff' if es_oscuro else '#0f172a', size=10, weight='bold'),
-                marker=dict(color='rgba(245, 158, 11, 0.85)', line=dict(color='#f59e0b', width=1.5)),
+                textposition='inside',
+                insidetextanchor='middle',
+                textfont=dict(color='#ffffff', size=10, family='Inter', weight='bold'),
+                marker=dict(color='#d97706', line=dict(color='#b45309', width=1)),
                 hovertemplate="<b>%{x}</b><br>% Margen: %{y:.1%}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
                 customdata=df_fs['Margen_Total']
             ))
@@ -1873,10 +1893,10 @@ if df_raw is not None:
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
-                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["text_secondary"], size=10)),
+                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
                 margin=dict(t=20, b=20, l=10, r=10),
-                xaxis=dict(showgrid=False, color=t["text_secondary"], tickfont=dict(size=10, weight='bold')),
-                yaxis=dict(title="Participación Relativa (%)", showgrid=True, gridcolor=t["grid_color"], color=t["text_secondary"], tickformat=".0%")
+                xaxis=dict(showgrid=False, color=t["plotly_text"], tickfont=dict(size=10, weight='bold')),
+                yaxis=dict(title="Participación (%)", showgrid=True, gridcolor=t["grid_color"], color=t["plotly_text"], tickformat=".0%")
             )
             
             fig_fs.update_xaxes(fixedrange=True)
