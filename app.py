@@ -17,16 +17,16 @@ st.set_page_config(
 st.markdown("""
     <style>
         .block-container {
-            padding-left: 1rem !important;
-            padding-right: 1rem !important;
-            padding-top: 1.2rem !important; 
+            padding-left: 1.2rem !important;
+            padding-right: 1.2rem !important;
+            padding-top: 1.5rem !important; 
             padding-bottom: 0rem !important;
             max-width: 100% !important;
         }
-        .fin-kpi-container { display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
-        .fin-kpi-card { flex: 1; min-width: 180px; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 14px 18px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
-        .fin-kpi-title { font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
-        .fin-kpi-val { font-size: 1.8rem; font-weight: 900; color: #ffffff; line-height: 1; }
+        .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        .fin-kpi-card { flex: 1; min-width: 200px; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 18px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
+        .fin-kpi-title { font-size: 0.80rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
+        .fin-kpi-val { font-size: 2.0rem; font-weight: 900; color: #ffffff; line-height: 1; }
         .fin-kpi-card.green-theme { border-left-color: #10b981; }
         .fin-kpi-card.purple-theme { border-left-color: #8b5cf6; }
     </style>
@@ -300,7 +300,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           overflow: hidden;
         }}
 
-        /* LEYENDA SUPERIOR EN PANTALLA COMPLETA */
+        /* LEYENDA SUPERIOR EN PANTALLA COMPLETA: MÁS ALTA Y CON FILTRO DE CATEGORÍA */
         .fullscreen-legend-bar {{
           display: none;
           position: sticky;
@@ -308,14 +308,39 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           left: 0;
           right: 0;
           background: rgba(15, 23, 42, 0.98);
-          border-bottom: 2px solid #3b82f6;
-          padding: 8px 16px;
-          z-index: 1000;
+          border-bottom: 3px solid #3b82f6;
+          padding: 14px 24px;
+          z-index: 10000;
           backdrop-filter: blur(8px);
           align-items: center;
-          gap: 10px;
+          gap: 15px;
           overflow-x: auto;
           white-space: nowrap;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.7);
+        }}
+        
+        .fs-cat-wrapper {{
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-left: auto;
+        }}
+        .fs-cat-label {{
+          font-size: 0.78rem;
+          font-weight: 800;
+          color: #93c5fd;
+          text-transform: uppercase;
+        }}
+        .fs-cat-select {{
+          background: #ffffff;
+          border: 2px solid #3b82f6;
+          color: #0f172a;
+          padding: 5px 10px;
+          border-radius: 4px;
+          font-size: 0.82rem;
+          font-weight: 700;
+          outline: none;
+          min-width: 150px;
         }}
         
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
@@ -442,39 +467,40 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .shelf-bottom-rail {{ height: 6px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
         .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 3px 6px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
         
-        /* MODAL 100% CENTRADO EN LA PANTALLA VISIBLE */
+        /* MODAL OVERLAY: TOTALMENTE CENTRADO TANTO EN MODO ESTÁNDAR COMO EN PANTALLA COMPLETA */
         .modal-overlay {{ 
-          position: fixed; 
-          inset: 0;
-          width: 100vw;
-          height: 100vh;
-          background: rgba(0,0,0,0.85); 
-          z-index: 999999; 
+          position: fixed !important; 
+          inset: 0 !important;
+          width: 100vw !important;
+          height: 100vh !important;
+          background: rgba(0,0,0,0.85) !important; 
+          z-index: 9999999 !important; 
           opacity: 0; 
           pointer-events: none; 
           transition: opacity 0.2s ease; 
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 16px;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          padding: 16px !important;
+          box-sizing: border-box !important;
         }}
-        .modal-overlay.active {{ opacity: 1; pointer-events: auto; }}
+        .modal-overlay.active {{ opacity: 1 !important; pointer-events: auto !important; }}
         .modal-content {{ 
-          background: #1e293b; 
-          color: #fff; 
-          padding: 22px; 
-          border-radius: 10px; 
-          width: 90%; 
-          max-width: 440px; 
-          max-height: 85vh; 
-          overflow-y: auto; 
-          border: 2px solid #3b82f6; 
-          box-shadow: 0 10px 40px rgba(0,0,0,0.9); 
-          position: relative;
-          margin: auto;
+          background: #1e293b !important; 
+          color: #fff !important; 
+          padding: 24px !important; 
+          border-radius: 10px !important; 
+          width: 90% !important; 
+          max-width: 450px !important; 
+          max-height: 85vh !important; 
+          overflow-y: auto !important; 
+          border: 2px solid #3b82f6 !important; 
+          box-shadow: 0 10px 40px rgba(0,0,0,0.9) !important; 
+          position: relative !important;
+          margin: auto !important;
         }}
         .modal-close {{ position: absolute; top: 10px; right: 15px; font-size: 1.8rem; cursor: pointer; color: #94a3b8; font-weight: bold; line-height: 1; }}
-        .m-row {{ border-bottom: 1px solid #334155; padding: 6px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
+        .m-row {{ border-bottom: 1px solid #334155; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.85rem; }}
         .m-label {{ font-weight: 700; color: #93c5fd; }}
         .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
 
@@ -539,25 +565,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
     <body>
       <div class="main-container" id="mainContainer">
 
-        <!-- MODAL 100% CENTRADO EN LA PANTALLA -->
-        <div id="productModal" class="modal-overlay">
-          <div class="modal-content" id="modalContent">
-            <span class="modal-close">&times;</span>
-            <h3 id="m-name" style="margin-top: 0; font-size: 1.1rem; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; line-height: 1.3;">Producto</h3>
-            <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod"></span></div>
-            <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
-            <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
-            <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept" style="color: #cbd5e1;"></span></div>
-            <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec" style="color: #cbd5e1;"></span></div>
-            <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer" style="color: #cbd5e1;"></span></div>
-            <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga" style="color: #cbd5e1;"></span></div>
-            <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
-            <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
-            <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
-            <div class="m-row" style="border-bottom: none;"><span class="m-label" style="color: #fbbf24; font-weight: 800;">¿Es TOP Ventas?:</span><span class="m-val" id="m-top" style="color: #fbbf24; font-weight: 800;"></span></div>
-          </div>
-        </div>
-
         <div class="top-panel" style="background: #111c30; border: 1px solid #1e3a8a; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-shrink: 0;">
           <div style="display: flex; align-items: center; gap: 6px;">
               <span style="font-size: 1.1rem;">🏆</span>
@@ -606,19 +613,49 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           </div>
         </div>
 
-        <!-- CONTENEDOR CON SCROLL BIDIRECCIONAL COMPLETO -->
+        <!-- CONTENEDOR CON SCROLL BIDIRECCIONAL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
-          <div class="fullscreen-legend-bar">
-            <span style="font-size: 0.75rem; font-weight: 800; color: #93c5fd; text-transform: uppercase;">📍 LEYENDA:</span>
-            <div class="legend-chips">
-              <button class="legend-chip" data-filter="Bloqueado" style="--bg: #FFC7CE; --tc: #9C0006; font-size: 0.65rem; padding: 4px 10px;">Bloqueado</button>
-              <button class="legend-chip" data-filter="Sin Stock" style="--bg: #F4B084; --tc: #833C0C; font-size: 0.65rem; padding: 4px 10px;">Sin Stock</button>
-              <button class="legend-chip" data-filter="Stock Bajo" style="--bg: #FFFF99; --tc: #8A5A00; font-size: 0.65rem; padding: 4px 10px;">Stock 1-5</button>
-              <button class="legend-chip" data-filter="Stock OK" style="--bg: #C6EFCE; --tc: #006100; font-size: 0.65rem; padding: 4px 10px;">Stock >5</button>
-              <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 1.5px solid #ef4444; font-size: 0.65rem; padding: 4px 10px;">Cob ≥30</button>
-              <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 1.5px solid #FFC000; font-size: 0.65rem; padding: 4px 10px;">★ TOP</button>
+
+          <!-- MODAL 100% CENTRADO HORIZONTAL Y VERTICALMENTE -->
+          <div id="productModal" class="modal-overlay">
+            <div class="modal-content" id="modalContent">
+              <span class="modal-close">&times;</span>
+              <h3 id="m-name" style="margin-top: 0; font-size: 1.15rem; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; line-height: 1.3;">Producto</h3>
+              <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod"></span></div>
+              <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
+              <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
+              <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept" style="color: #cbd5e1;"></span></div>
+              <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec" style="color: #cbd5e1;"></span></div>
+              <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer" style="color: #cbd5e1;"></span></div>
+              <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga" style="color: #cbd5e1;"></span></div>
+              <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
+              <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
+              <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
+              <div class="m-row" style="border-bottom: none;"><span class="m-label" style="color: #fbbf24; font-weight: 800;">¿Es TOP Ventas?:</span><span class="m-val" id="m-top" style="color: #fbbf24; font-weight: 800;"></span></div>
             </div>
-            <button id="exitFsBtn" style="margin-left: auto; background: #ef4444; border: none; color: white; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 0.70rem; cursor: pointer;">✕ Salir</button>
+          </div>
+
+          <!-- BARRA DE LEYENDA SUPERIOR AMPLIA CON FILTRO DE CATEGORÍA -->
+          <div class="fullscreen-legend-bar">
+            <span style="font-size: 0.85rem; font-weight: 900; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.5px;">📍 LEYENDA:</span>
+            <div class="legend-chips">
+              <button class="legend-chip" data-filter="Bloqueado" style="--bg: #FFC7CE; --tc: #9C0006; font-size: 0.72rem; padding: 6px 14px;">Bloqueado</button>
+              <button class="legend-chip" data-filter="Sin Stock" style="--bg: #F4B084; --tc: #833C0C; font-size: 0.72rem; padding: 6px 14px;">Sin Stock</button>
+              <button class="legend-chip" data-filter="Stock Bajo" style="--bg: #FFFF99; --tc: #8A5A00; font-size: 0.72rem; padding: 6px 14px;">Stock 1-5</button>
+              <button class="legend-chip" data-filter="Stock OK" style="--bg: #C6EFCE; --tc: #006100; font-size: 0.72rem; padding: 6px 14px;">Stock >5</button>
+              <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 2px solid #ef4444; font-size: 0.72rem; padding: 6px 14px;">Cob ≥30</button>
+              <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 2px solid #FFC000; font-size: 0.72rem; padding: 6px 14px;">★ TOP VENTAS</button>
+            </div>
+            
+            <div class="fs-cat-wrapper">
+              <span class="fs-cat-label">📂 Categoría:</span>
+              <select id="fsCatSelect" class="fs-cat-select">
+                <option value="ALL">Todas las Categorías</option>
+                {options_categorias}
+              </select>
+            </div>
+            
+            <button id="exitFsBtn" style="background: #ef4444; border: none; color: white; padding: 6px 14px; border-radius: 4px; font-weight: bold; font-size: 0.80rem; cursor: pointer;">✕ Salir</button>
           </div>
 
           <button class="nav-btn nav-btn-prev" id="btnPrev" title="Cuerpo Anterior">❮</button>
@@ -772,6 +809,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         const searchInput = document.getElementById('searchInput');
         const brandSelect = document.getElementById('brandSelect');
         const catSelect = document.getElementById('catSelect');
+        const fsCatSelect = document.getElementById('fsCatSelect');
         const baySelect = document.getElementById('baySelect');
         const levelSelect = document.getElementById('levelSelect');
         const resetBtn = document.getElementById('resetBtn');
@@ -920,7 +958,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           allBrands.forEach(opt => {{ if(opt.val === 'ALL' || availableBrands.has(opt.val)) brandSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBrand)); }});
 
           catSelect.innerHTML = '';
-          allCats.forEach(opt => {{ if(opt.val === 'ALL' || availableCats.has(opt.val)) catSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedCat)); }});
+          fsCatSelect.innerHTML = '';
+          allCats.forEach(opt => {{ 
+            if(opt.val === 'ALL' || availableCats.has(opt.val)) {{
+              catSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedCat));
+              fsCatSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedCat));
+            }}
+          }});
 
           baySelect.innerHTML = '';
           allBays.forEach(opt => {{ if(opt.val === 'ALL' || availableBays.has(opt.val)) baySelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBay)); }});
@@ -979,7 +1023,17 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
 
         searchInput.addEventListener('input', applyFilters);
         brandSelect.addEventListener('change', applyFilters);
-        catSelect.addEventListener('change', applyFilters);
+        
+        catSelect.addEventListener('change', () => {{
+          fsCatSelect.value = catSelect.value;
+          applyFilters();
+        }});
+        
+        fsCatSelect.addEventListener('change', () => {{
+          catSelect.value = fsCatSelect.value;
+          applyFilters();
+        }});
+
         baySelect.addEventListener('change', applyFilters);
         levelSelect.addEventListener('change', applyFilters);
         topNInput.addEventListener('input', applyFilters);
@@ -988,16 +1042,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           searchInput.value = ''; currentLegendFilter = null;
           document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
           brandSelect.innerHTML = ''; allBrands.forEach(o => brandSelect.add(new Option(o.text, o.val)));
-          catSelect.innerHTML = ''; allCats.forEach(o => catSelect.add(new Option(o.text, o.val)));
+          catSelect.innerHTML = ''; fsCatSelect.innerHTML = ''; allCats.forEach(o => {{ catSelect.add(new Option(o.text, o.val)); fsCatSelect.add(new Option(o.text, o.val)); }});
           baySelect.innerHTML = ''; allBays.forEach(o => baySelect.add(new Option(o.text, o.val)));
           levelSelect.innerHTML = ''; allLevels.forEach(o => levelSelect.add(new Option(o.text, o.val)));
-          brandSelect.value = 'ALL'; catSelect.value = 'ALL'; baySelect.value = 'ALL'; levelSelect.value = 'ALL';
+          brandSelect.value = 'ALL'; catSelect.value = 'ALL'; fsCatSelect.value = 'ALL'; baySelect.value = 'ALL'; levelSelect.value = 'ALL';
           topNInput.value = 5;
           scale = 1; posX = 0; posY = 0; updateZoom();
           applyFilters();
         }});
 
-        // MODAL PRODUCTO (SIEMPRE 100% CENTRADO EN LA PANTALLA)
+        // MODAL PRODUCTO (100% CENTRADO EN PANTALLA)
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         
@@ -1255,7 +1309,6 @@ if df_raw is not None:
         st.markdown("---")
         
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma)
-        # Altura adaptable al monitor con scroll interno: cero espacio negro y modal 100% centrado
         components.html(html_pasillo, height=840, scrolling=False)
             
     with tab2:
