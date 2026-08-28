@@ -42,32 +42,44 @@ theme_vars = {
         "input_text": "#ffffff",
         "btn_bg": "#1e293b",
         "btn_text": "#ffffff",
+        "insight_green_bg": "rgba(16, 185, 129, 0.12)",
+        "insight_green_text": "#6ee7b7",
+        "insight_amber_bg": "rgba(245, 158, 11, 0.12)",
+        "insight_amber_text": "#fde047",
+        "insight_blue_bg": "rgba(59, 130, 246, 0.12)",
+        "insight_blue_text": "#93c5fd",
     },
     "light": {
         "bg_app": "#f8fafc",
         "bg_surface": "#ffffff",
         "bg_card": "#ffffff",
-        "border": "#3b82f6",
+        "border": "#2563eb",
         "border_subtle": "#cbd5e1",
         "text_primary": "#0f172a",
         "text_secondary": "#2563eb",
-        "text_muted": "#64748b",
+        "text_muted": "#475569",
         "accent": "#2563eb",
         "accent_green": "#059669",
         "accent_purple": "#7c3aed",
         "accent_amber": "#d97706",
         "grid_color": "rgba(0, 0, 0, 0.06)",
-        "card_shadow": "0 2px 6px rgba(0,0,0,0.05)",
+        "card_shadow": "0 2px 6px rgba(0,0,0,0.06)",
         "plotly_text": "#334155",
         "input_bg": "#ffffff",
         "input_text": "#0f172a",
         "btn_bg": "#ffffff",
         "btn_text": "#0f172a",
+        "insight_green_bg": "#dcfce7",
+        "insight_green_text": "#14532d",
+        "insight_amber_bg": "#fef3c7",
+        "insight_amber_text": "#78350f",
+        "insight_blue_bg": "#eff6ff",
+        "insight_blue_text": "#1e40af",
     }
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS FORZADA (CONTROL DE FONDO + WIDGETS STREAMLIT NATIVOS)
+# INYECCIÓN CSS PROFUNDA Y COMPLETA PARA MODO CLARO Y OSCURO
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -91,7 +103,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* OVERRIDE AGRESIVO DE WIDGETS NATIVOS STREAMLIT */
+        /* OVERRIDE AGRESIVO DE WIDGETS Y DROPDOWNS STREAMLIT */
         div[data-baseweb="select"] > div {{
             background-color: {t["input_bg"]} !important;
             color: {t["input_text"]} !important;
@@ -99,9 +111,14 @@ st.markdown(f"""
             border-radius: 6px !important;
         }}
         
-        div[data-baseweb="select"] span, div[data-baseweb="select"] div {{
+        div[data-baseweb="select"] span, div[data-baseweb="select"] div, div[data-baseweb="select"] input {{
             color: {t["input_text"]} !important;
             font-weight: 600 !important;
+            -webkit-text-fill-color: {t["input_text"]} !important;
+        }}
+
+        div[data-baseweb="select"] svg {{
+            fill: {t["text_muted"]} !important;
         }}
         
         div[data-baseweb="popover"], div[data-baseweb="popover"] ul, div[data-baseweb="menu"] {{
@@ -113,6 +130,7 @@ st.markdown(f"""
             font-weight: 600 !important;
         }}
         
+        /* BOTONES STREAMLIT */
         .stButton > button {{
             background-color: {t["btn_bg"]} !important;
             color: {t["btn_text"]} !important;
@@ -136,11 +154,12 @@ st.markdown(f"""
             box-shadow: {t["card_shadow"]} !important;
         }}
         
-        /* DATASET Y DATAFRAME DE STREAMLIT */
+        /* TABLA DE DATAFRAME STREAMLIT */
         [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {{
             background-color: {t["bg_card"]} !important;
             border: 1px solid {t["border_subtle"]} !important;
             border-radius: 8px !important;
+            color: {t["text_primary"]} !important;
         }}
         
         /* TARJETAS KPIS DEL DASHBOARD */
@@ -222,7 +241,14 @@ st.markdown(f"""
             gap: 6px;
         }}
         
-        /* PESTAÑAS (TABS) */
+        /* LABELS DE WIDGETS */
+        .stSelectbox label, .stRadio label {{
+            color: {t["text_primary"]} !important;
+            font-weight: 700 !important;
+            font-size: 0.80rem !important;
+        }}
+        
+        /* PESTAÑAS (TABS) CON ALTO CONTRASTE */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px;
             background-color: {t["bg_card"]};
@@ -238,14 +264,23 @@ st.markdown(f"""
             border-radius: 6px;
             font-weight: 700;
             font-size: 0.84rem;
-            color: {t["text_muted"]};
-            background-color: transparent;
+            color: {t["text_muted"]} !important;
+            background-color: transparent !important;
             border: none !important;
         }}
         
         .stTabs [aria-selected="true"] {{
             background-color: {t["accent"]} !important;
             color: #ffffff !important;
+        }}
+
+        /* TARJETAS DE INSIGHTS */
+        .insight-box {{
+            border-radius: 8px;
+            padding: 14px 16px;
+            line-height: 1.45;
+            font-size: 0.84rem;
+            box-shadow: {t["card_shadow"]};
         }}
     </style>
 """, unsafe_allow_html=True)
@@ -837,7 +872,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {border_col}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
-        /* MODAL OVERLAY */
+        /* MODAL OVERLAY ENTERPRISE */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important;
@@ -966,8 +1001,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'};">Sin Stock</button>
               <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'};">Stock 1-5</button>
               <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'};">Stock >5</button>
-              <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥30</button>
-              <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP</button>
+              <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥30</button>
+              <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP</button>
             </div>
             
             <div class="fs-cat-wrapper">
@@ -1647,7 +1682,7 @@ if df_raw is not None:
         total_skus_activos = len(df_unicos)
         promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
         
-        # --- TARJETAS KPIS ---
+        # --- TARJETAS KPIS CON FORMATO Y PALETA EXACTA A PESTAÑA 1 ---
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #3b82f6;">
@@ -1841,7 +1876,7 @@ if df_raw is not None:
             st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
             st.markdown("</div>", unsafe_allow_html=True)
 
-        # --- NIVEL 3: FAIR SHARE ANALYSIS ---
+        # --- NIVEL 3: FAIR SHARE ANALYSIS CON ALTO CONTRASTE ---
         st.markdown(f"""
             <div class="dash-card">
                 <div class="dash-card-header">
@@ -1946,7 +1981,7 @@ if df_raw is not None:
             fig_fs.update_yaxes(fixedrange=True)
             st.plotly_chart(fig_fs, use_container_width=True, config={'displayModeBar': False})
             
-            # DIAGNÓSTICOS SEMÁNTICOS
+            # DIAGNÓSTICOS SEMÁNTICOS CON TIPOGRAFÍA DE ALTO CONTRASTE
             subdimensionados = df_fs[df_fs['Brecha_Share'] > 0.03]
             sobredimensionados = df_fs[df_fs['Brecha_Share'] < -0.03]
             
@@ -1955,17 +1990,33 @@ if df_raw is not None:
                 if not subdimensionados.empty:
                     top_sub = subdimensionados.iloc[0]
                     brecha_val = top_sub['Brecha_Share'] * 100
-                    st.success(f"🚀 **Oportunidad de Crecimiento:** `{top_sub[dim_fs]}` genera el **{top_sub['Pct_Ventas']*100:.1f}%** de la venta pero ocupa el **{top_sub['Pct_Espacio']*100:.1f}%** del espacio (+{brecha_val:.1f}% de rendimiento positivo).")
+                    st.markdown(f"""
+                        <div class="insight-box" style="background-color: {t['insight_green_bg']}; border-left: 4px solid #10b981; color: {t['insight_green_text']};">
+                            <b>🚀 Oportunidad de Crecimiento:</b> <b>{top_sub[dim_fs]}</b> genera el <b>{top_sub['Pct_Ventas']*100:.1f}%</b> de la venta pero ocupa el <b>{top_sub['Pct_Espacio']*100:.1f}%</b> del espacio (+{brecha_val:.1f}% de rendimiento positivo).
+                        </div>
+                    """, unsafe_allow_html=True)
                 else:
-                    st.info("✅ Asignación de espacio balanceada frente a las ventas.")
+                    st.markdown(f"""
+                        <div class="insight-box" style="background-color: {t['insight_blue_bg']}; border-left: 4px solid #3b82f6; color: {t['insight_blue_text']};">
+                            <b>✅ Asignación Balanceada:</b> No se detectan categorías con subasignación crítica de espacio.
+                        </div>
+                    """, unsafe_allow_html=True)
                     
             with col_diag2:
                 if not sobredimensionados.empty:
                     top_sobre = sobredimensionados.sort_values(by='Brecha_Share', ascending=True).iloc[0]
                     brecha_sobre = abs(top_sobre['Brecha_Share'] * 100)
-                    st.warning(f"⚠️ **Alerta de Sobreasignación:** `{top_sobre[dim_fs]}` ocupa el **{top_sobre['Pct_Espacio']*100:.1f}%** de la repisa pero solo aporta el **{top_sobre['Pct_Ventas']*100:.1f}%** de las ventas ({brecha_sobre:.1f}% de espacio no rentable).")
+                    st.markdown(f"""
+                        <div class="insight-box" style="background-color: {t['insight_amber_bg']}; border-left: 4px solid #f59e0b; color: {t['insight_amber_text']};">
+                            <b>⚠️ Alerta de Sobreasignación:</b> <b>{top_sobre[dim_fs]}</b> ocupa el <b>{top_sobre['Pct_Espacio']*100:.1f}%</b> de la repisa pero solo aporta el <b>{top_sobre['Pct_Ventas']*100:.1f}%</b> de las ventas ({brecha_sobre:.1f}% de espacio no rentable).
+                        </div>
+                    """, unsafe_allow_html=True)
                 else:
-                    st.info("✅ No se detectan sobreasignaciones críticas de espacio.")
+                    st.markdown(f"""
+                        <div class="insight-box" style="background-color: {t['insight_blue_bg']}; border-left: 4px solid #3b82f6; color: {t['insight_blue_text']};">
+                            <b>✅ Espacio Óptimo:</b> No se detectan saturaciones ni sobreasignaciones críticas de repisa.
+                        </div>
+                    """, unsafe_allow_html=True)
             
             st.markdown("</div>", unsafe_allow_html=True)
 
