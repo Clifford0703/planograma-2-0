@@ -9,7 +9,7 @@ import plotly.express as px
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
     page_title="Planograma 2.0 | Retail Analytics",
-    page_icon="🏬",
+    page_icon="🏪",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -34,15 +34,15 @@ theme_vars = {
         "accent": "#3b82f6",
         "accent_green": "#10b981",
         "accent_purple": "#8b5cf6",
-        "accent_amber": "#f59e0b",
+        "accent_amber": "#fbbf24",
         "grid_color": "rgba(255, 255, 255, 0.08)",
-        "plotly_template": "plotly_dark",
+        "card_shadow": "0 4px 6px rgba(0,0,0,0.4)",
     },
     "light": {
-        "bg_app": "#f1f5f9",
+        "bg_app": "#f8fafc",
         "bg_surface": "#ffffff",
         "bg_card": "#ffffff",
-        "border": "#cbd5e1",
+        "border": "#3b82f6",
         "border_subtle": "#e2e8f0",
         "text_primary": "#0f172a",
         "text_secondary": "#2563eb",
@@ -51,20 +51,25 @@ theme_vars = {
         "accent_green": "#059669",
         "accent_purple": "#7c3aed",
         "accent_amber": "#d97706",
-        "grid_color": "rgba(0, 0, 0, 0.08)",
-        "plotly_template": "plotly_white",
+        "grid_color": "rgba(0, 0, 0, 0.06)",
+        "card_shadow": "0 2px 4px rgba(0,0,0,0.06)",
     }
 }
 t = theme_vars[st.session_state.tema_actual]
 
+# INYECCIÓN CSS GLOBAL (CAMBIO REAL DE FONDO EN STREAMLIT)
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         
-        html, body, [class*="css"] {{
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        .stApp, [data-testid="stAppViewContainer"], .main {{
             background-color: {t["bg_app"]} !important;
             color: {t["text_primary"]} !important;
+            font-family: 'Inter', sans-serif !important;
+        }}
+        
+        header[data-testid="stHeader"] {{
+            background-color: transparent !important;
         }}
         
         .block-container {{
@@ -75,20 +80,20 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* HEADER PRINCIPAL */
+        /* HEADER SAAS */
         .saas-header-box {{
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: {t["bg_surface"]};
+            background: {t["bg_card"]};
             border: 1px solid {t["border_subtle"]};
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 12px 18px;
             margin-bottom: 12px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            box-shadow: {t["card_shadow"]};
         }}
         
-        /* KPIS DASHBOARD */
+        /* TARJETAS KPIS DEL DASHBOARD */
         .fin-kpi-container {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -101,19 +106,14 @@ st.markdown(f"""
             border: 1px solid {t["border_subtle"]};
             border-radius: 8px;
             padding: 14px 18px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+            box-shadow: {t["card_shadow"]};
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }}
-        .fin-kpi-card:hover {{
-            border-color: {t["accent"]};
-            transform: translateY(-2px);
         }}
         
         .fin-kpi-title {{
-            font-size: 0.70rem;
+            font-size: 0.68rem;
             font-weight: 800;
             color: {t["text_secondary"]};
             text-transform: uppercase;
@@ -125,7 +125,7 @@ st.markdown(f"""
         }}
         
         .fin-kpi-val {{
-            font-size: 1.8rem;
+            font-size: 1.85rem;
             font-weight: 900;
             color: {t["text_primary"]};
             line-height: 1.1;
@@ -139,14 +139,14 @@ st.markdown(f"""
             color: {t["text_muted"]};
         }}
         
-        /* CONTENEDOR DE GRÁFICOS */
+        /* CONTENEDORES DE GRÁFICOS Y FAIR SHARE */
         .dash-card {{
             background: {t["bg_card"]};
             border: 1px solid {t["border_subtle"]};
             border-radius: 8px;
             padding: 14px 16px;
             margin-bottom: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
+            box-shadow: {t["card_shadow"]};
         }}
         
         .dash-card-header {{
@@ -167,10 +167,10 @@ st.markdown(f"""
             gap: 6px;
         }}
         
-        /* TABS UNIFICADOS */
+        /* PESTAÑAS (TABS) */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px;
-            background-color: {t["bg_surface"]};
+            background-color: {t["bg_card"]};
             padding: 6px;
             border-radius: 8px;
             border: 1px solid {t["border_subtle"]};
@@ -418,6 +418,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
     app_bg = t["bg_app"]
     surface_bg = t["bg_surface"]
+    card_bg = t["bg_card"]
     border_col = t["border_subtle"]
     text_primary = t["text_primary"]
     text_secondary = t["text_secondary"]
@@ -434,7 +435,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         * {{ box-sizing: border-box; }}
         
         body, html {{ 
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+          font-family: 'Inter', sans-serif; 
           background-color: {app_bg}; 
           color: {text_primary}; 
           margin: 0; 
@@ -453,14 +454,15 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
 
         ::-webkit-scrollbar {{ height: 6px; width: 6px; }}
-        ::-webkit-scrollbar-track {{ background: {surface_bg}; border-radius: 4px; }}
+        ::-webkit-scrollbar-track {{ background: {card_bg}; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
 
+        /* BARRA SUPERIOR */
         .saas-top-bar {{
           display: flex;
           align-items: center;
           justify-content: space-between;
-          background: {surface_bg};
+          background: {card_bg};
           border: 1px solid {border_col};
           border-radius: 8px;
           padding: 8px 14px;
@@ -477,6 +479,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           color: {text_primary};
         }}
 
+        /* KPIS */
         .kpi-container {{ 
           display: flex; 
           gap: 8px; 
@@ -488,18 +491,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .kpi-card {{ 
           flex: 1; 
           min-width: 100px; 
-          background: {surface_bg}; 
+          background: {card_bg}; 
           border: 1px solid {border_col}; 
           border-radius: 8px; 
           padding: 8px 12px; 
           text-align: left; 
-          box-shadow: 0 1px 2px rgba(0,0,0,0.03); 
+          box-shadow: {t["card_shadow"]}; 
         }}
         .kpi-title {{ font-size: 0.62rem; font-weight: 700; color: {text_secondary}; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px; }}
         .kpi-val {{ font-size: 1.35rem; font-weight: 900; line-height: 1.1; color: {text_primary}; font-feature-settings: "tnum"; }}
         
+        /* FILTROS */
         .filter-panel {{ 
-          background: {surface_bg}; 
+          background: {card_bg}; 
           border: 1px solid {border_col}; 
           border-radius: 8px; 
           padding: 8px 12px; 
@@ -547,8 +551,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .btn-fullscreen {{ background: #3b82f61a; color: #3b82f6; border: 1px solid #3b82f633; }}
         .btn-fullscreen:hover {{ background: #3b82f6; color: #fff; }}
         
+        /* LEYENDA */
         .legend-panel {{ 
-          background: {surface_bg}; 
+          background: {card_bg}; 
           border: 1px solid {border_col}; 
           border-radius: 8px; 
           padding: 6px 12px; 
@@ -576,6 +581,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.04); box-shadow: 0 0 0 2px #3b82f6 !important; }}
         
+        /* CONTENEDOR DEL PLANOGRAMA */
         .aisle-wrapper {{ 
           display: flex;
           flex-direction: column;
@@ -583,7 +589,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           position: relative; 
           flex: 1;
           min-height: 0;
-          background: {surface_bg};
+          background: {card_bg};
           border-radius: 10px;
           border: 1px solid {border_col};
           padding: 0;
@@ -596,7 +602,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           top: 0;
           left: 0;
           right: 0;
-          background: {surface_bg};
+          background: {card_bg};
           border-bottom: 1px solid {border_col};
           padding: 12px 20px;
           z-index: 10000;
@@ -640,7 +646,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           position: absolute;
           top: 50%;
           transform: translateY(-50%);
-          background: {surface_bg}; 
+          background: {card_bg}; 
           color: {text_primary}; 
           border: 1px solid {border_col}; 
           border-radius: 50%; 
@@ -690,7 +696,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .bay-column {{ 
           flex: 0 0 100%; 
           width: 100%; 
-          background: {surface_bg}; 
+          background: {card_bg}; 
           border: 1px solid {border_col}; 
           border-radius: 8px; 
           display: flex; 
@@ -699,12 +705,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           scroll-snap-align: center; 
           padding-bottom: 12px; 
           box-sizing: border-box;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+          box-shadow: {t["card_shadow"]};
         }}
         .bay-column.hidden {{ display: none !important; }}
         
         .bay-title {{ 
-          background: {surface_bg}; 
+          background: {card_bg}; 
           padding: 10px 14px; 
           border-bottom: 1px solid {border_col}; 
           border-radius: 8px 8px 0 0; 
@@ -725,14 +731,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
         
         .shelf-base {{ height: 8px; background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%); border-radius: 2px; position: relative; z-index: 5; margin-top: -2px; }}
-        .shelf-name-tag {{ position: absolute; top: 6px; background: {surface_bg}; border: 1px solid {border_col}; color: {text_primary}; font-size: 0.52rem; padding: 1px 6px; border-radius: 4px; font-weight: 800; }}
+        .shelf-name-tag {{ position: absolute; top: 6px; background: {card_bg}; border: 1px solid {border_col}; color: {text_primary}; font-size: 0.52rem; padding: 1px 6px; border-radius: 4px; font-weight: 800; }}
         
         .sku-group {{ display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; transition: all 0.2s; z-index: 10; padding: 0 2px; flex-shrink: 0; }}
         .sku-images-wrapper {{ display: flex; flex-direction: row; align-items: flex-end; gap: 1px; }}
         .sku-images-wrapper img {{ height: 85px; width: auto; max-width: 55px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); transition: transform 0.2s; }}
         .sku-group:hover .sku-images-wrapper img {{ transform: translateY(-3px); }}
         
-        .sku-fleje {{ background: {surface_bg}; color: {text_primary}; border: 1px solid {border_col}; font-size: 0.48rem; display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; z-index: 15; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: max-content; padding: 1px 4px; border-radius: 2px; }}
+        .sku-fleje {{ background: {card_bg}; color: {text_primary}; border: 1px solid {border_col}; font-size: 0.48rem; display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; z-index: 15; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: max-content; padding: 1px 4px; border-radius: 2px; }}
         .fleje-ean {{ font-weight: 600; font-family: monospace; }}
         .fleje-caras {{ font-weight: 800; color: #3b82f6; }}
         
@@ -741,6 +747,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
         
+        /* BLOQUES DE PRODUCTOS */
         .sku-card {{ 
           border-radius: 6px; 
           padding: 6px; 
@@ -773,9 +780,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .sku-cap-val {{ font-size: 0.60rem; font-weight: 800; }}
         
         .shelf-bottom-rail {{ height: 4px; background: {border_col}; border-radius: 0 0 2px 2px; }}
-        .shelf-info {{ background: {surface_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
+        .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
-        /* MODAL OVERLAY ENTERPRISE */
+        /* MODAL OVERLAY */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important;
@@ -794,7 +801,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
         .modal-overlay.active {{ opacity: 1 !important; pointer-events: auto !important; }}
         .modal-content {{ 
-          background: {surface_bg} !important; 
+          background: {card_bg} !important; 
           color: {text_primary} !important; 
           padding: 24px !important; 
           border-radius: 12px !important; 
@@ -1262,6 +1269,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             window.print();
         }});
 
+        // LEYENDA
         document.querySelectorAll('.legend-chip').forEach(chip => {{
             chip.addEventListener('click', () => {{
                 const filter = chip.getAttribute('data-filter');
@@ -1307,6 +1315,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           applyFilters();
         }});
 
+        // MODAL PRODUCTO
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         
@@ -1397,14 +1406,14 @@ df_fotos_raw = None
 info_hora = None
 error_nube = None
 
-# --- HEADER SAAS ---
+# --- HEADER SAAS UNIFICADO ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
 
 with col_head1:
     st.markdown(f"""
         <div style="display: flex; align-items: center; gap: 10px;">
             <div style="font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; color: {t['text_primary']};">
-                🏬 Planograma <span style="color: {t['accent']}; font-weight: 800;">2.0</span>
+                🏪 Planograma <span style="color: {t['accent']}; font-weight: 800;">2.0</span>
             </div>
             <span style="background: {t['accent']}1a; color: {t['accent']}; font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; border: 1px solid {t['accent']}33;">ENTERPRISE</span>
         </div>
@@ -1574,7 +1583,7 @@ if df_raw is not None:
         components.html(html_pasillo, height=840, scrolling=False)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO REDISEÑADO CON PALETA UNIFICADA ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (FORMATO EXACTO A PESTAÑA 1) ---
     # =========================================================================
     with tab2:
         ventas_globales = df_unicos['Venta_Num'].sum()
@@ -1583,40 +1592,40 @@ if df_raw is not None:
         total_skus_activos = len(df_unicos)
         promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
         
-        # --- TARJETAS KPIS CON ESTILO INTEGRADO ---
+        # --- TARJETAS KPIS CON FORMATO Y PALETA EXACTA A PESTAÑA 1 ---
         st.markdown(f"""
             <div class="fin-kpi-container">
-                <div class="fin-kpi-card" style="border-left: 4px solid {t['accent']};">
+                <div class="fin-kpi-card" style="border-bottom: 4px solid #3b82f6;">
                     <div class="fin-kpi-title">
                         <span>Ventas Brutas</span>
-                        <span style="font-size: 1rem;">💳</span>
+                        <span>💳</span>
                     </div>
                     <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
-                    <div class="fin-kpi-subtitle">Ticket Promedio/SKU: S/ {promedio_venta_sku:,.2f}</div>
+                    <div class="fin-kpi-subtitle">Promedio por SKU: S/ {promedio_venta_sku:,.2f}</div>
                 </div>
-                <div class="fin-kpi-card" style="border-left: 4px solid {t['accent_green']};">
+                <div class="fin-kpi-card" style="border-bottom: 4px solid #10b981;">
                     <div class="fin-kpi-title">
                         <span>Margen Total Bruto</span>
-                        <span style="font-size: 1rem;">📈</span>
+                        <span>📈</span>
                     </div>
                     <div class="fin-kpi-val" style="color: {t['accent_green']};">S/ {margen_global:,.2f}</div>
                     <div class="fin-kpi-subtitle">Ganancia Monetaria Acumulada</div>
                 </div>
-                <div class="fin-kpi-card" style="border-left: 4px solid {t['accent_purple']};">
+                <div class="fin-kpi-card" style="border-bottom: 4px solid #8b5cf6;">
                     <div class="fin-kpi-title">
                         <span>Margen Global</span>
-                        <span style="font-size: 1rem;">📊</span>
+                        <span>📊</span>
                     </div>
                     <div class="fin-kpi-val" style="color: {t['accent_purple']};">{margen_pct_global*100:.1f}%</div>
-                    <div class="fin-kpi-subtitle">Rentabilidad sobre Ventas</div>
+                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta</div>
                 </div>
-                <div class="fin-kpi-card" style="border-left: 4px solid {t['accent_amber']};">
+                <div class="fin-kpi-card" style="border-bottom: 4px solid #fbbf24;">
                     <div class="fin-kpi-title">
                         <span>Surtido Activo</span>
-                        <span style="font-size: 1rem;">📦</span>
+                        <span>📦</span>
                     </div>
                     <div class="fin-kpi-val" style="color: {t['accent_amber']};">{total_skus_activos}</div>
-                    <div class="fin-kpi-subtitle">SKUs Únicos en Góndola</div>
+                    <div class="fin-kpi-subtitle">SKUs Únicos en Mueble</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -1635,7 +1644,7 @@ if df_raw is not None:
             
         df_dash_unicos = df_dash_base.drop_duplicates(subset=['COD REAL']).copy()
 
-        # --- NIVEL 2: GRÁFICOS (VENTAS/MARGEN POR CUERPO + DONUT) ---
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
@@ -1775,7 +1784,7 @@ if df_raw is not None:
             st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
             st.markdown("</div>", unsafe_allow_html=True)
 
-        # --- NIVEL 3: FAIR SHARE ANALYSIS & INSIGHTS ---
+        # --- NIVEL 3: FAIR SHARE ANALYSIS ---
         st.markdown(f"""
             <div class="dash-card">
                 <div class="dash-card-header">
@@ -1874,7 +1883,7 @@ if df_raw is not None:
             fig_fs.update_yaxes(fixedrange=True)
             st.plotly_chart(fig_fs, use_container_width=True, config={'displayModeBar': False})
             
-            # INSIGHTS DE EFICIENCIA
+            # DIAGNÓSTICOS SEMÁNTICOS
             subdimensionados = df_fs[df_fs['Brecha_Share'] > 0.03]
             sobredimensionados = df_fs[df_fs['Brecha_Share'] < -0.03]
             
