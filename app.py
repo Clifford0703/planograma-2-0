@@ -20,36 +20,38 @@ if "tema_actual" not in st.session_state:
 
 es_oscuro = st.session_state.tema_actual == "dark"
 
-# --- DESIGN SYSTEM VARIABLES (STREAMLIT UI) ---
+# --- PALETA DESIGN SYSTEM UNIFICADA ---
 theme_vars = {
     "dark": {
-        "bg_app": "#090d16",
+        "bg_app": "#070d19",
         "bg_surface": "#0f172a",
-        "bg_card": "#131e36",
-        "border": "#1e293b",
-        "border_focus": "#3b82f6",
-        "text_primary": "#f8fafc",
-        "text_secondary": "#94a3b8",
+        "bg_card": "#111c30",
+        "border": "#1e3a8a",
+        "border_subtle": "#1e293b",
+        "text_primary": "#ffffff",
+        "text_secondary": "#93c5fd",
         "text_muted": "#64748b",
         "accent": "#3b82f6",
-        "accent_hover": "#2563eb",
-        "badge_bg": "#1e293b",
-        "grid_color": "rgba(255, 255, 255, 0.06)",
+        "accent_green": "#10b981",
+        "accent_purple": "#8b5cf6",
+        "accent_amber": "#f59e0b",
+        "grid_color": "rgba(255, 255, 255, 0.08)",
         "plotly_template": "plotly_dark",
     },
     "light": {
-        "bg_app": "#f8fafc",
+        "bg_app": "#f1f5f9",
         "bg_surface": "#ffffff",
         "bg_card": "#ffffff",
-        "border": "#e2e8f0",
-        "border_focus": "#2563eb",
+        "border": "#cbd5e1",
+        "border_subtle": "#e2e8f0",
         "text_primary": "#0f172a",
-        "text_secondary": "#475569",
-        "text_muted": "#94a3b8",
+        "text_secondary": "#2563eb",
+        "text_muted": "#64748b",
         "accent": "#2563eb",
-        "accent_hover": "#1d4ed8",
-        "badge_bg": "#f1f5f9",
-        "grid_color": "rgba(0, 0, 0, 0.06)",
+        "accent_green": "#059669",
+        "accent_purple": "#7c3aed",
+        "accent_amber": "#d97706",
+        "grid_color": "rgba(0, 0, 0, 0.08)",
         "plotly_template": "plotly_white",
     }
 }
@@ -68,36 +70,38 @@ st.markdown(f"""
         .block-container {{
             padding-left: 1.2rem !important;
             padding-right: 1.2rem !important;
-            padding-top: 1.2rem !important;
+            padding-top: 1rem !important;
             padding-bottom: 1.5rem !important;
             max-width: 100% !important;
         }}
         
-        /* SaaS Header & KPI Cards */
-        .saas-header {{
+        /* HEADER PRINCIPAL */
+        .saas-header-box {{
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 20px;
             background: {t["bg_surface"]};
-            border: 1px solid {t["border"]};
-            border-radius: 12px;
-            margin-bottom: 16px;
+            border: 1px solid {t["border_subtle"]};
+            border-radius: 10px;
+            padding: 12px 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
         }}
         
+        /* KPIS DASHBOARD */
         .fin-kpi-container {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 12px;
-            margin-bottom: 18px;
+            margin-bottom: 14px;
         }}
         
         .fin-kpi-card {{
             background: {t["bg_card"]};
-            border: 1px solid {t["border"]};
-            border-radius: 10px;
-            padding: 16px 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            border: 1px solid {t["border_subtle"]};
+            border-radius: 8px;
+            padding: 14px 18px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -109,19 +113,19 @@ st.markdown(f"""
         }}
         
         .fin-kpi-title {{
-            font-size: 0.72rem;
-            font-weight: 700;
+            font-size: 0.70rem;
+            font-weight: 800;
             color: {t["text_secondary"]};
             text-transform: uppercase;
-            letter-spacing: 0.6px;
-            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
             display: flex;
             align-items: center;
             justify-content: space-between;
         }}
         
         .fin-kpi-val {{
-            font-size: 1.85rem;
+            font-size: 1.8rem;
             font-weight: 900;
             color: {t["text_primary"]};
             line-height: 1.1;
@@ -135,50 +139,51 @@ st.markdown(f"""
             color: {t["text_muted"]};
         }}
         
-        /* Insight Card Styling */
-        .insight-card {{
+        /* CONTENEDOR DE GRÁFICOS */
+        .dash-card {{
             background: {t["bg_card"]};
-            border: 1px solid {t["border"]};
-            border-radius: 10px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-            height: 100%;
-        }}
-        .insight-header {{
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.82rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
-        }}
-        .insight-body {{
-            font-size: 0.84rem;
-            color: {t["text_secondary"]};
-            line-height: 1.4;
+            border: 1px solid {t["border_subtle"]};
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
         }}
         
-        /* St Tabs Customization */
+        .dash-card-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid {t["border_subtle"]};
+        }}
+        
+        .dash-card-title {{
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: {t["text_primary"]};
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }}
+        
+        /* TABS UNIFICADOS */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px;
             background-color: {t["bg_surface"]};
             padding: 6px;
-            border-radius: 10px;
-            border: 1px solid {t["border"]};
-            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid {t["border_subtle"]};
+            margin-bottom: 12px;
         }}
         
         .stTabs [data-baseweb="tab"] {{
-            height: 38px;
-            padding: 0 20px;
+            height: 36px;
+            padding: 0 18px;
             border-radius: 6px;
             font-weight: 700;
-            font-size: 0.86rem;
-            color: {t["text_secondary"]};
+            font-size: 0.84rem;
+            color: {t["text_muted"]};
             background-color: transparent;
             border: none !important;
         }}
@@ -252,7 +257,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (HTML/CSS ENTERPRISE) ---
+# --- GENERADOR DEL PLANOGRAMA ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -411,12 +416,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     options_cuerpos = "".join([f'<option value="{k.replace("Cuerpo ", "")}">{k}</option>' for k in cuerpos.keys()])
     options_niveles = "".join([f'<option value="{int(lvl)}">Nivel {int(lvl)}</option>' for lvl in todos_niveles])
 
-    app_bg = "#090d16" if es_oscuro else "#f8fafc"
-    surface_bg = "#0f172a" if es_oscuro else "#ffffff"
-    border_col = "#1e293b" if es_oscuro else "#e2e8f0"
-    text_primary = "#f8fafc" if es_oscuro else "#0f172a"
-    text_secondary = "#94a3b8" if es_oscuro else "#64748b"
-    input_bg = "#1e293b" if es_oscuro else "#ffffff"
+    app_bg = t["bg_app"]
+    surface_bg = t["bg_surface"]
+    border_col = t["border_subtle"]
+    text_primary = t["text_primary"]
+    text_secondary = t["text_secondary"]
+    input_bg = t["bg_card"]
 
     return f"""
     <!DOCTYPE html>
@@ -439,7 +444,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
         
         .main-container {{ 
-          padding: 6px 8px; 
+          padding: 4px 6px; 
           height: 100vh; 
           display: flex; 
           flex-direction: column; 
@@ -823,6 +828,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     <body>
       <div class="main-container" id="mainContainer">
 
+        <!-- MODAL GLOBAL -->
         <div id="productModal" class="modal-overlay">
           <div class="modal-content" id="modalContent">
             <span class="modal-close">&times;</span>
@@ -853,6 +859,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           </div>
         </div>
 
+        <!-- TARJETAS KPIS -->
         <div class="kpi-container">
           <div class="kpi-card" style="border-left: 3px solid #3b82f6;"><span class="kpi-title">Total SKUs</span><span class="kpi-val" id="t-total">0</span></div>
           <div class="kpi-card" style="border-left: 3px solid #ef4444;"><span class="kpi-title">Bloqueados</span><span class="kpi-val" id="t-bloq" style="color: #ef4444;">0</span></div>
@@ -888,6 +895,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           </div>
         </div>
 
+        <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           <div class="fullscreen-legend-bar">
             <span style="font-size: 0.80rem; font-weight: 800; color: #3b82f6;">📍 LEYENDA:</span>
@@ -1389,16 +1397,16 @@ df_fotos_raw = None
 info_hora = None
 error_nube = None
 
-# --- HEADER SAAS ENTERPRISE ---
+# --- HEADER SAAS ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
 
 with col_head1:
     st.markdown(f"""
         <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; color: {t['text_primary']};">
+            <div style="font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; color: {t['text_primary']};">
                 🏬 Planograma <span style="color: {t['accent']}; font-weight: 800;">2.0</span>
             </div>
-            <span style="background: {t['badge_bg']}; color: {t['accent']}; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; border: 1px solid {t['border']};">ENTERPRISE</span>
+            <span style="background: {t['accent']}1a; color: {t['accent']}; font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; border: 1px solid {t['accent']}33;">ENTERPRISE</span>
         </div>
     """, unsafe_allow_html=True)
     
@@ -1417,7 +1425,7 @@ with col_head3:
     with col_time:
         header_time_placeholder = st.empty()
 
-with st.spinner("Sincronizando base de datos central, jerarquías e imágenes..."):
+with st.spinner("Sincronizando base de datos central..."):
     df_nube, df_aux_nube, df_jer_nube, df_fotos_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE, URL_JERARQUIA, URL_FOTOS)
 
 header_time_placeholder.markdown(f"""
@@ -1566,60 +1574,60 @@ if df_raw is not None:
         components.html(html_pasillo, height=840, scrolling=False)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO REDISEÑADO AL 100% ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO REDISEÑADO CON PALETA UNIFICADA ---
     # =========================================================================
     with tab2:
-        # --- NIVEL 1: RESUMEN EJECUTIVO (EXECUTIVE KPI MATRIX) ---
         ventas_globales = df_unicos['Venta_Num'].sum()
         margen_global = df_unicos['Margen_Num'].sum()
         margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
         total_skus_activos = len(df_unicos)
         promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
         
+        # --- TARJETAS KPIS CON ESTILO INTEGRADO ---
         st.markdown(f"""
             <div class="fin-kpi-container">
-                <div class="fin-kpi-card" style="border-left: 4px solid #3b82f6;">
+                <div class="fin-kpi-card" style="border-left: 4px solid {t['accent']};">
                     <div class="fin-kpi-title">
                         <span>Ventas Brutas</span>
                         <span style="font-size: 1rem;">💳</span>
                     </div>
                     <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
-                    <div class="fin-kpi-subtitle">Promedio por SKU: S/ {promedio_venta_sku:,.2f}</div>
+                    <div class="fin-kpi-subtitle">Ticket Promedio/SKU: S/ {promedio_venta_sku:,.2f}</div>
                 </div>
-                <div class="fin-kpi-card" style="border-left: 4px solid #10b981;">
+                <div class="fin-kpi-card" style="border-left: 4px solid {t['accent_green']};">
                     <div class="fin-kpi-title">
                         <span>Margen Total Bruto</span>
                         <span style="font-size: 1rem;">📈</span>
                     </div>
-                    <div class="fin-kpi-val" style="color: #10b981;">S/ {margen_global:,.2f}</div>
-                    <div class="fin-kpi-subtitle">Rentabilidad Monetaria Acumulada</div>
+                    <div class="fin-kpi-val" style="color: {t['accent_green']};">S/ {margen_global:,.2f}</div>
+                    <div class="fin-kpi-subtitle">Ganancia Monetaria Acumulada</div>
                 </div>
-                <div class="fin-kpi-card" style="border-left: 4px solid #8b5cf6;">
+                <div class="fin-kpi-card" style="border-left: 4px solid {t['accent_purple']};">
                     <div class="fin-kpi-title">
                         <span>Margen Global</span>
                         <span style="font-size: 1rem;">📊</span>
                     </div>
-                    <div class="fin-kpi-val" style="color: #8b5cf6;">{margen_pct_global*100:.1f}%</div>
-                    <div class="fin-kpi-subtitle">Retorno sobre Venta Total</div>
+                    <div class="fin-kpi-val" style="color: {t['accent_purple']};">{margen_pct_global*100:.1f}%</div>
+                    <div class="fin-kpi-subtitle">Rentabilidad sobre Ventas</div>
                 </div>
-                <div class="fin-kpi-card" style="border-left: 4px solid #f59e0b;">
+                <div class="fin-kpi-card" style="border-left: 4px solid {t['accent_amber']};">
                     <div class="fin-kpi-title">
                         <span>Surtido Activo</span>
                         <span style="font-size: 1rem;">📦</span>
                     </div>
-                    <div class="fin-kpi-val">{total_skus_activos}</div>
+                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{total_skus_activos}</div>
                     <div class="fin-kpi-subtitle">SKUs Únicos en Góndola</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
         
-        # --- TOOLBAR DE FILTROS SUPERIOR ---
+        # --- FILTRO POR CATEGORÍA ---
         cats_disponibles = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
-        col_seg_cat, col_sp_info = st.columns([2.5, 7.5])
+        col_seg_cat, col_sp_info = st.columns([3, 7])
         with col_seg_cat:
             cat_seleccionada = st.selectbox("🎯 Filtrar Dashboard por Categoría:", ["Todas las Categorías"] + cats_disponibles)
         with col_sp_info:
-            st.markdown(f"<div style='margin-top: 32px; font-size: 0.80rem; color: {t['text_muted']}; text-align: right;'>Visualizando métricas consolidadas en tiempo real</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='margin-top: 30px; font-size: 0.78rem; color: {t['text_muted']}; text-align: right;'>Métricas sincronizadas en tiempo real</div>", unsafe_allow_html=True)
         
         df_dash_base = df_base.copy()
         if cat_seleccionada != "Todas las Categorías":
@@ -1627,17 +1635,15 @@ if df_raw is not None:
             
         df_dash_unicos = df_dash_base.drop_duplicates(subset=['COD REAL']).copy()
 
-        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-
-        # --- NIVEL 2: GRÁFICOS OPERATIVOS (VENTAS/MARGEN POR CUERPO + DONUT DE PARTICIPACIÓN) ---
+        # --- NIVEL 2: GRÁFICOS (VENTAS/MARGEN POR CUERPO + DONUT) ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
             st.markdown(f"""
-                <div style='background: {t["bg_surface"]}; border: 1px solid {t["border"]}; border-radius: 10px; padding: 14px 16px;'>
-                    <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;'>
-                        <span style='font-size: 0.88rem; font-weight: 800; color: {t["text_primary"]};'>📈 Rendimiento Comercial por Cuerpo</span>
-                        <span style='font-size: 0.72rem; font-weight: 700; color: {t["text_muted"]};'>VENTAS (S/) vs MARGEN (%)</span>
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <span class="dash-card-title">📈 Rendimiento Comercial por Cuerpo</span>
+                        <span style="font-size: 0.70rem; font-weight: 700; color: {t['text_muted']};">VENTAS (S/) vs MARGEN (%)</span>
                     </div>
             """, unsafe_allow_html=True)
             
@@ -1669,7 +1675,7 @@ if df_raw is not None:
                 axis=1
             )
             
-            col_ord, _ = st.columns([2, 2])
+            col_ord, _ = st.columns([2.5, 1.5])
             with col_ord:
                 orden_grafico = st.selectbox("Ordenar:", 
                     ["Secuencial (Cuerpo 1..N)", "Mayor a Menor Venta", "Mayor Margen (%)"],
@@ -1704,21 +1710,22 @@ if df_raw is not None:
                     mode="lines+markers+text",
                     text=ventas_cuerpo['Margen_Pct'].apply(lambda x: f"{x*100:,.1f}%"),
                     textposition='top center',
-                    textfont=dict(color='#10b981', size=11, weight='bold'),
-                    marker=dict(color="#10b981", size=8, symbol='circle', line=dict(color=t["bg_surface"], width=2)),
-                    line=dict(color="#10b981", width=3, shape='spline'),
+                    textfont=dict(color=t["accent_green"], size=11, weight='bold'),
+                    marker=dict(color=t["accent_green"], size=8, symbol='circle', line=dict(color=t["bg_card"], width=2)),
+                    line=dict(color=t["accent_green"], width=3, shape='spline'),
                     hovertemplate="<b>%{x}</b><br>Margen: %{text}<extra></extra>"
                 ), secondary_y=True
             )
 
             fig.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)', 
+                plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
                 legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["text_secondary"], size=10)),
-                margin=dict(t=10, b=20, l=10, r=10),
+                margin=dict(t=10, b=10, l=10, r=10),
                 xaxis=dict(showgrid=False, color=t["text_secondary"], tickfont=dict(size=10, weight='bold')),
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["text_secondary"], zeroline=False),
-                yaxis2=dict(title="Margen (%)", showgrid=False, color='#10b981', zeroline=False)
+                yaxis2=dict(title="Margen (%)", showgrid=False, color=t["accent_green"], zeroline=False)
             )
             
             fig.update_xaxes(fixedrange=True)
@@ -1728,10 +1735,10 @@ if df_raw is not None:
             
         with col_graf_der:
             st.markdown(f"""
-                <div style='background: {t["bg_surface"]}; border: 1px solid {t["border"]}; border-radius: 10px; padding: 14px 16px;'>
-                    <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;'>
-                        <span style='font-size: 0.88rem; font-weight: 800; color: {t["text_primary"]};'>🍩 Mix de Venta</span>
-                        <span style='font-size: 0.72rem; font-weight: 700; color: {t["text_muted"]};'>PARTICIPACIÓN</span>
+                <div class="dash-card">
+                    <div class="dash-card-header">
+                        <span class="dash-card-title">🍩 Mix de Venta</span>
+                        <span style="font-size: 0.70rem; font-weight: 700; color: {t['text_muted']};">PARTICIPACIÓN</span>
                     </div>
             """, unsafe_allow_html=True)
             
@@ -1753,7 +1760,7 @@ if df_raw is not None:
                 insidetextorientation='horizontal',
                 textfont=dict(size=11, color='#ffffff', family='Inter', weight='bold'),
                 marker=dict(colors=['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#14b8a6'], 
-                            line=dict(color=t["bg_surface"], width=2))
+                            line=dict(color=t["bg_card"], width=2))
             )])
             
             fig_pie.update_layout(
@@ -1768,29 +1775,25 @@ if df_raw is not None:
             st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
             st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
-
-        # --- NIVEL 3: FAIR SHARE ANALYSIS & SMART INSIGHT BANNERS ---
+        # --- NIVEL 3: FAIR SHARE ANALYSIS & INSIGHTS ---
         st.markdown(f"""
-            <div style='background: {t["bg_surface"]}; border: 1px solid {t["border"]}; border-radius: 10px; padding: 18px 20px; margin-bottom: 14px;'>
-                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;'>
-                    <div>
-                        <span style='font-size: 0.98rem; font-weight: 800; color: {t["text_primary"]};'>⚖️ Fair Share: Comparativa de Espacio vs. Desempeño Financiero</span>
-                        <div style='font-size: 0.76rem; color: {t["text_muted"]}; margin-top: 2px;'>Evalúa si la asignación física de repisa (% Espacio) corresponde al volumen de venta (% Venta) y rentabilidad (% Margen).</div>
-                    </div>
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <span class="dash-card-title">⚖️ Fair Share: Espacio Físico vs Rendimiento</span>
+                    <span style="font-size: 0.70rem; font-weight: 700; color: {t['text_muted']};">ANÁLISIS DE EFICIENCIA</span>
                 </div>
         """, unsafe_allow_html=True)
         
         col_fs_dim, col_fs_met = st.columns([2, 2])
         with col_fs_dim:
             dim_fs = st.selectbox(
-                "Segmentar Fair Share por:", 
+                "Segmentar por:", 
                 ["Categoría", "Sección", "Departamento", "Grupo de artículo", "Marca"],
                 key="fs_dim_select"
             )
         with col_fs_met:
             metrica_espacio = st.radio(
-                "Métrica de Espacio Físico a Comparar:",
+                "Métrica de Espacio:",
                 ["Caras (Facings)", "Total Unidades en Bandeja"],
                 horizontal=True,
                 key="fs_met_radio"
@@ -1862,7 +1865,7 @@ if df_raw is not None:
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
                 legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["text_secondary"], size=10)),
-                margin=dict(t=20, b=30, l=10, r=10),
+                margin=dict(t=20, b=20, l=10, r=10),
                 xaxis=dict(showgrid=False, color=t["text_secondary"], tickfont=dict(size=10, weight='bold')),
                 yaxis=dict(title="Participación Relativa (%)", showgrid=True, gridcolor=t["grid_color"], color=t["text_secondary"], tickformat=".0%")
             )
@@ -1871,7 +1874,7 @@ if df_raw is not None:
             fig_fs.update_yaxes(fixedrange=True)
             st.plotly_chart(fig_fs, use_container_width=True, config={'displayModeBar': False})
             
-            # Smart Insight Banners
+            # INSIGHTS DE EFICIENCIA
             subdimensionados = df_fs[df_fs['Brecha_Share'] > 0.03]
             sobredimensionados = df_fs[df_fs['Brecha_Share'] < -0.03]
             
@@ -1880,58 +1883,26 @@ if df_raw is not None:
                 if not subdimensionados.empty:
                     top_sub = subdimensionados.iloc[0]
                     brecha_val = top_sub['Brecha_Share'] * 100
-                    st.markdown(f"""
-                        <div class="insight-card" style="border-left: 4px solid #10b981;">
-                            <div class="insight-header" style="color: #10b981;">
-                                <span>🚀 Oportunidad de Expansión de Espacio</span>
-                            </div>
-                            <div class="insight-body">
-                                <b>{top_sub[dim_fs]}</b> genera el <b>{top_sub['Pct_Ventas']*100:.1f}%</b> de la venta total pero solo ocupa el <b>{top_sub['Pct_Espacio']*100:.1f}%</b> de la repisa física (+{brecha_val:.1f}% de rendimiento positivo). Conviene ampliar facings.
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.success(f"🚀 **Oportunidad de Crecimiento:** `{top_sub[dim_fs]}` genera el **{top_sub['Pct_Ventas']*100:.1f}%** de la venta pero ocupa el **{top_sub['Pct_Espacio']*100:.1f}%** del espacio (+{brecha_val:.1f}% de rendimiento positivo).")
                 else:
-                    st.markdown(f"""
-                        <div class="insight-card" style="border-left: 4px solid #3b82f6;">
-                            <div class="insight-header" style="color: #3b82f6;"><span>✅ Asignación Balanceada</span></div>
-                            <div class="insight-body">No se detectan categorías con subasignación crítica de espacio frente a su venta.</div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.info("✅ Asignación de espacio balanceada frente a las ventas.")
                     
             with col_diag2:
                 if not sobredimensionados.empty:
                     top_sobre = sobredimensionados.sort_values(by='Brecha_Share', ascending=True).iloc[0]
                     brecha_sobre = abs(top_sobre['Brecha_Share'] * 100)
-                    st.markdown(f"""
-                        <div class="insight-card" style="border-left: 4px solid #f59e0b;">
-                            <div class="insight-header" style="color: #f59e0b;">
-                                <span>⚠️ Alerta de Sobreasignación (Espacio Ocioso)</span>
-                            </div>
-                            <div class="insight-body">
-                                <b>{top_sobre[dim_fs]}</b> ocupa el <b>{top_sobre['Pct_Espacio']*100:.1f}%</b> de la repisa pero solo aporta el <b>{top_sobre['Pct_Ventas']*100:.1f}%</b> de las ventas ({brecha_sobre:.1f}% de espacio no rentable).
-                            </div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.warning(f"⚠️ **Alerta de Sobreasignación:** `{top_sobre[dim_fs]}` ocupa el **{top_sobre['Pct_Espacio']*100:.1f}%** de la repisa pero solo aporta el **{top_sobre['Pct_Ventas']*100:.1f}%** de las ventas ({brecha_sobre:.1f}% de espacio no rentable).")
                 else:
-                    st.markdown(f"""
-                        <div class="insight-card" style="border-left: 4px solid #3b82f6;">
-                            <div class="insight-header" style="color: #3b82f6;"><span>✅ Espacio Óptimo</span></div>
-                            <div class="insight-body">No se detectan saturaciones ni sobreasignaciones críticas de repisa.</div>
-                        </div>
-                    """, unsafe_allow_html=True)
+                    st.info("✅ No se detectan sobreasignaciones críticas de espacio.")
             
             st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
-
-        # --- NIVEL 4: REPORTE OPERATIVO DE SKUS & EXPORT HUB ---
+        # --- NIVEL 4: REPORTE OPERATIVO DETALLADO ---
         st.markdown(f"""
-            <div style='background: {t["bg_surface"]}; border: 1px solid {t["border"]}; border-radius: 10px; padding: 18px 20px;'>
-                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;'>
-                    <div>
-                        <span style='font-size: 0.98rem; font-weight: 800; color: {t["text_primary"]};'>📋 Detalle Operativo por SKU Único</span>
-                        <div style='font-size: 0.76rem; color: {t["text_muted"]}; margin-top: 2px;'>Auditoría completa de stock, cobertura y rentabilidad con mapeo de ubicación en góndola.</div>
-                    </div>
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <span class="dash-card-title">📋 Detalle Operativo por SKU Único</span>
+                    <span style="font-size: 0.70rem; font-weight: 700; color: {t['text_muted']};">AUDITORÍA COMPLETA</span>
                 </div>
         """, unsafe_allow_html=True)
         
