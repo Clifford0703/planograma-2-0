@@ -1719,17 +1719,17 @@ if df_raw is not None:
         components.html(html_pasillo, height=840, scrolling=False)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (INDEPENDIENTE Y REDISEÑADO) ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO Y REESTRUCTURADO) ---
     # =========================================================================
     with tab2:
-        # Inicialización de estados locales para el Dashboard
+        # Inicialización de estados locales independientes para el Dashboard
         if "dash_orden" not in st.session_state:
             st.session_state.dash_orden = "Secuencial (Cuerpo 1..N)"
         if "dash_analizar" not in st.session_state:
             st.session_state.dash_analizar = "Categoría"
 
-        # --- FILTROS DE ESTA PESTAÑA (INDEPENDIENTES Y ORDENADOS EXACTAMENTE COMO PEDISTE) ---
-        st.markdown(f"<div style='font-size: 0.85rem; font-weight: 800; color: {t['text_secondary']}; margin-bottom: 8px; text-transform: uppercase;'>🎯 Filtros Operativos del Dashboard</div>", unsafe_allow_html=True)
+        # --- FILTROS EXCLUSIVOS DE ESTA PESTAÑA EN EL ORDEN SOLICITADO: Departamento -> Sección -> Categoría -> Grupo de artículo -> Marca ---
+        st.markdown(f"<div style='font-size: 0.85rem; font-weight: 800; color: {t['text_secondary']}; margin-bottom: 8px; text-transform: uppercase;'>🎯 Filtros Operativos del Dashboard Analítico</div>", unsafe_allow_html=True)
         
         col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns(5)
         
@@ -1744,12 +1744,12 @@ if df_raw is not None:
             filtro_categoria = st.selectbox("📁 Categoría", ["Todas"] + cats_disp, key="dash_cat_sel")
         with col_f4:
             gas_disp = sorted([g for g in df_unicos['Grupo de artículo'].dropna().unique() if g not in ['S/G', 'nan', '']])
-            filtro_ga = st.selectbox("📦 Grupo Artículo", ["Todos"] + gas_disp, key="dash_ga_sel")
+            filtro_ga = st.selectbox("📦 Grupo de Artículo", ["Todos"] + gas_disp, key="dash_ga_sel")
         with col_f5:
             marcas_disp = sorted([m for m in df_unicos['Marca'].dropna().unique() if m not in ['S/M', 'nan', '']])
             filtro_marca = st.selectbox("🏷️ Marca", ["Todas"] + marcas_disp, key="dash_marca_sel")
 
-        # Aplicación exclusiva de filtros de la pestaña 2 a df_base y df_unicos locales
+        # Aplicación exclusiva de los filtros del dashboard a los datos locales
         df_dash_base = df_base.copy()
         df_dash_unicos = df_unicos.copy()
 
@@ -1809,24 +1809,27 @@ if df_raw is not None:
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
-            # Cabecera con menú de 3 puntos (⋮) para ordenar
-            h_c1, h_c2 = st.columns([8, 2])
+            # Gráfico de Rendimiento con Botones de Ordenamiento Directos
+            h_c1, h_c2 = st.columns([6.5, 3.5])
             with h_c1:
                 st.markdown(f"""
                     <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px;">
-                        📈 Rendimiento Comercial por Cuerpo <span style="font-size: 0.68rem; color: {t['text_muted']}; font-weight: 600;">(VENTAS vs MARGEN)</span>
+                        📈 Rendimiento Comercial por Cuerpo
                     </div>
                 """, unsafe_allow_html=True)
             with h_c2:
-                with st.popover("⋮", help="Opciones de ordenamiento"):
-                    st.markdown("**Ordenar por:**")
-                    if st.button("🔢 Secuencial", use_container_width=True, key="ord_seq"):
+                # Botones de ordenamiento directos y limpios
+                b_s, b_v, b_m = st.columns(3)
+                with b_s:
+                    if st.button("🔢", key="btn_ord_seq", help="Secuencial", use_container_width=True):
                         st.session_state.dash_orden = "Secuencial (Cuerpo 1..N)"
                         st.rerun()
-                    if st.button("💰 Mayor Venta", use_container_width=True, key="ord_ven"):
+                with b_v:
+                    if st.button("💰", key="btn_ord_ven", help="Mayor a Menor Venta", use_container_width=True):
                         st.session_state.dash_orden = "Mayor a Menor Venta"
                         st.rerun()
-                    if st.button("📈 Mayor Margen", use_container_width=True, key="ord_mar"):
+                with b_m:
+                    if st.button("📈", key="btn_ord_mar", help="Mayor Margen (%)", use_container_width=True):
                         st.session_state.dash_orden = "Mayor Margen (%)"
                         st.rerun()
 
@@ -1914,14 +1917,13 @@ if df_raw is not None:
             st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
             
         with col_graf_der:
-            # Selector de "Analizar Por" en orden exacto: Departamento -> Sección -> Categoría -> Grupo de artículo -> Marca
+            # Título del Mix de Venta con Píldoras de orden estricto: Departamento -> Sección -> Categoría -> Grupo de artículo -> Marca
             st.markdown(f"""
                 <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px; margin-bottom: 6px;">
                     🍩 Mix de Venta <span style="font-size: 0.68rem; color: {t['text_secondary']}; font-weight: 700;">({st.session_state.dash_analizar.upper()})</span>
                 </div>
             """, unsafe_allow_html=True)
             
-            # Píldoras de dimensiones en orden estricto
             dims_mix = ["Departamento", "Sección", "Categoría", "Grupo de artículo", "Marca"]
             c_chips = st.columns(len(dims_mix))
             for i, d_opt in enumerate(dims_mix):
@@ -2046,7 +2048,7 @@ if df_raw is not None:
                 insidetextanchor='middle',
                 textfont=dict(color='#ffffff', size=10, family='Inter', weight='bold'),
                 marker=dict(color='#d97706', line=dict(color='#b45309', width=1)),
-                hovertemplate="<b>%{x}</b><br>% Margen: %{y:.1%}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
+                hovertemplate="<b>%{x}</b><br>% Margen: %{text}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
                 customdata=df_fs['Margen_Total']
             ))
             
