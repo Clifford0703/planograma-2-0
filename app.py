@@ -66,7 +66,7 @@ theme_vars = {
         "accent_purple": "#7c3aed",
         "accent_amber": "#d97706",
         "grid_color": "rgba(0, 0, 0, 0.06)",
-        "card_shadow": "0 2px 6px rgba(0,0,0,0.05)",
+        "card_shadow": "0 2px 6px rgba(0,0,0,0.06)",
         "plotly_text": "#334155",
         "input_bg": "#ffffff",
         "input_border": "#2563eb",
@@ -85,12 +85,13 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS PARA IGUALAR PESTAÑA 2 A PESTAÑA 1
+# INYECCIÓN CSS FORZADA DE MÁXIMA ESPECIFICIDAD
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         
-        .stApp, [data-testid="stAppViewContainer"], .main, section.main, [data-testid="stHeader"] {{
+        /* FONDO GENERAL STREAMLIT */
+        html, body, .stApp, [data-testid="stAppViewContainer"], .main, section.main, [data-testid="stHeader"], [data-testid="stToolbar"] {{
             background-color: {t["bg_app"]} !important;
             background: {t["bg_app"]} !important;
             color: {t["text_primary"]} !important;
@@ -109,52 +110,73 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* SEGMENTACIONES / SELECTBOXES IDÉNTICOS A PESTAÑA 1 */
-        .stSelectbox div[data-baseweb="select"] > div {{
+        /* OVERRIDE TOTAL Y AGRESIVO DE SELECTBOXES EN STREAMLIT */
+        [data-testid="stSelectbox"],
+        [data-testid="stSelectbox"] > div,
+        [data-testid="stSelectbox"] div[data-baseweb="select"],
+        [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+        [data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
+        [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus,
+        [data-testid="stSelectbox"] [class*="st-emotion-cache"] {{
             background-color: {t["input_bg"]} !important;
+            background: {t["input_bg"]} !important;
+            border-color: {t["input_border"]} !important;
             color: {t["input_text"]} !important;
+        }}
+
+        [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
             border: 2px solid {t["input_border"]} !important;
             border-radius: 6px !important;
             min-height: 38px !important;
             box-shadow: {t["card_shadow"]} !important;
         }}
         
-        .stSelectbox div[data-baseweb="select"] * {{
+        [data-testid="stSelectbox"] * {{
             color: {t["input_text"]} !important;
-            font-weight: 700 !important;
-            font-size: 0.85rem !important;
             -webkit-text-fill-color: {t["input_text"]} !important;
+            font-weight: 700 !important;
         }}
 
-        .stSelectbox div[data-baseweb="select"] svg {{
+        [data-testid="stSelectbox"] svg {{
             fill: {t["text_secondary"]} !important;
+            color: {t["text_secondary"]} !important;
         }}
         
-        /* MENÚS DESPLEGABLES (POPOVERS) */
-        div[data-baseweb="popover"], div[data-baseweb="popover"] > div, div[data-baseweb="menu"], ul[role="listbox"] {{
+        /* POPOVERS Y MENÚS DESPLEGABLES */
+        div[data-baseweb="popover"],
+        div[data-baseweb="popover"] > div,
+        div[data-baseweb="menu"],
+        div[data-baseweb="popover"] ul,
+        div[data-baseweb="popover"] [class*="st-emotion-cache"] {{
             background-color: {t["popover_bg"]} !important;
+            background: {t["popover_bg"]} !important;
             color: {t["input_text"]} !important;
-            border: 1px solid {t["input_border"]} !important;
+            border: 1.5px solid {t["input_border"]} !important;
             border-radius: 6px !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2) !important;
         }}
         
         li[role="option"] {{
             background-color: {t["popover_bg"]} !important;
+            background: {t["popover_bg"]} !important;
             color: {t["input_text"]} !important;
+            -webkit-text-fill-color: {t["input_text"]} !important;
             font-weight: 600 !important;
-            font-size: 0.84rem !important;
+            font-size: 0.85rem !important;
         }}
         
         li[role="option"]:hover, li[aria-selected="true"] {{
             background-color: {t["popover_hover"]} !important;
+            background: {t["popover_hover"]} !important;
             color: {t["accent"]} !important;
+            -webkit-text-fill-color: {t["accent"]} !important;
         }}
         
         /* BOTONES STREAMLIT */
         .stButton > button {{
             background-color: {t["btn_bg"]} !important;
+            background: {t["btn_bg"]} !important;
             color: {t["btn_text"]} !important;
+            -webkit-text-fill-color: {t["btn_text"]} !important;
             border: 1.5px solid {t["border_subtle"]} !important;
             border-radius: 6px !important;
             font-weight: 700 !important;
@@ -164,18 +186,21 @@ st.markdown(f"""
         .stButton > button:hover {{
             border-color: {t["accent"]} !important;
             color: {t["accent"]} !important;
+            -webkit-text-fill-color: {t["accent"]} !important;
         }}
         
         .stDownloadButton > button {{
             background-color: #10b981 !important;
+            background: #10b981 !important;
             color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
             border: none !important;
             border-radius: 6px !important;
             font-weight: 800 !important;
             box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
         }}
         
-        /* TABLA DE DATAFRAME STREAMLIT */
+        /* TABLA DE DATAFRAME */
         [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {{
             background-color: {t["bg_card"]} !important;
             border: 1px solid {t["border_subtle"]} !important;
@@ -270,7 +295,7 @@ st.markdown(f"""
             letter-spacing: 0.4px !important;
         }}
         
-        /* PESTAÑAS (TABS) CON ALTO CONTRASTE */
+        /* PESTAÑAS (TABS) */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px;
             background-color: {t["bg_card"]};
@@ -294,6 +319,7 @@ st.markdown(f"""
         .stTabs [aria-selected="true"] {{
             background-color: {t["accent"]} !important;
             color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
         }}
 
         /* TARJETAS DE INSIGHTS */
@@ -858,6 +884,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
         
+        /* BLOQUES DE PRODUCTOS */
         .sku-card {{ 
           border-radius: 6px; 
           padding: 6px; 
