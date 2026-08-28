@@ -20,7 +20,7 @@ if "tema_actual" not in st.session_state:
 
 es_oscuro = st.session_state.tema_actual == "dark"
 
-# --- DESIGN SYSTEM VARIABLES ---
+# --- PALETA DESIGN SYSTEM UNIFICADA ---
 theme_vars = {
     "dark": {
         "bg_app": "#070d19",
@@ -30,7 +30,7 @@ theme_vars = {
         "border_subtle": "#1e293b",
         "text_primary": "#ffffff",
         "text_secondary": "#93c5fd",
-        "text_muted": "#64748b",
+        "text_muted": "#94a3b8",
         "accent": "#3b82f6",
         "accent_green": "#10b981",
         "accent_purple": "#8b5cf6",
@@ -38,13 +38,17 @@ theme_vars = {
         "grid_color": "rgba(255, 255, 255, 0.08)",
         "card_shadow": "0 4px 10px rgba(0,0,0,0.4)",
         "plotly_text": "#cbd5e1",
+        "input_bg": "#1e293b",
+        "input_text": "#ffffff",
+        "btn_bg": "#1e293b",
+        "btn_text": "#ffffff",
     },
     "light": {
         "bg_app": "#f8fafc",
         "bg_surface": "#ffffff",
         "bg_card": "#ffffff",
         "border": "#3b82f6",
-        "border_subtle": "#e2e8f0",
+        "border_subtle": "#cbd5e1",
         "text_primary": "#0f172a",
         "text_secondary": "#2563eb",
         "text_muted": "#64748b",
@@ -55,11 +59,15 @@ theme_vars = {
         "grid_color": "rgba(0, 0, 0, 0.06)",
         "card_shadow": "0 2px 6px rgba(0,0,0,0.05)",
         "plotly_text": "#334155",
+        "input_bg": "#ffffff",
+        "input_text": "#0f172a",
+        "btn_bg": "#ffffff",
+        "btn_text": "#0f172a",
     }
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS FORZADA (CONTROL TOTAL DEL TEMA EN STREAMLIT)
+# INYECCIÓN CSS FORZADA (CONTROL DE FONDO + WIDGETS STREAMLIT NATIVOS)
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -83,17 +91,56 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* HEADER SAAS */
-        .saas-header-box {{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: {t["bg_card"]};
-            border: 1px solid {t["border_subtle"]};
-            border-radius: 8px;
-            padding: 12px 18px;
-            margin-bottom: 12px;
-            box-shadow: {t["card_shadow"]};
+        /* OVERRIDE AGRESIVO DE WIDGETS NATIVOS STREAMLIT */
+        div[data-baseweb="select"] > div {{
+            background-color: {t["input_bg"]} !important;
+            color: {t["input_text"]} !important;
+            border: 1.5px solid {t["border_subtle"]} !important;
+            border-radius: 6px !important;
+        }}
+        
+        div[data-baseweb="select"] span, div[data-baseweb="select"] div {{
+            color: {t["input_text"]} !important;
+            font-weight: 600 !important;
+        }}
+        
+        div[data-baseweb="popover"], div[data-baseweb="popover"] ul, div[data-baseweb="menu"] {{
+            background-color: {t["bg_surface"]} !important;
+            color: {t["input_text"]} !important;
+        }}
+        div[data-baseweb="menu"] li {{
+            color: {t["input_text"]} !important;
+            font-weight: 600 !important;
+        }}
+        
+        .stButton > button {{
+            background-color: {t["btn_bg"]} !important;
+            color: {t["btn_text"]} !important;
+            border: 1.5px solid {t["border_subtle"]} !important;
+            border-radius: 6px !important;
+            font-weight: 700 !important;
+            box-shadow: {t["card_shadow"]} !important;
+            transition: all 0.2s ease !important;
+        }}
+        .stButton > button:hover {{
+            border-color: {t["accent"]} !important;
+            color: {t["accent"]} !important;
+        }}
+        
+        .stDownloadButton > button {{
+            background-color: {t["accent"]} !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 6px !important;
+            font-weight: 700 !important;
+            box-shadow: {t["card_shadow"]} !important;
+        }}
+        
+        /* DATASET Y DATAFRAME DE STREAMLIT */
+        [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {{
+            background-color: {t["bg_card"]} !important;
+            border: 1px solid {t["border_subtle"]} !important;
+            border-radius: 8px !important;
         }}
         
         /* TARJETAS KPIS DEL DASHBOARD */
@@ -173,13 +220,6 @@ st.markdown(f"""
             display: flex;
             align-items: center;
             gap: 6px;
-        }}
-        
-        /* SELECTBOXES Y WIDGETS EN MODO CLARO/OSCURO */
-        .stSelectbox label, .stRadio label {{
-            color: {t["text_primary"]} !important;
-            font-weight: 700 !important;
-            font-size: 0.80rem !important;
         }}
         
         /* PESTAÑAS (TABS) */
@@ -437,7 +477,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     border_col = t["border_subtle"]
     text_primary = t["text_primary"]
     text_secondary = t["text_secondary"]
-    input_bg = t["bg_card"]
+    input_bg = t["input_bg"]
 
     return f"""
     <!DOCTYPE html>
@@ -472,6 +512,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         ::-webkit-scrollbar-track {{ background: {card_bg}; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
 
+        /* BARRA SUPERIOR */
         .saas-top-bar {{
           display: flex;
           align-items: center;
@@ -493,6 +534,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           color: {text_primary};
         }}
 
+        /* KPIS */
         .kpi-container {{ 
           display: flex; 
           gap: 8px; 
@@ -514,6 +556,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .kpi-title {{ font-size: 0.62rem; font-weight: 700; color: {text_secondary}; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px; }}
         .kpi-val {{ font-size: 1.35rem; font-weight: 900; line-height: 1.1; color: {text_primary}; font-feature-settings: "tnum"; }}
         
+        /* FILTROS */
         .filter-panel {{ 
           background: {card_bg}; 
           border: 1px solid {border_col}; 
@@ -563,6 +606,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .btn-fullscreen {{ background: #3b82f61a; color: #3b82f6; border: 1px solid #3b82f633; }}
         .btn-fullscreen:hover {{ background: #3b82f6; color: #fff; }}
         
+        /* LEYENDA */
         .legend-panel {{ 
           background: {card_bg}; 
           border: 1px solid {border_col}; 
@@ -592,6 +636,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.04); box-shadow: 0 0 0 2px #3b82f6 !important; }}
         
+        /* CONTENEDOR DEL PLANOGRAMA */
         .aisle-wrapper {{ 
           display: flex;
           flex-direction: column;
@@ -921,8 +966,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'};">Sin Stock</button>
               <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'};">Stock 1-5</button>
               <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'};">Stock >5</button>
-              <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥30</button>
-              <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP</button>
+              <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥30</button>
+              <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP</button>
             </div>
             
             <div class="fs-cat-wrapper">
@@ -1325,7 +1370,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           applyFilters();
         }});
 
-        // MODAL PRODUCTO (CENTRADO NATIVO)
+        // MODAL PRODUCTO
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         
@@ -1593,7 +1638,7 @@ if df_raw is not None:
         components.html(html_pasillo, height=840, scrolling=False)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO REDISEÑADO AL 100% ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (FORMATO EXACTO A PESTAÑA 1) ---
     # =========================================================================
     with tab2:
         ventas_globales = df_unicos['Venta_Num'].sum()
@@ -1602,7 +1647,7 @@ if df_raw is not None:
         total_skus_activos = len(df_unicos)
         promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
         
-        # --- TARJETAS KPIS CON FORMATO Y PALETA EXACTA A PESTAÑA 1 ---
+        # --- TARJETAS KPIS ---
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #3b82f6;">
@@ -1654,7 +1699,7 @@ if df_raw is not None:
             
         df_dash_unicos = df_dash_base.drop_duplicates(subset=['COD REAL']).copy()
 
-        # --- NIVEL 2: GRÁFICOS OPERATIVOS CON ETIQUETAS DE ALTO CONTRASTE ---
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
@@ -1707,7 +1752,6 @@ if df_raw is not None:
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             
-            # Barras de Venta con color sólido de contraste y etiquetas nítidas
             fig.add_trace(
                 go.Bar(
                     x=ventas_cuerpo['Cuerpo_Label'], 
@@ -1723,7 +1767,6 @@ if df_raw is not None:
                 ), secondary_y=False
             )
 
-            # Línea de Margen (%) con etiqueta flotante resaltada
             fig.add_trace(
                 go.Scatter(
                     x=ventas_cuerpo['Cuerpo_Label'], 
