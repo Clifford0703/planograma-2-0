@@ -66,24 +66,11 @@ st.markdown(f"""
         }}
         
         .block-container {{
-            padding-left: 1.5rem !important;
-            padding-right: 1.5rem !important;
-            padding-top: 1rem !important;
-            padding-bottom: 2rem !important;
+            padding-left: 1.2rem !important;
+            padding-right: 1.2rem !important;
+            padding-top: 1.5rem !important;
+            padding-bottom: 0rem !important;
             max-width: 100% !important;
-        }}
-        
-        /* SaaS Header & Cards */
-        .saas-header {{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 20px;
-            background: {t["bg_surface"]};
-            border: 1px solid {t["border"]};
-            border-radius: 12px;
-            margin-bottom: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }}
         
         .fin-kpi-container {{
@@ -129,7 +116,6 @@ st.markdown(f"""
             font-feature-settings: "tnum";
         }}
         
-        /* St Tabs Customization */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px;
             background-color: {t["bg_surface"]};
@@ -179,25 +165,35 @@ def obtener_estado_y_color(estado, stock_val, dark=True):
     estado = str(estado).strip().upper()
     if estado == "B": 
         bg = "#451a1a" if dark else "#fee2e2"
+        border = "#7f1d1d" if dark else "#fca5a5"
         tc = "#fca5a5" if dark else "#991b1b"
-        return bg, tc, "Bloqueado"
+        name_c = "#fecaca" if dark else "#7f1d1d"
+        return bg, border, tc, name_c, "Bloqueado"
     elif estado == "A":
         if stock_val <= 0: 
             bg = "#431407" if dark else "#ffedd5"
+            border = "#7c2d12" if dark else "#fdba74"
             tc = "#fdba74" if dark else "#9a3412"
-            return bg, tc, "Sin Stock"
+            name_c = "#ffedd5" if dark else "#7c2d12"
+            return bg, border, tc, name_c, "Sin Stock"
         elif stock_val <= 5: 
             bg = "#422006" if dark else "#fef9c3"
+            border = "#713f12" if dark else "#fde047"
             tc = "#fde047" if dark else "#854d0e"
-            return bg, tc, "Stock Bajo"
+            name_c = "#fef08a" if dark else "#713f12"
+            return bg, border, tc, name_c, "Stock Bajo"
         else: 
             bg = "#064e3b" if dark else "#dcfce7"
+            border = "#065f46" if dark else "#86efac"
             tc = "#6ee7b7" if dark else "#166534"
-            return bg, tc, "Stock OK"
+            name_c = "#ecfdf5" if dark else "#14532d"
+            return bg, border, tc, name_c, "Stock OK"
     else: 
         bg = "#1e293b" if dark else "#f1f5f9"
+        border = "#334155" if dark else "#cbd5e1"
         tc = "#94a3b8" if dark else "#475569"
-        return bg, tc, "Desconocido"
+        name_c = "#f8fafc" if dark else "#0f172a"
+        return bg, border, tc, name_c, "Desconocido"
 
 def obtener_alerta_css(estado, stock_val):
     estado = str(estado).strip().upper()
@@ -208,7 +204,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (HTML/CSS ENTERPRISE) ---
+# --- GENERADOR DEL PLANOGRAMA (HTML/CSS ENTERPRISE CON BLOQUES COLOR COMPLETOS) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -277,7 +273,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 part_fmt = format_pct(part_val)
                 stock_fmt = f"{stock_val:.2f}"
                 cob_fmt = f"{cob_val:.2f}"
-                estilo_cobertura = "color: #ef4444; font-weight: 700;" if cob_val >= 30 else ""
+                estilo_cobertura = "color: #ef4444; font-weight: 800;" if cob_val >= 30 else ""
                 
                 if es_realograma:
                     link_foto = str(it.get("Links de fotos", ""))
@@ -300,25 +296,24 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                     clase_wrapper = f"sku-item sku-group {clase_alerta}"
                     estilo_wrapper = ""
                 else:
-                    bg_color, text_color, cat_leyenda = obtener_estado_y_color(estado, stock_val, dark=es_oscuro)
-                    border_color = "rgba(255,255,255,0.08)" if es_oscuro else "rgba(0,0,0,0.08)"
+                    bg_color, border_color, text_color, name_color, cat_leyenda = obtener_estado_y_color(estado, stock_val, dark=es_oscuro)
                     
                     html_interno = f"""
                       <div class="sku-header-row">
-                        <span class="sku-pos">{pos}</span>
-                        <span class="sku-caras-tag">{caras}C</span>
+                        <span class="sku-pos" style="color: {text_color}; font-weight: 800;">{pos}</span>
+                        <span class="sku-caras-tag" style="color: {text_color}; background: rgba(0,0,0,0.25); border: 1px solid {text_color}44;">{caras}C</span>
                       </div>
                       <div class="sku-details">
-                        <span class="sku-brand-text">{marca}</span>
-                        <span class="sku-name-text">{nombre}</span>
+                        <span class="sku-brand-text" style="color: {text_color};">{marca}</span>
+                        <span class="sku-name-text" style="color: {name_color};">{nombre}</span>
                       </div>
-                      <div class="sku-bottom-bar">
-                        <span class="sku-stock-pill" style="color: {text_color}; background-color: {bg_color}; border: 1px solid {text_color}33;">Stock: {stock_fmt}</span>
+                      <div class="sku-bottom-bar" style="border-top: 1px dashed {border_color};">
+                        <span class="sku-stock-pill" style="color: {text_color}; font-weight: 800;">Stk: {stock_fmt}</span>
                         <span class="sku-cap-val" style="{estilo_cobertura}">Cob: {cob_fmt}</span>
                       </div>
                     """
                     clase_wrapper = "sku-item sku-card"
-                    estilo_wrapper = f"flex: {caras}; border: 1px solid {border_color};"
+                    estilo_wrapper = f"flex: {caras}; background-color: {bg_color}; border: 1.5px solid {border_color};"
 
                 cards_html += f"""
                 <div class="{clase_wrapper}" style="{estilo_wrapper}" 
@@ -368,10 +363,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     options_cuerpos = "".join([f'<option value="{k.replace("Cuerpo ", "")}">{k}</option>' for k in cuerpos.keys()])
     options_niveles = "".join([f'<option value="{int(lvl)}">Nivel {int(lvl)}</option>' for lvl in todos_niveles])
 
-    # Variables CSS incrustadas según modo claro/oscuro
     app_bg = "#090d16" if es_oscuro else "#f8fafc"
     surface_bg = "#0f172a" if es_oscuro else "#ffffff"
-    card_bg = "#131e36" if es_oscuro else "#ffffff"
     border_col = "#1e293b" if es_oscuro else "#e2e8f0"
     text_primary = "#f8fafc" if es_oscuro else "#0f172a"
     text_secondary = "#94a3b8" if es_oscuro else "#64748b"
@@ -398,7 +391,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
         
         .main-container {{ 
-          padding: 8px 10px; 
+          padding: 6px 8px; 
           height: 100vh; 
           display: flex; 
           flex-direction: column; 
@@ -410,7 +403,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         ::-webkit-scrollbar-track {{ background: {surface_bg}; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
 
-        /* Top Status / Metric Header */
+        /* Top Bar */
         .saas-top-bar {{
           display: flex;
           align-items: center;
@@ -531,7 +524,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           border-radius: 20px; 
           cursor: pointer; 
           transition: all 0.15s ease; 
-          opacity: 0.85; 
+          opacity: 0.90; 
           outline: none; 
         }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.04); box-shadow: 0 0 0 2px #3b82f6 !important; }}
@@ -635,6 +628,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           transition: transform 0.2s ease-out;
         }}
 
+        /* SCROLL BIDIRECCIONAL COMPLETO DEL PLANOGRAMA */
         .aisle-container {{ 
           display: flex; 
           flex-direction: row; 
@@ -704,8 +698,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
         
+        /* BLOQUES DE PRODUCTOS CON COLORACIÓN COMPLETA VISIBLE */
         .sku-card {{ 
-          background: {card_bg};
           border-radius: 6px; 
           padding: 6px; 
           display: flex; 
@@ -713,24 +707,28 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           justify-content: space-between; 
           min-width: 95px; 
           position: relative; 
-          transition: all 0.2s; 
+          transition: transform 0.15s ease, box-shadow 0.15s ease; 
           cursor: pointer; 
           align-items: stretch; 
           flex-shrink: 0; 
-          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.15);
         }}
-        .sku-card.is-top {{ outline: 2px solid #f59e0b !important; outline-offset: -1px; }}
-        .sku-header-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }}
-        .sku-pos {{ font-size: 0.58rem; font-weight: 800; color: {text_secondary}; }}
-        .sku-caras-tag {{ background: {t["badge_bg"]}; color: {text_primary}; font-size: 0.52rem; font-weight: 800; padding: 1px 4px; border-radius: 4px; }}
+        .sku-card:hover {{
+          transform: translateY(-2px);
+          box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+        }}
+        .sku-card.is-top {{ outline: 2.5px solid #f59e0b !important; outline-offset: -1px; }}
+        .sku-header-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }}
+        .sku-pos {{ font-size: 0.60rem; font-weight: 900; }}
+        .sku-caras-tag {{ font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 4px; }}
         
         .sku-details {{ display: flex; flex-direction: column; gap: 2px; text-align: left; overflow: hidden; margin-bottom: 6px; }}
-        .sku-brand-text {{ font-size: 0.60rem; font-weight: 800; text-transform: uppercase; color: #3b82f6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-        .sku-name-text {{ font-size: 0.65rem; font-weight: 600; line-height: 1.15; color: {text_primary}; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }}
+        .sku-brand-text {{ font-size: 0.62rem; font-weight: 900; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.3px; }}
+        .sku-name-text {{ font-size: 0.66rem; font-weight: 700; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }}
         
-        .sku-bottom-bar {{ display: flex; justify-content: space-between; align-items: center; gap: 4px; }}
-        .sku-stock-pill {{ font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 4px; }}
-        .sku-cap-val {{ font-size: 0.58rem; font-weight: 700; color: {text_secondary}; }}
+        .sku-bottom-bar {{ display: flex; justify-content: space-between; align-items: center; gap: 4px; padding-top: 3px; }}
+        .sku-stock-pill {{ font-size: 0.58rem; }}
+        .sku-cap-val {{ font-size: 0.60rem; font-weight: 800; }}
         
         .shelf-bottom-rail {{ height: 4px; background: {border_col}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {surface_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
@@ -845,10 +843,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         <div class="legend-panel">
           <span class="legend-title">📍 Leyenda:</span>
           <div class="legend-chips">
-            <button class="legend-chip" data-filter="Bloqueado" style="--bg: {'#451a1a' if es_oscuro else '#fee2e2'}; --tc: {'#fca5a5' if es_oscuro else '#991b1b'};">Bloqueado</button>
-            <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'};">Sin Stock</button>
-            <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'};">Stock 1 a 5</button>
-            <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'};">Stock > 5</button>
+            <button class="legend-chip" data-filter="Bloqueado" style="--bg: {'#451a1a' if es_oscuro else '#fee2e2'}; --tc: {'#fca5a5' if es_oscuro else '#991b1b'}; --bd: 1px solid {'#7f1d1d' if es_oscuro else '#fca5a5'};">Bloqueado</button>
+            <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'}; --bd: 1px solid {'#7c2d12' if es_oscuro else '#fdba74'};">Sin Stock</button>
+            <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
+            <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
             <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
             <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
