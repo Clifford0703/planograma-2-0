@@ -42,7 +42,10 @@ theme_vars = {
         "input_border": "#1e3a8a",
         "input_text": "#ffffff",
         "popover_bg": "#111c30",
+        "popover_border": "#1e3a8a",
+        "popover_text": "#ffffff",
         "popover_hover": "#1e3a8a",
+        "popover_hover_text": "#60a5fa",
         "btn_bg": "#111c30",
         "btn_text": "#ffffff",
         "insight_green_bg": "rgba(16, 185, 129, 0.12)",
@@ -66,13 +69,16 @@ theme_vars = {
         "accent_purple": "#7c3aed",
         "accent_amber": "#d97706",
         "grid_color": "rgba(0, 0, 0, 0.06)",
-        "card_shadow": "0 2px 6px rgba(0,0,0,0.06)",
+        "card_shadow": "0 2px 6px rgba(0,0,0,0.05)",
         "plotly_text": "#334155",
         "input_bg": "#ffffff",
-        "input_border": "#2563eb",
+        "input_border": "#cbd5e1",
         "input_text": "#0f172a",
         "popover_bg": "#ffffff",
+        "popover_border": "#cbd5e1",
+        "popover_text": "#0f172a",
         "popover_hover": "#eff6ff",
+        "popover_hover_text": "#2563eb",
         "btn_bg": "#ffffff",
         "btn_text": "#0f172a",
         "insight_green_bg": "#dcfce7",
@@ -85,13 +91,12 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS FORZADA DE MÁXIMA ESPECIFICIDAD
+# INYECCIÓN CSS CON CONTROL TOTAL DE LA LISTA DESPLEGABLE
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         
-        /* FONDO GENERAL STREAMLIT */
-        html, body, .stApp, [data-testid="stAppViewContainer"], .main, section.main, [data-testid="stHeader"], [data-testid="stToolbar"] {{
+        html, body, .stApp, [data-testid="stAppViewContainer"], .main, section.main, [data-testid="stHeader"] {{
             background-color: {t["bg_app"]} !important;
             background: {t["bg_app"]} !important;
             color: {t["text_primary"]} !important;
@@ -110,28 +115,19 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* OVERRIDE TOTAL Y AGRESIVO DE SELECTBOXES EN STREAMLIT */
-        [data-testid="stSelectbox"],
-        [data-testid="stSelectbox"] > div,
-        [data-testid="stSelectbox"] div[data-baseweb="select"],
-        [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-        [data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
-        [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus,
-        [data-testid="stSelectbox"] [class*="st-emotion-cache"] {{
+        /* CAJA PRINCIPAL DE LA SEGMENTACIÓN */
+        [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
             background-color: {t["input_bg"]} !important;
             background: {t["input_bg"]} !important;
-            border-color: {t["input_border"]} !important;
-            color: {t["input_text"]} !important;
-        }}
-
-        [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
-            border: 2px solid {t["input_border"]} !important;
+            border: 1.5px solid {t["input_border"]} !important;
             border-radius: 6px !important;
             min-height: 38px !important;
             box-shadow: {t["card_shadow"]} !important;
         }}
         
-        [data-testid="stSelectbox"] * {{
+        [data-testid="stSelectbox"] div[data-baseweb="select"] span,
+        [data-testid="stSelectbox"] div[data-baseweb="select"] div,
+        [data-testid="stSelectbox"] div[data-baseweb="select"] input {{
             color: {t["input_text"]} !important;
             -webkit-text-fill-color: {t["input_text"]} !important;
             font-weight: 700 !important;
@@ -139,36 +135,45 @@ st.markdown(f"""
 
         [data-testid="stSelectbox"] svg {{
             fill: {t["text_secondary"]} !important;
-            color: {t["text_secondary"]} !important;
         }}
         
-        /* POPOVERS Y MENÚS DESPLEGABLES */
+        /* LISTA FLOTANTE QUE SE DESPLIEGA DEBAJO DE LA SEGMENTACIÓN (ROOT DOM PORTAL) */
         div[data-baseweb="popover"],
         div[data-baseweb="popover"] > div,
         div[data-baseweb="menu"],
         div[data-baseweb="popover"] ul,
+        ul[role="listbox"],
         div[data-baseweb="popover"] [class*="st-emotion-cache"] {{
             background-color: {t["popover_bg"]} !important;
             background: {t["popover_bg"]} !important;
-            color: {t["input_text"]} !important;
-            border: 1.5px solid {t["input_border"]} !important;
-            border-radius: 6px !important;
+            border: 1px solid {t["popover_border"]} !important;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
         }}
         
-        li[role="option"] {{
+        div[data-baseweb="popover"] li,
+        div[data-baseweb="menu"] li,
+        li[role="option"],
+        ul[role="listbox"] li {{
             background-color: {t["popover_bg"]} !important;
             background: {t["popover_bg"]} !important;
-            color: {t["input_text"]} !important;
-            -webkit-text-fill-color: {t["input_text"]} !important;
+            color: {t["popover_text"]} !important;
+            -webkit-text-fill-color: {t["popover_text"]} !important;
             font-weight: 600 !important;
-            font-size: 0.85rem !important;
+            font-size: 0.86rem !important;
+            padding: 8px 14px !important;
         }}
         
-        li[role="option"]:hover, li[aria-selected="true"] {{
+        div[data-baseweb="popover"] li:hover,
+        div[data-baseweb="menu"] li:hover,
+        li[role="option"]:hover,
+        li[aria-selected="true"],
+        ul[role="listbox"] li:hover,
+        ul[role="listbox"] li[aria-selected="true"] {{
             background-color: {t["popover_hover"]} !important;
             background: {t["popover_hover"]} !important;
-            color: {t["accent"]} !important;
-            -webkit-text-fill-color: {t["accent"]} !important;
+            color: {t["popover_hover_text"]} !important;
+            -webkit-text-fill-color: {t["popover_hover_text"]} !important;
         }}
         
         /* BOTONES STREAMLIT */
@@ -288,11 +293,9 @@ st.markdown(f"""
         
         /* LABELS DE WIDGETS */
         .stSelectbox label, .stRadio label {{
-            color: {t["text_secondary"]} !important;
+            color: {t["text_primary"]} !important;
             font-weight: 800 !important;
-            font-size: 0.75rem !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.4px !important;
+            font-size: 0.80rem !important;
         }}
         
         /* PESTAÑAS (TABS) */
@@ -656,7 +659,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .filter-label {{ font-size: 0.68rem; font-weight: 800; color: {text_secondary}; text-transform: uppercase; letter-spacing: 0.4px; }}
         .filter-select, .filter-input {{ 
           background: {input_bg}; 
-          border: 2px solid {border_col}; 
+          border: 1.5px solid {border_col}; 
           color: {text_primary}; 
           padding: 6px 10px; 
           border-radius: 6px; 
@@ -758,7 +761,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
         .fs-cat-select {{
           background: {input_bg};
-          border: 2px solid {border_col};
+          border: 1.5px solid {border_col};
           color: {text_primary};
           padding: 5px 10px;
           border-radius: 6px;
@@ -1767,7 +1770,7 @@ if df_raw is not None:
             </div>
         """, unsafe_allow_html=True)
         
-        # --- FILTRO POR CATEGORÍA ESTILIZADO CON EMOJI ---
+        # --- FILTRO POR CATEGORÍA ---
         cats_disponibles = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
         col_seg_cat, col_sp_info = st.columns([3, 7])
         with col_seg_cat:
