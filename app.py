@@ -70,7 +70,7 @@ theme_vars = {
         "accent_amber": "#d97706",
         "grid_color": "rgba(0, 0, 0, 0.06)",
         "card_shadow": "0 2px 6px rgba(0,0,0,0.05)",
-        "plotly_text": "#334155",
+        "plotly_text": "#0f172a",  # Texto oscuro nítido en modo claro para los ejes de gráficos
         "input_bg": "#ffffff",
         "input_border": "#cbd5e1",
         "input_text": "#0f172a",
@@ -1722,15 +1722,14 @@ if df_raw is not None:
     # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO Y REESTRUCTURADO) ---
     # =========================================================================
     with tab2:
-        # Inicialización de estados locales independientes para el Dashboard
         if "dash_orden" not in st.session_state:
             st.session_state.dash_orden = "Secuencial (Cuerpo 1..N)"
         if "dash_analizar" not in st.session_state:
             st.session_state.dash_analizar = "Categoría"
 
-        # --- FILTROS EXCLUSIVOS DE ESTA PESTAÑA EN EL ORDEN SOLICITADO: Departamento -> Sección -> Categoría -> Grupo de artículo -> Marca ---
         st.markdown(f"<div style='font-size: 0.85rem; font-weight: 800; color: {t['text_secondary']}; margin-bottom: 8px; text-transform: uppercase;'>🎯 Filtros Operativos del Dashboard Analítico</div>", unsafe_allow_html=True)
         
+        # Orden exacto solicitado: Departamento -> Sección -> Categoría -> Grupo de artículo -> Marca
         col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns(5)
         
         with col_f1:
@@ -1749,7 +1748,7 @@ if df_raw is not None:
             marcas_disp = sorted([m for m in df_unicos['Marca'].dropna().unique() if m not in ['S/M', 'nan', '']])
             filtro_marca = st.selectbox("🏷️ Marca", ["Todas"] + marcas_disp, key="dash_marca_sel")
 
-        # Aplicación exclusiva de los filtros del dashboard a los datos locales
+        # Aislamiento total de los filtros en la pestaña 2 (no afectan a Pestaña 1)
         df_dash_base = df_base.copy()
         df_dash_unicos = df_unicos.copy()
 
@@ -1771,7 +1770,6 @@ if df_raw is not None:
 
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
-        # --- CÁLCULO DE KPIS CON FILTROS LOCALES ---
         ventas_globales = df_dash_unicos['Venta_Num'].sum()
         margen_global = df_dash_unicos['Margen_Num'].sum()
         margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
@@ -1814,11 +1812,10 @@ if df_raw is not None:
             with h_c1:
                 st.markdown(f"""
                     <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px;">
-                        📈 Rendimiento Comercial por Cuerpo
+                        📈 Rendimiento Comercial por Cuerpo <span style="font-size: 0.68rem; color: {t['text_secondary']}; font-weight: 700;">(VENTAS vs MARGEN)</span>
                     </div>
                 """, unsafe_allow_html=True)
             with h_c2:
-                # Botones de ordenamiento directos y limpios
                 b_s, b_v, b_m = st.columns(3)
                 with b_s:
                     if st.button("🔢", key="btn_ord_seq", help="Secuencial", use_container_width=True):
@@ -1906,7 +1903,8 @@ if df_raw is not None:
                 hovermode="x unified",
                 legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
                 margin=dict(t=10, b=10, l=10, r=10),
-                xaxis=dict(showgrid=False, color=t["plotly_text"], tickfont=dict(size=10, weight='bold')),
+                # Eje X con color dinámico de alta legibilidad en modo claro y oscuro
+                xaxis=dict(showgrid=False, color=t["plotly_text"], tickfont=dict(size=10, weight='bold', color=t["plotly_text"])),
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["plotly_text"], zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color=t["accent_green"], zeroline=False)
             )
@@ -1954,7 +1952,7 @@ if df_raw is not None:
             )])
             
             fig_pie.update_layout(
-                showlegend=False,  # Sin leyenda inferior masiva, limpio con tooltip flotante
+                showlegend=False,
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 margin=dict(t=10, b=10, l=10, r=10),
@@ -2059,7 +2057,7 @@ if df_raw is not None:
                 hovermode="x unified",
                 legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
                 margin=dict(t=20, b=20, l=10, r=10),
-                xaxis=dict(showgrid=False, color=t["plotly_text"], tickfont=dict(size=10, weight='bold')),
+                xaxis=dict(showgrid=False, color=t["plotly_text"], tickfont=dict(size=10, weight='bold', color=t["plotly_text"])),
                 yaxis=dict(title="Participación (%)", showgrid=True, gridcolor=t["grid_color"], color=t["plotly_text"], tickformat=".0%")
             )
             
