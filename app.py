@@ -8,31 +8,155 @@ import plotly.express as px
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
-    page_title="Planograma 2.0 - Realograma",
-    page_icon="🏪",
+    page_title="Planograma 2.0 | Retail Analytics",
+    page_icon="🏬",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-st.markdown("""
+# --- GESTIÓN DE TEMA GLOBAL (LIGHT / DARK) ---
+if "tema_actual" not in st.session_state:
+    st.session_state.tema_actual = "dark"
+
+es_oscuro = st.session_state.tema_actual == "dark"
+
+# --- DESIGN SYSTEM VARIABLES (STREAMLIT UI) ---
+theme_vars = {
+    "dark": {
+        "bg_app": "#090d16",
+        "bg_surface": "#0f172a",
+        "bg_card": "#131e36",
+        "border": "#1e293b",
+        "border_focus": "#3b82f6",
+        "text_primary": "#f8fafc",
+        "text_secondary": "#94a3b8",
+        "text_muted": "#64748b",
+        "accent": "#3b82f6",
+        "accent_hover": "#2563eb",
+        "badge_bg": "#1e293b",
+        "grid_color": "rgba(255, 255, 255, 0.06)",
+        "plotly_template": "plotly_dark",
+    },
+    "light": {
+        "bg_app": "#f8fafc",
+        "bg_surface": "#ffffff",
+        "bg_card": "#ffffff",
+        "border": "#e2e8f0",
+        "border_focus": "#2563eb",
+        "text_primary": "#0f172a",
+        "text_secondary": "#475569",
+        "text_muted": "#94a3b8",
+        "accent": "#2563eb",
+        "accent_hover": "#1d4ed8",
+        "badge_bg": "#f1f5f9",
+        "grid_color": "rgba(0, 0, 0, 0.06)",
+        "plotly_template": "plotly_white",
+    }
+}
+t = theme_vars[st.session_state.tema_actual]
+
+st.markdown(f"""
     <style>
-        .block-container {
-            padding-left: 1.2rem !important;
-            padding-right: 1.2rem !important;
-            padding-top: 1.5rem !important; 
-            padding-bottom: 0rem !important;
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        
+        html, body, [class*="css"] {{
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+            background-color: {t["bg_app"]} !important;
+            color: {t["text_primary"]} !important;
+        }}
+        
+        .block-container {{
+            padding-left: 1.5rem !important;
+            padding-right: 1.5rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 2rem !important;
             max-width: 100% !important;
-        }
-        .fin-kpi-container { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-        .fin-kpi-card { flex: 1; min-width: 200px; background: linear-gradient(145deg, #111c30 0%, #0f172a 100%); border-left: 5px solid #3b82f6; border-radius: 8px; padding: 18px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: center; }
-        .fin-kpi-title { font-size: 0.80rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px; }
-        .fin-kpi-val { font-size: 2.0rem; font-weight: 900; color: #ffffff; line-height: 1; }
-        .fin-kpi-card.green-theme { border-left-color: #10b981; }
-        .fin-kpi-card.purple-theme { border-left-color: #8b5cf6; }
+        }}
+        
+        /* SaaS Header & Cards */
+        .saas-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: {t["bg_surface"]};
+            border: 1px solid {t["border"]};
+            border-radius: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }}
+        
+        .fin-kpi-container {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }}
+        
+        .fin-kpi-card {{
+            background: {t["bg_card"]};
+            border: 1px solid {t["border"]};
+            border-radius: 10px;
+            padding: 16px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }}
+        .fin-kpi-card:hover {{
+            border-color: {t["accent"]};
+            transform: translateY(-2px);
+        }}
+        
+        .fin-kpi-title {{
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: {t["text_secondary"]};
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }}
+        
+        .fin-kpi-val {{
+            font-size: 1.85rem;
+            font-weight: 900;
+            color: {t["text_primary"]};
+            line-height: 1.1;
+            font-feature-settings: "tnum";
+        }}
+        
+        /* St Tabs Customization */
+        .stTabs [data-baseweb="tab-list"] {{
+            gap: 8px;
+            background-color: {t["bg_surface"]};
+            padding: 6px;
+            border-radius: 10px;
+            border: 1px solid {t["border"]};
+        }}
+        
+        .stTabs [data-baseweb="tab"] {{
+            height: 38px;
+            padding: 0 18px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: {t["text_secondary"]};
+            background-color: transparent;
+            border: none !important;
+        }}
+        
+        .stTabs [aria-selected="true"] {{
+            background-color: {t["accent"]} !important;
+            color: #ffffff !important;
+        }}
     </style>
 """, unsafe_allow_html=True)
 
-# --- FUNCIONES DE APOYO Y LIMPIEZA ---
+# --- FUNCIONES AUXILIARES ---
 def safe_float(val, default=0.0):
     if pd.isna(val): return default
     try:
@@ -48,20 +172,32 @@ def format_pct(val):
 def clean_sku(val):
     if pd.isna(val): return ""
     s = str(val).strip()
-    if s.endswith('.0'):
-        s = s[:-2]
+    if s.endswith('.0'): s = s[:-2]
     return s
 
-def obtener_estado_y_color(estado, stock_val):
+def obtener_estado_y_color(estado, stock_val, dark=True):
     estado = str(estado).strip().upper()
     if estado == "B": 
-        return "#FFC7CE", "#9C0006", "Bloqueado"
+        bg = "#451a1a" if dark else "#fee2e2"
+        tc = "#fca5a5" if dark else "#991b1b"
+        return bg, tc, "Bloqueado"
     elif estado == "A":
-        if stock_val <= 0: return "#F4B084", "#833C0C", "Sin Stock"
-        elif stock_val <= 5: return "#FFFF99", "#8A5A00", "Stock Bajo"
-        else: return "#C6EFCE", "#006100", "Stock OK"
+        if stock_val <= 0: 
+            bg = "#431407" if dark else "#ffedd5"
+            tc = "#fdba74" if dark else "#9a3412"
+            return bg, tc, "Sin Stock"
+        elif stock_val <= 5: 
+            bg = "#422006" if dark else "#fef9c3"
+            tc = "#fde047" if dark else "#854d0e"
+            return bg, tc, "Stock Bajo"
+        else: 
+            bg = "#064e3b" if dark else "#dcfce7"
+            tc = "#6ee7b7" if dark else "#166534"
+            return bg, tc, "Stock OK"
     else: 
-        return "#D9D9D9", "#000000", "Desconocido"
+        bg = "#1e293b" if dark else "#f1f5f9"
+        tc = "#94a3b8" if dark else "#475569"
+        return bg, tc, "Desconocido"
 
 def obtener_alerta_css(estado, stock_val):
     estado = str(estado).strip().upper()
@@ -72,8 +208,8 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR HTML INTERACTIVO ---
-def generar_html_pasillo_interactivo(df, es_realograma=False):
+# --- GENERADOR DEL PLANOGRAMA (HTML/CSS ENTERPRISE) ---
+def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
     df['TieneOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').notna()
@@ -141,12 +277,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
                 part_fmt = format_pct(part_val)
                 stock_fmt = f"{stock_val:.2f}"
                 cob_fmt = f"{cob_val:.2f}"
-                estilo_cobertura = "color: red; font-weight: bold;" if cob_val >= 30 else ""
+                estilo_cobertura = "color: #ef4444; font-weight: 700;" if cob_val >= 30 else ""
                 
                 if es_realograma:
                     link_foto = str(it.get("Links de fotos", ""))
                     if link_foto in ['nan', '', 'None']:
-                        link_foto = "https://via.placeholder.com/60x150.png/0f172a/94a3b8?text=Sin+Foto"
+                        link_foto = "https://via.placeholder.com/60x150.png/1e293b/94a3b8?text=Sin+Foto"
                     else:
                         link_foto = link_foto.replace("http://", "https://")
                     
@@ -164,22 +300,25 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
                     clase_wrapper = f"sku-item sku-group {clase_alerta}"
                     estilo_wrapper = ""
                 else:
-                    bg_color, text_color, cat_leyenda = obtener_estado_y_color(estado, stock_val)
+                    bg_color, text_color, cat_leyenda = obtener_estado_y_color(estado, stock_val, dark=es_oscuro)
+                    border_color = "rgba(255,255,255,0.08)" if es_oscuro else "rgba(0,0,0,0.08)"
+                    
                     html_interno = f"""
-                      <div class="sku-pos">{pos}</div>
-                      <div class="sku-caras-tag">{caras} C</div>
-                      <div class="sku-details">
-                        <span class="sku-brand-text" style="color: {text_color};">{marca}</span>
-                        <span class="sku-name-text" style="color: #000000;">{nombre}</span>
-                        <span style="font-size: 0.65rem; color: {text_color}; font-weight: 800; margin-top: 2px;">Stock: {stock_fmt}</span>
+                      <div class="sku-header-row">
+                        <span class="sku-pos">{pos}</span>
+                        <span class="sku-caras-tag">{caras}C</span>
                       </div>
-                      <div class="sku-bottom-bar" style="border-top-color: {text_color};">
-                        <span class="sku-ean-code" style="color: {text_color};">EAN: {ean}</span>
+                      <div class="sku-details">
+                        <span class="sku-brand-text">{marca}</span>
+                        <span class="sku-name-text">{nombre}</span>
+                      </div>
+                      <div class="sku-bottom-bar">
+                        <span class="sku-stock-pill" style="color: {text_color}; background-color: {bg_color}; border: 1px solid {text_color}33;">Stock: {stock_fmt}</span>
                         <span class="sku-cap-val" style="{estilo_cobertura}">Cob: {cob_fmt}</span>
                       </div>
                     """
                     clase_wrapper = "sku-item sku-card"
-                    estilo_wrapper = f"flex: {caras}; background-color: {bg_color}; border: 1px solid #7f7f7f;"
+                    estilo_wrapper = f"flex: {caras}; border: 1px solid {border_color};"
 
                 cards_html += f"""
                 <div class="{clase_wrapper}" style="{estilo_wrapper}" 
@@ -187,7 +326,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
                      data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_val}" data-part="{part_fmt}" 
                      data-cod="{cod_real}" data-cat="{cat_leyenda}" 
                      data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
-                     title="Clic para ver detalles de {nombre}">
+                     title="Detalles: {nombre}">
                   {html_interno}
                 </div>
                 """
@@ -210,12 +349,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
             </div>
             """
 
-        subtitulo_cat = f'<div class="bay-subcat">{cat_predominante}</div>' if cat_predominante else ''
+        subtitulo_cat = f'<span class="bay-subcat">{cat_predominante}</span>' if cat_predominante else ''
 
         html_cuerpos += f"""
         <div class="bay-column" data-module="{cuerpo_num}">
           <div class="bay-title">
-            <span>{cuerpo_nombre.upper()}</span>
+            <span class="bay-main-title">{cuerpo_nombre.upper()}</span>
             {subtitulo_cat}
           </div>
           <div class="bay-shelves">
@@ -229,6 +368,15 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
     options_cuerpos = "".join([f'<option value="{k.replace("Cuerpo ", "")}">{k}</option>' for k in cuerpos.keys()])
     options_niveles = "".join([f'<option value="{int(lvl)}">Nivel {int(lvl)}</option>' for lvl in todos_niveles])
 
+    # Variables CSS incrustadas según modo claro/oscuro
+    app_bg = "#090d16" if es_oscuro else "#f8fafc"
+    surface_bg = "#0f172a" if es_oscuro else "#ffffff"
+    card_bg = "#131e36" if es_oscuro else "#ffffff"
+    border_col = "#1e293b" if es_oscuro else "#e2e8f0"
+    text_primary = "#f8fafc" if es_oscuro else "#0f172a"
+    text_secondary = "#94a3b8" if es_oscuro else "#64748b"
+    input_bg = "#1e293b" if es_oscuro else "#ffffff"
+
     return f"""
     <!DOCTYPE html>
     <html lang="es">
@@ -236,11 +384,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
       <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         * {{ box-sizing: border-box; }}
+        
         body, html {{ 
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-          background-color: #070d19; 
-          color: #fff; 
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+          background-color: {app_bg}; 
+          color: {text_primary}; 
           margin: 0; 
           padding: 0; 
           height: 100vh; 
@@ -248,7 +398,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         }}
         
         .main-container {{ 
-          padding: 6px 8px; 
+          padding: 8px 10px; 
           height: 100vh; 
           display: flex; 
           flex-direction: column; 
@@ -256,34 +406,135 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           overflow: hidden;
         }}
 
-        ::-webkit-scrollbar {{ height: 8px; width: 8px; }}
-        ::-webkit-scrollbar-track {{ background: #0f172a; border-radius: 4px; }}
+        ::-webkit-scrollbar {{ height: 6px; width: 6px; }}
+        ::-webkit-scrollbar-track {{ background: {surface_bg}; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
-        ::-webkit-scrollbar-thumb:hover {{ background: #2563eb; }}
+
+        /* Top Status / Metric Header */
+        .saas-top-bar {{
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: {surface_bg};
+          border: 1px solid {border_col};
+          border-radius: 8px;
+          padding: 8px 14px;
+          margin-bottom: 8px;
+          flex-shrink: 0;
+        }}
+        
+        .top-highlight-badge {{
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: {text_primary};
+        }}
 
         /* KPI CONTAINER */
-        .kpi-container {{ display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; justify-content: center; flex-shrink: 0; }}
-        .kpi-card {{ flex: 1; min-width: 105px; background: #111c30; border: 1px solid #1e3a8a; border-radius: 6px; padding: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.4); }}
-        .kpi-title {{ font-size: 0.60rem; font-weight: 800; color: #93c5fd; text-transform: uppercase; margin-bottom: 2px; display: block; letter-spacing: 0.5px; }}
-        .kpi-val {{ font-size: 1.35rem; font-weight: 900; line-height: 1; display: block; }}
+        .kpi-container {{ 
+          display: flex; 
+          gap: 8px; 
+          margin-bottom: 8px; 
+          flex-wrap: wrap; 
+          justify-content: space-between; 
+          flex-shrink: 0; 
+        }}
+        .kpi-card {{ 
+          flex: 1; 
+          min-width: 100px; 
+          background: {surface_bg}; 
+          border: 1px solid {border_col}; 
+          border-radius: 8px; 
+          padding: 8px 12px; 
+          text-align: left; 
+          box-shadow: 0 1px 2px rgba(0,0,0,0.03); 
+        }}
+        .kpi-title {{ font-size: 0.62rem; font-weight: 700; color: {text_secondary}; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px; }}
+        .kpi-val {{ font-size: 1.35rem; font-weight: 900; line-height: 1.1; color: {text_primary}; font-feature-settings: "tnum"; }}
         
         /* FILTROS */
-        .filter-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; flex-shrink: 0; }}
+        .filter-panel {{ 
+          background: {surface_bg}; 
+          border: 1px solid {border_col}; 
+          border-radius: 8px; 
+          padding: 8px 12px; 
+          margin-bottom: 8px; 
+          display: flex; 
+          flex-wrap: wrap; 
+          gap: 8px; 
+          align-items: flex-end; 
+          flex-shrink: 0; 
+        }}
         .filter-group {{ display: flex; flex-direction: column; gap: 3px; flex-grow: 1; }}
-        .filter-label {{ font-size: 0.65rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; }}
-        .filter-select, .filter-input {{ background: #ffffff; border: 2px solid #3b82f6; color: #0f172a; padding: 4px 8px; border-radius: 4px; font-size: 0.80rem; font-weight: 600; outline: none; width: 100%; min-width: 110px; }}
+        .filter-label {{ font-size: 0.65rem; font-weight: 700; color: {text_secondary}; text-transform: uppercase; }}
+        .filter-select, .filter-input {{ 
+          background: {input_bg}; 
+          border: 1px solid {border_col}; 
+          color: {text_primary}; 
+          padding: 6px 10px; 
+          border-radius: 6px; 
+          font-size: 0.80rem; 
+          font-weight: 500; 
+          outline: none; 
+          width: 100%; 
+          min-width: 120px; 
+          transition: border-color 0.2s;
+        }}
+        .filter-select:focus, .filter-input:focus {{
+          border-color: #3b82f6;
+        }}
         .btn-group {{ display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; align-items: center; }}
         
-        .filter-btn-reset {{ background: #ef4444; border: none; color: white; font-weight: 700; font-size: 0.72rem; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }}
-        .filter-btn-print {{ background: #10b981; border: none; color: white; font-weight: 700; font-size: 0.72rem; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }}
-        .filter-btn-fullscreen {{ background: #3b82f6; border: none; color: white; font-weight: 700; font-size: 0.72rem; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: background 0.2s; }}
+        .btn-saas {{ 
+          border: none; 
+          font-weight: 700; 
+          font-size: 0.75rem; 
+          padding: 7px 14px; 
+          border-radius: 6px; 
+          cursor: pointer; 
+          transition: all 0.2s ease; 
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }}
+        .btn-reset {{ background: #ef44441a; color: #ef4444; border: 1px solid #ef444433; }}
+        .btn-reset:hover {{ background: #ef4444; color: #fff; }}
+        .btn-print {{ background: #10b9811a; color: #10b981; border: 1px solid #10b98133; }}
+        .btn-print:hover {{ background: #10b981; color: #fff; }}
+        .btn-fullscreen {{ background: #3b82f61a; color: #3b82f6; border: 1px solid #3b82f633; }}
+        .btn-fullscreen:hover {{ background: #3b82f6; color: #fff; }}
         
         /* LEYENDA */
-        .legend-panel {{ background: #111c30; border: 1px solid #1e3a8a; border-radius: 6px; padding: 6px 12px; margin-bottom: 8px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0; }}
-        .legend-title {{ font-size: 0.70rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-right: 6px; }}
+        .legend-panel {{ 
+          background: {surface_bg}; 
+          border: 1px solid {border_col}; 
+          border-radius: 8px; 
+          padding: 6px 12px; 
+          margin-bottom: 8px; 
+          display: flex; 
+          align-items: center; 
+          flex-wrap: wrap; 
+          gap: 8px; 
+          flex-shrink: 0; 
+        }}
+        .legend-title {{ font-size: 0.68rem; font-weight: 700; color: {text_secondary}; text-transform: uppercase; margin-right: 4px; }}
         .legend-chips {{ display: flex; flex-wrap: wrap; gap: 6px; }}
-        .legend-chip {{ background: var(--bg); color: var(--tc); border: var(--bd, 1px solid transparent); font-weight: 700; font-size: 0.65rem; padding: 4px 8px; border-radius: 16px; cursor: pointer; transition: all 0.2s; opacity: 0.85; outline: none; }}
-        .legend-chip.active {{ opacity: 1; transform: scale(1.05); box-shadow: 0 0 10px rgba(59, 130, 246, 0.9); border: 2px solid #3b82f6 !important; }}
+        .legend-chip {{ 
+          background: var(--bg); 
+          color: var(--tc); 
+          border: var(--bd, 1px solid transparent); 
+          font-weight: 700; 
+          font-size: 0.65rem; 
+          padding: 4px 10px; 
+          border-radius: 20px; 
+          cursor: pointer; 
+          transition: all 0.15s ease; 
+          opacity: 0.85; 
+          outline: none; 
+        }}
+        .legend-chip.active {{ opacity: 1; transform: scale(1.04); box-shadow: 0 0 0 2px #3b82f6 !important; }}
         
         /* CONTENEDOR PRINCIPAL DEL PLANOGRAMA */
         .aisle-wrapper {{ 
@@ -293,30 +544,29 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           position: relative; 
           flex: 1;
           min-height: 0;
-          background: #0b1324;
-          border-radius: 8px;
-          border: 1.5px solid #1e293b;
+          background: {surface_bg};
+          border-radius: 10px;
+          border: 1px solid {border_col};
           padding: 0;
           overflow: hidden;
         }}
 
-        /* LEYENDA SUPERIOR EN PANTALLA COMPLETA: MÁS ALTA Y CON FILTRO DE CATEGORÍA */
+        /* LEYENDA SUPERIOR EN PANTALLA COMPLETA */
         .fullscreen-legend-bar {{
           display: none;
           position: sticky;
           top: 0;
           left: 0;
           right: 0;
-          background: rgba(15, 23, 42, 0.98);
-          border-bottom: 3px solid #3b82f6;
-          padding: 14px 24px;
+          background: {surface_bg};
+          border-bottom: 1px solid {border_col};
+          padding: 12px 20px;
           z-index: 10000;
           backdrop-filter: blur(8px);
           align-items: center;
-          gap: 15px;
+          gap: 12px;
           overflow-x: auto;
           white-space: nowrap;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.7);
         }}
         
         .fs-cat-wrapper {{
@@ -325,26 +575,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           gap: 8px;
           margin-left: auto;
         }}
-        .fs-cat-label {{
-          font-size: 0.78rem;
-          font-weight: 800;
-          color: #93c5fd;
-          text-transform: uppercase;
-        }}
         .fs-cat-select {{
-          background: #ffffff;
-          border: 2px solid #3b82f6;
-          color: #0f172a;
+          background: {input_bg};
+          border: 1px solid {border_col};
+          color: {text_primary};
           padding: 5px 10px;
-          border-radius: 4px;
-          font-size: 0.82rem;
-          font-weight: 700;
+          border-radius: 6px;
+          font-size: 0.80rem;
+          font-weight: 600;
           outline: none;
-          min-width: 150px;
         }}
         
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
-          background: #070d19 !important;
+          background: {app_bg} !important;
           width: 100vw !important;
           height: 100vh !important;
           padding: 0 !important;
@@ -355,29 +598,28 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           display: flex !important;
         }}
 
-        /* FLECHAS FLOTANTES DINÁMICAS (DESKTOP) */
+        /* FLECHAS FLOTANTES DINÁMICAS */
         .nav-btn {{ 
           position: absolute;
           top: 50%;
           transform: translateY(-50%);
-          background: rgba(17, 28, 48, 0.92); 
-          color: #60a5fa; 
-          border: 2px solid #3b82f6; 
+          background: {surface_bg}; 
+          color: {text_primary}; 
+          border: 1px solid {border_col}; 
           border-radius: 50%; 
-          width: 44px; 
-          height: 44px;
-          font-size: 1.5rem; 
-          font-weight: 900; 
+          width: 40px; 
+          height: 40px;
+          font-size: 1.2rem; 
+          font-weight: 700; 
           cursor: pointer; 
           z-index: 100; 
           display: flex; 
           align-items: center; 
           justify-content: center; 
-          box-shadow: 0 4px 18px rgba(0,0,0,0.8); 
-          backdrop-filter: blur(6px);
-          transition: transform 0.2s, background 0.2s;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+          transition: all 0.2s;
         }}
-        .nav-btn:hover {{ background: #1e3a8a; color: #ffffff; transform: translateY(-50%) scale(1.1); }}
+        .nav-btn:hover {{ background: {t["accent"]}; color: #ffffff; border-color: {t["accent"]}; transform: translateY(-50%) scale(1.08); }}
         .nav-btn-prev {{ left: 10px; }}
         .nav-btn-next {{ right: 10px; }}
         .nav-btn:disabled {{ opacity: 0; pointer-events: none; }}
@@ -393,14 +635,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           transition: transform 0.2s ease-out;
         }}
 
-        /* SCROLL BIDIRECCIONAL COMPLETO DEL PLANOGRAMA */
         .aisle-container {{ 
           display: flex; 
           flex-direction: row; 
           gap: 16px; 
-          background: #0f172a; 
-          border-radius: 8px; 
-          padding: 12px 40px; 
+          background: {app_bg}; 
+          padding: 14px 45px; 
           overflow-x: auto; 
           overflow-y: auto; 
           scroll-behavior: smooth; 
@@ -413,67 +653,95 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         .bay-column {{ 
           flex: 0 0 100%; 
           width: 100%; 
-          background: #111c30; 
-          border: 1.5px solid #1e293b; 
-          border-radius: 6px; 
+          background: {surface_bg}; 
+          border: 1px solid {border_col}; 
+          border-radius: 8px; 
           display: flex; 
           flex-direction: column; 
           height: fit-content; 
           scroll-snap-align: center; 
           padding-bottom: 12px; 
           box-sizing: border-box;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.04);
         }}
         .bay-column.hidden {{ display: none !important; }}
         
-        .bay-title {{ background: #1e3a8a; padding: 6px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 2px solid #3b82f6; border-radius: 4px 4px 0 0; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }}
-        .bay-subcat {{ font-size: 0.68rem; font-weight: 600; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.3px; }}
+        .bay-title {{ 
+          background: {surface_bg}; 
+          padding: 10px 14px; 
+          border-bottom: 1px solid {border_col}; 
+          border-radius: 8px 8px 0 0; 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          flex-shrink: 0; 
+        }}
+        .bay-main-title {{ font-size: 0.82rem; font-weight: 800; color: {text_primary}; letter-spacing: 0.5px; }}
+        .bay-subcat {{ font-size: 0.70rem; font-weight: 600; color: #3b82f6; text-transform: uppercase; }}
         
-        .bay-shelves {{ padding: 10px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }}
-        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 6px; transition: all 0.3s; }}
+        .bay-shelves {{ padding: 12px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }}
+        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 4px; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        .shelf-products {{ display: flex; flex-direction: row; gap: 4px; padding: 4px 6px; min-height: 95px; overflow-x: auto; padding-bottom: 4px; align-items: flex-end; justify-content: flex-start; }}
-        .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); z-index: 1; }}
+        .shelf-products {{ display: flex; flex-direction: row; gap: 6px; padding: 4px 6px; min-height: 95px; overflow-x: auto; padding-bottom: 4px; align-items: flex-end; justify-content: flex-start; }}
+        .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); }}
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
         
-        .shelf-base {{ height: 10px; background: linear-gradient(180deg, #fde047 0%, #ca8a04 100%); border-radius: 2px; box-shadow: 0 4px 6px rgba(0,0,0,0.6); display: flex; justify-content: center; position: relative; z-index: 5; margin-top: -2px; border-top: 1px solid #fef08a; border-bottom: 2px solid #854d0e; }}
-        .shelf-name-tag {{ position: absolute; top: 8px; background: rgba(0,0,0,0.7); color: #fef08a; font-size: 0.50rem; padding: 1px 5px; border-radius: 0 0 4px 4px; font-weight: 800; letter-spacing: 0.5px; }}
+        .shelf-base {{ height: 8px; background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%); border-radius: 2px; position: relative; z-index: 5; margin-top: -2px; }}
+        .shelf-name-tag {{ position: absolute; top: 6px; background: {surface_bg}; border: 1px solid {border_col}; color: {text_primary}; font-size: 0.52rem; padding: 1px 6px; border-radius: 4px; font-weight: 800; }}
         
         .sku-group {{ display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; transition: all 0.2s; z-index: 10; padding: 0 2px; flex-shrink: 0; }}
         .sku-images-wrapper {{ display: flex; flex-direction: row; align-items: flex-end; gap: 1px; }}
-        .sku-images-wrapper img {{ height: 85px; width: auto; max-width: 55px; object-fit: contain; filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.5)); transition: transform 0.2s; }}
-        .sku-group:hover .sku-images-wrapper img {{ transform: translateY(-4px); filter: drop-shadow(4px 8px 8px rgba(0,0,0,0.7)); }}
+        .sku-images-wrapper img {{ height: 85px; width: auto; max-width: 55px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); transition: transform 0.2s; }}
+        .sku-group:hover .sku-images-wrapper img {{ transform: translateY(-3px); }}
         
-        .sku-fleje {{ background: #ffffff; color: #000; border: 1px solid #64748b; font-size: 0.48rem; display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; z-index: 15; box-shadow: 0 2px 4px rgba(0,0,0,0.5); width: max-content; padding: 1px 2px; }}
-        .fleje-ean {{ font-weight: 600; font-family: monospace; letter-spacing: -0.5px; }}
-        .fleje-caras {{ font-weight: 900; background: #e2e8f0; width: 100%; text-align: center; border-top: 1px solid #cbd5e1; padding-top: 1px; color: #1e293b; }}
+        .sku-fleje {{ background: {surface_bg}; color: {text_primary}; border: 1px solid {border_col}; font-size: 0.48rem; display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; z-index: 15; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: max-content; padding: 1px 4px; border-radius: 2px; }}
+        .fleje-ean {{ font-weight: 600; font-family: monospace; }}
+        .fleje-caras {{ font-weight: 800; color: #3b82f6; }}
         
-        .alerta-bloqueado .sku-images-wrapper img {{ filter: grayscale(100%) opacity(0.4) drop-shadow(0 0 2px #fff); }}
-        .alerta-sinstock .sku-images-wrapper img {{ filter: drop-shadow(0 0 10px #ef4444) drop-shadow(0 0 5px #ef4444); }}
-        .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 8px #f59e0b); }}
-        .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1.05rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8)); z-index: 30; animation: float 2s ease-in-out infinite; }}
-        @keyframes float {{ 0% {{transform: translateY(0px);}} 50% {{transform: translateY(-4px);}} 100% {{transform: translateY(0px);}} }}
+        .alerta-bloqueado .sku-images-wrapper img {{ filter: grayscale(100%) opacity(0.4); }}
+        .alerta-sinstock .sku-images-wrapper img {{ filter: drop-shadow(0 0 8px #ef4444); }}
+        .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
+        .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
         
-        .sku-card {{ border-radius: 4px; padding: 5px; display: flex; flex-direction: column; justify-content: space-between; min-width: 90px; position: relative; transition: all 0.2s; cursor: pointer; align-items: stretch; flex-shrink: 0; outline: none; }}
-        .sku-card.is-top {{ outline: 2px solid #FFC000 !important; outline-offset: -1px; }}
-        .sku-pos {{ position: absolute; top: 3px; left: 3px; background: #0f172a; color: #fff; font-size: 0.58rem; font-weight: 800; width: 15px; height: 15px; display: flex; align-items: center; justify-content: center; border-radius: 2px; }}
-        .sku-caras-tag {{ position: absolute; top: 3px; right: 3px; background: rgba(255,255,255,0.9); color: #000; font-size: 0.52rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; }}
-        .sku-details {{ margin-top: 16px; display: flex; flex-direction: column; gap: 2px; text-align: center; overflow: hidden; }}
-        .sku-brand-text {{ font-size: 0.62rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-        .sku-name-text {{ font-size: 0.68rem; font-weight: 700; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }}
-        .sku-bottom-bar {{ margin-top: 3px; border-top: 1px dashed; padding-top: 2px; display: flex; justify-content: space-between; align-items: center; gap: 3px; }}
-        .sku-ean-code {{ font-size: 0.58rem; font-family: monospace; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1; }}
-        .sku-cap-val {{ font-size: 0.62rem; font-weight: 800; padding: 1px 3px; border-radius: 2px; flex-shrink: 0; }}
-        .shelf-bottom-rail {{ height: 6px; background: linear-gradient(180deg, #94a3b8 0%, #475569 100%); border-radius: 0 0 3px 3px; margin-top: 2px; }}
-        .shelf-info {{ background: rgba(30, 58, 138, 0.8); padding: 3px 6px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; border-left: 3px solid #60a5fa; }}
+        .sku-card {{ 
+          background: {card_bg};
+          border-radius: 6px; 
+          padding: 6px; 
+          display: flex; 
+          flex-direction: column; 
+          justify-content: space-between; 
+          min-width: 95px; 
+          position: relative; 
+          transition: all 0.2s; 
+          cursor: pointer; 
+          align-items: stretch; 
+          flex-shrink: 0; 
+          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }}
+        .sku-card.is-top {{ outline: 2px solid #f59e0b !important; outline-offset: -1px; }}
+        .sku-header-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }}
+        .sku-pos {{ font-size: 0.58rem; font-weight: 800; color: {text_secondary}; }}
+        .sku-caras-tag {{ background: {t["badge_bg"]}; color: {text_primary}; font-size: 0.52rem; font-weight: 800; padding: 1px 4px; border-radius: 4px; }}
         
-        /* MODAL OVERLAY: TOTALMENTE CENTRADO TANTO EN MODO ESTÁNDAR COMO EN PANTALLA COMPLETA */
+        .sku-details {{ display: flex; flex-direction: column; gap: 2px; text-align: left; overflow: hidden; margin-bottom: 6px; }}
+        .sku-brand-text {{ font-size: 0.60rem; font-weight: 800; text-transform: uppercase; color: #3b82f6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+        .sku-name-text {{ font-size: 0.65rem; font-weight: 600; line-height: 1.15; color: {text_primary}; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }}
+        
+        .sku-bottom-bar {{ display: flex; justify-content: space-between; align-items: center; gap: 4px; }}
+        .sku-stock-pill {{ font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 4px; }}
+        .sku-cap-val {{ font-size: 0.58rem; font-weight: 700; color: {text_secondary}; }}
+        
+        .shelf-bottom-rail {{ height: 4px; background: {border_col}; border-radius: 0 0 2px 2px; }}
+        .shelf-info {{ background: {surface_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
+        
+        /* MODAL OVERLAY ENTERPRISE */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important;
           width: 100vw !important;
           height: 100vh !important;
-          background: rgba(0,0,0,0.85) !important; 
+          background: rgba(0,0,0,0.65) !important; 
           z-index: 9999999 !important; 
           opacity: 0; 
           pointer-events: none; 
@@ -482,110 +750,83 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           align-items: center !important;
           justify-content: center !important;
           padding: 16px !important;
-          box-sizing: border-box !important;
+          backdrop-filter: blur(6px);
         }}
         .modal-overlay.active {{ opacity: 1 !important; pointer-events: auto !important; }}
         .modal-content {{ 
-          background: #1e293b !important; 
-          color: #fff !important; 
+          background: {surface_bg} !important; 
+          color: {text_primary} !important; 
           padding: 24px !important; 
-          border-radius: 10px !important; 
+          border-radius: 12px !important; 
           width: 90% !important; 
-          max-width: 450px !important; 
+          max-width: 440px !important; 
           max-height: 85vh !important; 
           overflow-y: auto !important; 
-          border: 2px solid #3b82f6 !important; 
-          box-shadow: 0 10px 40px rgba(0,0,0,0.9) !important; 
+          border: 1px solid {border_col} !important; 
+          box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important; 
           position: relative !important;
-          margin: auto !important;
         }}
-        .modal-close {{ position: absolute; top: 10px; right: 15px; font-size: 1.8rem; cursor: pointer; color: #94a3b8; font-weight: bold; line-height: 1; }}
-        .m-row {{ border-bottom: 1px solid #334155; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.85rem; }}
-        .m-label {{ font-weight: 700; color: #93c5fd; }}
-        .m-val {{ font-weight: 600; text-align: right; max-width: 65%; word-wrap: break-word; }}
+        .modal-close {{ position: absolute; top: 12px; right: 16px; font-size: 1.5rem; cursor: pointer; color: {text_secondary}; font-weight: 700; }}
+        .modal-close:hover {{ color: {text_primary}; }}
+        .m-row {{ border-bottom: 1px solid {border_col}; padding: 8px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
+        .m-label {{ font-weight: 600; color: {text_secondary}; }}
+        .m-val {{ font-weight: 700; text-align: right; max-width: 65%; font-feature-settings: "tnum"; }}
 
-        /* --- VISTA MÓVIL ESTRICTA --- */
+        /* --- RESPONSIVE MOBILE --- */
         @media (max-width: 768px) {{
             .nav-btn {{ display: none !important; }}
-            .aisle-container {{ 
-              padding: 8px 4px !important; 
-              touch-action: pan-x pan-y !important;
-            }}
-            .kpi-container {{
-              display: grid !important;
-              grid-template-columns: repeat(2, 1fr) !important;
-              gap: 6px !important;
-            }}
+            .aisle-container {{ padding: 8px 4px !important; touch-action: pan-x pan-y !important; }}
+            .kpi-container {{ display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }}
             .kpi-card {{ min-width: unset !important; }}
             .kpi-card:last-child {{ grid-column: 1 / -1 !important; }}
-            .bay-column {{
-              flex: 0 0 100% !important;
-              width: 100% !important;
-              max-width: 100% !important;
-              scroll-snap-align: center !important;
-            }}
-            .bay-shelves {{ gap: 8px !important; padding: 4px !important; }}
-            .shelf-products {{ min-height: 70px !important; padding: 2px !important; }}
-            .sku-card {{ min-width: 68px !important; padding: 3px !important; }}
-            .sku-images-wrapper img {{ height: 68px !important; max-width: 36px !important; }}
-        }}
-
-        @media print {{
-          @page {{ size: A4 portrait; margin: 5mm; }}
-          body, html, .main-container {{ background-color: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; height: 100% !important; overflow: hidden !important; }}
-          .filter-panel, .legend-panel, .modal-overlay, .nav-btn, .kpi-container, .top-panel {{ display: none !important; }}
-          .aisle-wrapper {{ display: block !important; width: 100% !important; height: 100% !important; border: none !important; }}
-          .aisle-container {{ display: block !important; width: 100% !important; height: 100% !important; background: transparent !important; border: none !important; padding: 0 !important; overflow: visible !important; }}
-          .bay-column {{ background: #fff !important; border: 3px solid #000 !important; width: 195mm !important; height: 280mm !important; max-width: 100% !important; page-break-inside: avoid; margin: 0 auto !important; display: flex !important; flex-direction: column !important; }}
-          .bay-column.hidden {{ display: none !important; }}
-          .bay-title {{ background: #e2e8f0 !important; color: #000 !important; border-bottom: 3px solid #000 !important; padding: 10px !important; font-size: 20pt !important; display: block; text-align: center; }}
-          .bay-subcat {{ color: #334155 !important; font-size: 14pt !important; display: block; }}
-          .bay-shelves {{ padding: 5px !important; gap: 15px !important; display: flex !important; flex-direction: column !important; flex-grow: 1 !important; justify-content: space-evenly !important; overflow: visible !important; height: 100% !important; }}
-          .shelf-row {{ background: transparent !important; display: flex !important; flex-direction: column !important; justify-content: flex-end !important; flex-grow: 1 !important; margin-bottom: 0 !important; padding-top: 5px !important; }}
-          .shelf-products {{ flex-grow: 0 !important; padding: 2px !important; gap: 2px !important; display: flex !important; align-items: flex-end !important; justify-content: center !important; overflow: visible !important; }}
-          .sku-images-wrapper img {{ height: 110px !important; max-width: 45px !important; filter: none !important; }}
-          .sku-fleje {{ font-size: 7pt !important; padding: 2px !important; margin-top: 1px !important; border: 1px solid #000 !important; }}
-          .fleje-ean {{ font-size: 7pt !important; font-weight: bold !important; }}
-          .fleje-caras {{ font-size: 8pt !important; font-weight: 900 !important; color: #000 !important; background: transparent !important; border-top: 1px solid #000 !important; }}
-          .shelf-base {{ height: 10px !important; background: #eab308 !important; border-bottom: 3px solid #000 !important; border-top: 1px solid #000 !important; box-shadow: none !important; margin-top: 0 !important; }}
-          .shelf-name-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; border-top: none !important; font-size: 8pt !important; top: 8px !important; padding: 1px 4px !important; font-weight: bold !important; }}
-          .top-badge::after {{ font-size: 14pt !important; top: -15px !important; filter: none !important; }}
-          .sku-card {{ background: #fff !important; border: 2px solid #000 !important; color: #000 !important; padding: 4px !important; display: flex !important; flex-direction: column !important; justify-content: space-between !important; flex-basis: 0 !important; flex-grow: 1 !important; min-width: unset !important; }}
-          .sku-pos, .sku-caras-tag {{ background: #fff !important; color: #000 !important; border: 1px solid #000 !important; font-size: 9pt !important; width: auto !important; height: auto !important; padding: 2px 4px !important; font-weight: bold !important; }}
-          .sku-details {{ margin-top: 15px !important; }}
-          .sku-brand-text {{ font-size: 10pt !important; color: #000 !important; display: block; font-weight: bold !important; }}
-          .sku-name-text {{ font-size: 11pt !important; color: #000 !important; -webkit-line-clamp: 4 !important; line-height: 1.2 !important; font-weight: bold !important; }}
-          .sku-bottom-bar {{ border-top: 2px dashed #000 !important; margin-top: auto !important; padding-top: 4px !important; }}
-          .sku-ean-code, .sku-cap-val, span {{ color: #000 !important; font-size: 9pt !important; }}
-          .shelf-info {{ background: #f1f5f9 !important; color: #000 !important; border-left: 5px solid #000 !important; font-size: 14pt !important; padding: 4px 8px !important; font-weight: 900 !important; }}
-          .shelf-caras-count {{ background: #e2e8f0 !important; color: #000 !important; font-size: 12pt !important; }}
+            .bay-column {{ flex: 0 0 100% !important; width: 100% !important; max-width: 100% !important; scroll-snap-align: center !important; }}
+            .shelf-products {{ min-height: 70px !important; }}
+            .sku-card {{ min-width: 75px !important; }}
+            .sku-images-wrapper img {{ height: 70px !important; max-width: 40px !important; }}
         }}
       </style>
     </head>
     <body>
       <div class="main-container" id="mainContainer">
 
-        <div class="top-panel" style="background: #111c30; border: 1px solid #1e3a8a; border-radius: 6px; padding: 8px 12px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-shrink: 0;">
-          <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 1.1rem;">🏆</span>
-              <label style="color: #93c5fd; font-weight: 700; font-size: 0.80rem; text-transform: uppercase; margin: 0;">Resaltar TOP Ventas:</label>
-              <input type="number" id="topNInput" value="5" min="1" max="500" style="background: #ffffff; border: 2px solid #3b82f6; border-radius: 4px; padding: 2px 6px; width: 60px; font-weight: bold; color: #0f172a; outline: none; font-size: 0.85rem;">
-              <span style="color: #94a3b8; font-size: 0.75rem; font-weight: bold;">SKUs</span>
-          </div>
-          <div id="topNInfo" style="color: #cbd5e1; font-size: 0.80rem; background: rgba(59,130,246,0.1); padding: 4px 10px; border-radius: 4px; border-left: 3px solid #3b82f6; flex-grow: 1;">
-              💡 Calculando...
+        <div id="productModal" class="modal-overlay">
+          <div class="modal-content" id="modalContent">
+            <span class="modal-close">&times;</span>
+            <h3 id="m-name" style="margin-top: 0; font-size: 1.05rem; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; line-height: 1.3;">Producto</h3>
+            <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod" style="font-family: monospace;"></span></div>
+            <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean" style="font-family: monospace;"></span></div>
+            <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
+            <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept"></span></div>
+            <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec"></span></div>
+            <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
+            <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga"></span></div>
+            <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
+            <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
+            <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
+            <div class="m-row" style="border-bottom: none;"><span class="m-label" style="color: #f59e0b; font-weight: 700;">★ TOP Ventas:</span><span class="m-val" id="m-top" style="color: #f59e0b; font-weight: 800;"></span></div>
           </div>
         </div>
 
-        <!-- TARJETAS KPIS -->
+        <div class="saas-top-bar">
+          <div class="top-highlight-badge">
+              <span>🏆</span>
+              <span style="font-size: 0.75rem; text-transform: uppercase;">Resaltar TOP Ventas:</span>
+              <input type="number" id="topNInput" value="5" min="1" max="500" class="filter-input" style="width: 55px; padding: 3px 6px; font-weight: bold; font-size: 0.8rem; text-align: center;">
+              <span style="color: {text_secondary}; font-size: 0.75rem;">SKUs</span>
+          </div>
+          <div id="topNInfo" style="color: {text_secondary}; font-size: 0.78rem; font-weight: 500;">
+              Calculando concentración...
+          </div>
+        </div>
+
         <div class="kpi-container">
-          <div class="kpi-card" style="border-bottom: 3px solid #3b82f6;"><span class="kpi-title">Total SKUs</span><span class="kpi-val" id="t-total" style="color: #fff;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 3px solid #FFC7CE;"><span class="kpi-title">Bloqueados</span><span class="kpi-val" id="t-bloq" style="color: #FFC7CE;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 3px solid #F4B084;"><span class="kpi-title">Sin Stock (0)</span><span class="kpi-val" id="t-sin" style="color: #F4B084;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 3px solid #FFFF99;"><span class="kpi-title">Stock Bajo (1-5)</span><span class="kpi-val" id="t-bajo" style="color: #FFFF99;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 3px solid #C6EFCE;"><span class="kpi-title">Stock OK (>5)</span><span class="kpi-val" id="t-ok" style="color: #C6EFCE;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 3px solid #ef4444;"><span class="kpi-title">Cob. Alta (≥30)</span><span class="kpi-val" id="t-cob" style="color: #ef4444;">0</span></div>
-          <div class="kpi-card" style="border-bottom: 3px solid #fbbf24;"><span class="kpi-title">★ Top Ventas</span><span class="kpi-val" id="t-top" style="color: #fbbf24;">0</span></div>
+          <div class="kpi-card" style="border-left: 3px solid #3b82f6;"><span class="kpi-title">Total SKUs</span><span class="kpi-val" id="t-total">0</span></div>
+          <div class="kpi-card" style="border-left: 3px solid #ef4444;"><span class="kpi-title">Bloqueados</span><span class="kpi-val" id="t-bloq" style="color: #ef4444;">0</span></div>
+          <div class="kpi-card" style="border-left: 3px solid #f97316;"><span class="kpi-title">Sin Stock (0)</span><span class="kpi-val" id="t-sin" style="color: #f97316;">0</span></div>
+          <div class="kpi-card" style="border-left: 3px solid #eab308;"><span class="kpi-title">Stock Bajo (1-5)</span><span class="kpi-val" id="t-bajo" style="color: #eab308;">0</span></div>
+          <div class="kpi-card" style="border-left: 3px solid #10b981;"><span class="kpi-title">Stock OK (>5)</span><span class="kpi-val" id="t-ok" style="color: #10b981;">0</span></div>
+          <div class="kpi-card" style="border-left: 3px solid #ec4899;"><span class="kpi-title">Cob. Alta (≥30)</span><span class="kpi-val" id="t-cob" style="color: #ec4899;">0</span></div>
+          <div class="kpi-card" style="border-left: 3px solid #f59e0b;"><span class="kpi-title">★ Top Ventas</span><span class="kpi-val" id="t-top" style="color: #f59e0b;">0</span></div>
         </div>
 
         <div class="filter-panel">
@@ -595,67 +836,45 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           <div class="filter-group"><span class="filter-label">📦 Cuerpo</span><select id="baySelect" class="filter-select"><option value="ALL">Todos</option>{options_cuerpos}</select></div>
           <div class="filter-group"><span class="filter-label">📶 Nivel</span><select id="levelSelect" class="filter-select"><option value="ALL">Todos</option>{options_niveles}</select></div>
           <div class="btn-group">
-            <button id="fullscreenBtn" class="filter-btn-fullscreen" title="Expandir a Pantalla Completa">⛶ Pantalla Completa</button>
-            <button id="resetBtn" class="filter-btn-reset">Restablecer</button>
-            <button type="button" id="printBayBtn" class="filter-btn-print" title="Imprime el cuerpo visible optimizado en A4">🖨️ Imprimir</button>
+            <button id="fullscreenBtn" class="btn-saas btn-fullscreen" title="Pantalla Completa">⛶ Pantalla Completa</button>
+            <button id="resetBtn" class="btn-saas btn-reset">Restablecer</button>
+            <button type="button" id="printBayBtn" class="btn-saas btn-print">🖨️ Imprimir</button>
           </div>
         </div>
 
         <div class="legend-panel">
-          <span class="legend-title">📍 Leyenda Interactiva</span>
+          <span class="legend-title">📍 Leyenda:</span>
           <div class="legend-chips">
-            <button class="legend-chip" data-filter="Bloqueado" style="--bg: #FFC7CE; --tc: #9C0006;">Bloqueado</button>
-            <button class="legend-chip" data-filter="Sin Stock" style="--bg: #F4B084; --tc: #833C0C;">Sin Stock</button>
-            <button class="legend-chip" data-filter="Stock Bajo" style="--bg: #FFFF99; --tc: #8A5A00;">Stock 1 a 5</button>
-            <button class="legend-chip" data-filter="Stock OK" style="--bg: #C6EFCE; --tc: #006100;">Stock > 5</button>
-            <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 2px solid #ef4444;">Cobertura Alta</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 2px solid #FFC000;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="Bloqueado" style="--bg: {'#451a1a' if es_oscuro else '#fee2e2'}; --tc: {'#fca5a5' if es_oscuro else '#991b1b'};">Bloqueado</button>
+            <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'};">Sin Stock</button>
+            <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'};">Stock 1 a 5</button>
+            <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'};">Stock > 5</button>
+            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
-        <!-- CONTENEDOR CON SCROLL BIDIRECCIONAL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
-
-          <!-- MODAL 100% CENTRADO HORIZONTAL Y VERTICALMENTE -->
-          <div id="productModal" class="modal-overlay">
-            <div class="modal-content" id="modalContent">
-              <span class="modal-close">&times;</span>
-              <h3 id="m-name" style="margin-top: 0; font-size: 1.15rem; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; line-height: 1.3;">Producto</h3>
-              <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod"></span></div>
-              <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
-              <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
-              <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept" style="color: #cbd5e1;"></span></div>
-              <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec" style="color: #cbd5e1;"></span></div>
-              <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer" style="color: #cbd5e1;"></span></div>
-              <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga" style="color: #cbd5e1;"></span></div>
-              <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
-              <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
-              <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
-              <div class="m-row" style="border-bottom: none;"><span class="m-label" style="color: #fbbf24; font-weight: 800;">¿Es TOP Ventas?:</span><span class="m-val" id="m-top" style="color: #fbbf24; font-weight: 800;"></span></div>
-            </div>
-          </div>
-
-          <!-- BARRA DE LEYENDA SUPERIOR AMPLIA CON FILTRO DE CATEGORÍA -->
           <div class="fullscreen-legend-bar">
-            <span style="font-size: 0.85rem; font-weight: 900; color: #93c5fd; text-transform: uppercase; letter-spacing: 0.5px;">📍 LEYENDA:</span>
+            <span style="font-size: 0.80rem; font-weight: 800; color: #3b82f6;">📍 LEYENDA:</span>
             <div class="legend-chips">
-              <button class="legend-chip" data-filter="Bloqueado" style="--bg: #FFC7CE; --tc: #9C0006; font-size: 0.72rem; padding: 6px 14px;">Bloqueado</button>
-              <button class="legend-chip" data-filter="Sin Stock" style="--bg: #F4B084; --tc: #833C0C; font-size: 0.72rem; padding: 6px 14px;">Sin Stock</button>
-              <button class="legend-chip" data-filter="Stock Bajo" style="--bg: #FFFF99; --tc: #8A5A00; font-size: 0.72rem; padding: 6px 14px;">Stock 1-5</button>
-              <button class="legend-chip" data-filter="Stock OK" style="--bg: #C6EFCE; --tc: #006100; font-size: 0.72rem; padding: 6px 14px;">Stock >5</button>
-              <button class="legend-chip" data-filter="cob-alta" style="--bg: #ffffff; --tc: #ef4444; --bd: 2px solid #ef4444; font-size: 0.72rem; padding: 6px 14px;">Cob ≥30</button>
-              <button class="legend-chip" data-filter="top-ventas" style="--bg: #ffffff; --tc: #b45309; --bd: 2px solid #FFC000; font-size: 0.72rem; padding: 6px 14px;">★ TOP VENTAS</button>
+              <button class="legend-chip" data-filter="Bloqueado" style="--bg: {'#451a1a' if es_oscuro else '#fee2e2'}; --tc: {'#fca5a5' if es_oscuro else '#991b1b'};">Bloqueado</button>
+              <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'};">Sin Stock</button>
+              <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'};">Stock 1-5</button>
+              <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'};">Stock >5</button>
+              <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥30</button>
+              <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP</button>
             </div>
             
             <div class="fs-cat-wrapper">
-              <span class="fs-cat-label">📂 Categoría:</span>
+              <span style="font-size: 0.75rem; font-weight: 700; color: {text_secondary};">Categoría:</span>
               <select id="fsCatSelect" class="fs-cat-select">
                 <option value="ALL">Todas las Categorías</option>
                 {options_categorias}
               </select>
             </div>
             
-            <button id="exitFsBtn" style="background: #ef4444; border: none; color: white; padding: 6px 14px; border-radius: 4px; font-weight: bold; font-size: 0.80rem; cursor: pointer;">✕ Salir</button>
+            <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 4px 10px;">✕ Salir</button>
           </div>
 
           <button class="nav-btn nav-btn-prev" id="btnPrev" title="Cuerpo Anterior">❮</button>
@@ -670,7 +889,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
       </div>
 
       <script>
-        // --- MOTOR MULTITÁCTIL Y NAVEGACIÓN ---
         const aisleWrapper = document.getElementById('aisleWrapper');
         const zoomLayer = document.getElementById('zoomLayer');
         const container = document.getElementById('aisleContainer');
@@ -694,7 +912,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
         }}
 
-        // AUTO-FIT INTELIGENTE EN DOBLE TOQUE
         function autoFitCuerpo(targetBay) {{
           const bay = targetBay || document.querySelector('.bay-column:not(.hidden)');
           if (bay) {{
@@ -783,7 +1000,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
         container.addEventListener('scroll', updateScrollButtons);
         window.addEventListener('resize', updateScrollButtons);
 
-        // PANTALLA COMPLETA
         fullscreenBtn.addEventListener('click', () => {{
           if (!document.fullscreenElement) {{
             if (aisleWrapper.requestFullscreen) aisleWrapper.requestFullscreen();
@@ -805,7 +1021,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           scale = 1; posX = 0; posY = 0; updateZoom();
         }});
 
-        // --- FILTROS Y LÓGICA DE SKUS ---
         const searchInput = document.getElementById('searchInput');
         const brandSelect = document.getElementById('brandSelect');
         const catSelect = document.getElementById('catSelect');
@@ -868,7 +1083,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           }}
 
           let pct = totalVentasFiltered > 0 ? (topVentasSum / totalVentasFiltered) * 100 : 0;
-          document.getElementById('topNInfo').innerHTML = "💡 Has resaltado el <b>TOP " + topNSkusSet.size + "</b> de esta vista. Concentran el <b style='color:#10b981; font-size:0.95rem;'>" + pct.toFixed(2) + "%</b> de la venta mostrada (S/ " + totalVentasFiltered.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}}) + ").";
+          document.getElementById('topNInfo').innerHTML = "TOP <b>" + topNSkusSet.size + "</b> concentra el <b style='color:#10b981;'>" + pct.toFixed(1) + "%</b> de la venta (S/ " + totalVentasFiltered.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}}) + ").";
 
           let availableBrands = new Set();
           let availableCats = new Set();
@@ -1005,7 +1220,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
             window.print();
         }});
 
-        // LEYENDA (DUAL SYNC)
         document.querySelectorAll('.legend-chip').forEach(chip => {{
             chip.addEventListener('click', () => {{
                 const filter = chip.getAttribute('data-filter');
@@ -1051,7 +1265,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
           applyFilters();
         }});
 
-        // MODAL PRODUCTO (100% CENTRADO EN PANTALLA)
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         
@@ -1096,7 +1309,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False):
     </html>
     """
 
-# --- LÓGICA DE CARGA HÍBRIDA (NUBE + MANUAL) ---
+# --- LÓGICA DE CARGA HÍBRIDA ---
 @st.cache_data(ttl=14400)
 def cargar_datos_nube(url_matriz, url_jerarquia, url_fotos):
     try:
@@ -1142,31 +1355,41 @@ df_fotos_raw = None
 info_hora = None
 error_nube = None
 
-# --- HEADER PRINCIPAL ---
-col_head1, col_head2, col_head3 = st.columns([6, 2, 2])
+# --- HEADER SAAS ENTERPRISE ---
+col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
 
 with col_head1:
-    st.markdown("<h1 style='margin: 0; padding: 0; font-size: 2.1rem; color: #fff;'>📦 Planograma 2.0</h1>", unsafe_allow_html=True)
+    st.markdown(f"""
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; color: {t['text_primary']};">
+                🏬 Planograma <span style="color: {t['accent']}; font-weight: 800;">2.0</span>
+            </div>
+            <span style="background: {t['badge_bg']}; color: {t['accent']}; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; border: 1px solid {t['border']};">ENTERPRISE</span>
+        </div>
+    """, unsafe_allow_html=True)
     
 with col_head2:
-    st.markdown("<div style='margin-top: 5px;'>", unsafe_allow_html=True)
-    if st.button("🔄 Actualizar", use_container_width=True):
-        st.cache_data.clear()
+    modo_btn_label = "☀️ Modo Claro" if es_oscuro else "🌙 Modo Oscuro"
+    if st.button(modo_btn_label, use_container_width=True):
+        st.session_state.tema_actual = "light" if es_oscuro else "dark"
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
 with col_head3:
-    header_time_placeholder = st.empty()
-
-st.markdown("<div style='border-bottom: 2px solid #1e3a8a; padding-bottom: 5px; margin-bottom: 12px;'><span style='color: #93c5fd; font-size: 0.9rem;'>Análisis interactivo de pasillos y rentabilidad de tienda</span></div>", unsafe_allow_html=True)
+    col_act, col_time = st.columns([1, 2])
+    with col_act:
+        if st.button("🔄 Sync", use_container_width=True, help="Sincronizar base central"):
+            st.cache_data.clear()
+            st.rerun()
+    with col_time:
+        header_time_placeholder = st.empty()
 
 with st.spinner("Sincronizando base de datos central, jerarquías e imágenes..."):
     df_nube, df_aux_nube, df_jer_nube, df_fotos_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE, URL_JERARQUIA, URL_FOTOS)
 
 header_time_placeholder.markdown(f"""
-    <div style="text-align: right; margin-top: 5px;">
-        <div style="font-size: 0.92rem; color: #cbd5e1;">Desarrollado por <b>Alfredo HM</b></div>
-        <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">Última actualización: {info_hora if info_hora else 'No disponible'}</div>
+    <div style="text-align: right; line-height: 1.2;">
+        <div style="font-size: 0.75rem; font-weight: 700; color: {t['text_primary']};">Tienda Central</div>
+        <div style="font-size: 0.65rem; color: {t['text_muted']};">{info_hora if info_hora else 'En línea'}</div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -1292,7 +1515,6 @@ if df_raw is not None:
     tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard Analítico Financiero"])
     
     with tab1:
-        st.markdown("### ⚙️ Control de Visualización")
         col_view1, col_view2 = st.columns([1.5, 2])
         with col_view1:
             modo_vista = st.radio(
@@ -1304,11 +1526,9 @@ if df_raw is not None:
             )
             es_realograma = ("Realograma" in modo_vista)
         with col_view2:
-            st.markdown("<div style='text-align: right; font-size: 0.82rem; color: #94a3b8; margin-top: 5px;'>👆 <i>Pellizca para Zoom o haz <b>doble toque</b> para auto-encajar el cuerpo en la pantalla.</i></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Pellizca para Zoom o haz <b>doble toque</b> para auto-encajar el cuerpo.</i></div>", unsafe_allow_html=True)
             
-        st.markdown("---")
-        
-        html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma)
+        html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma, es_oscuro=es_oscuro)
         components.html(html_pasillo, height=840, scrolling=False)
             
     with tab2:
@@ -1317,8 +1537,6 @@ if df_raw is not None:
         skus_top_dash = df_top_calc_dash.head(top_n_fijo)['COD REAL'].astype(str).str.strip().tolist()
         df_unicos['TOPVENTAS'] = df_unicos['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top_dash else "NO")
 
-        st.markdown("### 💼 Resumen Ejecutivo")
-        
         ventas_globales = df_unicos['Venta_Num'].sum()
         margen_global = df_unicos['Margen_Num'].sum()
         margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
@@ -1327,25 +1545,23 @@ if df_raw is not None:
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card">
-                    <span class="fin-kpi-title">Ventas Totales (Acumuladas)</span>
-                    <span class="fin-kpi-val">S/ {ventas_globales:,.2f}</span>
-                </div>
-                <div class="fin-kpi-card green-theme">
-                    <span class="fin-kpi-title">Margen Total (Acumulado)</span>
-                    <span class="fin-kpi-val">S/ {margen_global:,.2f}</span>
-                </div>
-                <div class="fin-kpi-card purple-theme">
-                    <span class="fin-kpi-title">Margen Global (%)</span>
-                    <span class="fin-kpi-val">{margen_pct_global*100:.1f}%</span>
+                    <div class="fin-kpi-title"><span>Ventas Totales</span><span>💳</span></div>
+                    <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
                 </div>
                 <div class="fin-kpi-card">
-                    <span class="fin-kpi-title">SKUs Únicos en Mueble</span>
-                    <span class="fin-kpi-val">{total_skus_activos}</span>
+                    <div class="fin-kpi-title"><span>Margen Total</span><span>📈</span></div>
+                    <div class="fin-kpi-val" style="color: #10b981;">S/ {margen_global:,.2f}</div>
+                </div>
+                <div class="fin-kpi-card">
+                    <div class="fin-kpi-title"><span>Margen Global (%)</span><span>📊</span></div>
+                    <div class="fin-kpi-val" style="color: #8b5cf6;">{margen_pct_global*100:.1f}%</div>
+                </div>
+                <div class="fin-kpi-card">
+                    <div class="fin-kpi-title"><span>SKUs en Mueble</span><span>📦</span></div>
+                    <div class="fin-kpi-val">{total_skus_activos}</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
-        
-        st.markdown("---")
         
         cats_disponibles = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
         col_seg_cat, _ = st.columns([2, 2])
@@ -1358,10 +1574,10 @@ if df_raw is not None:
             
         df_dash_unicos = df_dash_base.drop_duplicates(subset=['COD REAL']).copy()
 
-        col_graf_izq, col_graf_der = st.columns([6.5, 3.5])
+        col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
-            st.markdown("##### 📈 Ventas y Rentabilidad por Cuerpo")
+            st.markdown(f"<div style='font-size: 0.88rem; font-weight: 800; margin-bottom: 8px; color: {t['text_primary']};'>📈 Rendimiento Financiero por Cuerpo</div>", unsafe_allow_html=True)
             
             bandeja_str = df_dash_base.get('Bandeja', pd.Series(["1.1"]*len(df_dash_base))).astype(str)
             df_dash_base['Cuerpo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
@@ -1381,8 +1597,8 @@ if df_raw is not None:
             
             def crear_etiqueta_eje(c_num):
                 cat_nombre = cat_por_cuerpo.get(c_num, "")
-                if cat_nombre and len(cat_nombre) > 18:
-                    cat_nombre = cat_nombre[:16] + ".."
+                if cat_nombre and len(cat_nombre) > 16:
+                    cat_nombre = cat_nombre[:14] + ".."
                 return f"Cuerpo {int(c_num)}<br><sub>{cat_nombre}</sub>" if cat_nombre else f"Cuerpo {int(c_num)}"
 
             ventas_cuerpo['Cuerpo_Label'] = ventas_cuerpo['Cuerpo_Ord'].apply(crear_etiqueta_eje)
@@ -1411,8 +1627,8 @@ if df_raw is not None:
                     name="Ventas Totales (S/)",
                     text=ventas_cuerpo['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
                     textposition='auto',
-                    textfont=dict(color='#ffffff', size=11, weight='bold'),
-                    marker=dict(color='rgba(59, 130, 246, 0.75)', line=dict(color='#3b82f6', width=2)),
+                    textfont=dict(color='#ffffff' if es_oscuro else '#0f172a', size=10, weight='bold'),
+                    marker=dict(color='rgba(59, 130, 246, 0.85)', line=dict(color='#3b82f6', width=1)),
                     hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata}<extra></extra>",
                     customdata=ventas_cuerpo['SKUs_Total']
                 ), secondary_y=False
@@ -1426,9 +1642,9 @@ if df_raw is not None:
                     mode="lines+markers+text",
                     text=ventas_cuerpo['Margen_Pct'].apply(lambda x: f"{x*100:,.1f}%"),
                     textposition='top center',
-                    textfont=dict(color='#10b981', size=12, weight='bold'),
-                    marker=dict(color="#10b981", size=9, symbol='circle', line=dict(color='#ffffff', width=2)),
-                    line=dict(color="#10b981", width=3.5, shape='spline'),
+                    textfont=dict(color='#10b981', size=11, weight='bold'),
+                    marker=dict(color="#10b981", size=8, symbol='circle'),
+                    line=dict(color="#10b981", width=3, shape='spline'),
                     hovertemplate="<b>%{x}</b><br>Margen: %{text}<extra></extra>"
                 ), secondary_y=True
             )
@@ -1436,10 +1652,10 @@ if df_raw is not None:
             fig.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
-                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color='#cbd5e1')),
+                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["text_secondary"], size=10)),
                 margin=dict(t=10, b=30, l=10, r=10),
-                xaxis=dict(showgrid=False, color='#cbd5e1', tickfont=dict(size=11, weight='bold')),
-                yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor='rgba(255,255,255,0.1)', color='#cbd5e1', zeroline=False),
+                xaxis=dict(showgrid=False, color=t["text_secondary"], tickfont=dict(size=10, weight='bold')),
+                yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["text_secondary"], zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color='#10b981', zeroline=False)
             )
             
@@ -1448,7 +1664,7 @@ if df_raw is not None:
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
             
         with col_graf_der:
-            st.markdown("##### 🍩 Distribución de Ventas")
+            st.markdown(f"<div style='font-size: 0.88rem; font-weight: 800; margin-bottom: 8px; color: {t['text_primary']};'>🍩 Distribución de Ventas</div>", unsafe_allow_html=True)
             
             vista_anillo = st.selectbox("Analizar por:", 
                 ["Categoría", "Departamento", "Sección", "Grupo de artículo", "Marca"], 
@@ -1457,19 +1673,18 @@ if df_raw is not None:
             
             df_pie = df_dash_unicos.groupby(vista_anillo)['Venta_Num'].sum().reset_index()
             df_pie = df_pie[df_pie['Venta_Num'] > 0].sort_values(by='Venta_Num', ascending=False)
-            
             ventas_dash_total = df_dash_unicos['Venta_Num'].sum()
             
             fig_pie = go.Figure(data=[go.Pie(
                 labels=df_pie[vista_anillo], 
                 values=df_pie['Venta_Num'], 
-                hole=0.48,
+                hole=0.55,
                 textinfo='label+percent',
                 textposition='inside',
                 insidetextorientation='horizontal',
-                textfont=dict(size=13, color='#ffffff', family='Arial Black'),
+                textfont=dict(size=11, color='#ffffff', family='Inter', weight='bold'),
                 marker=dict(colors=['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#14b8a6'], 
-                            line=dict(color='#0f172a', width=2))
+                            line=dict(color=t["bg_surface"], width=2))
             )])
             
             fig_pie.update_layout(
@@ -1477,14 +1692,14 @@ if df_raw is not None:
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 margin=dict(t=10, b=10, l=10, r=10),
-                annotations=[dict(text=f'<b>S/ {ventas_dash_total/1000:,.1f}K</b>', x=0.5, y=0.5, font_size=18, showarrow=False, font_color='#ffffff')]
+                annotations=[dict(text=f'<b>S/ {ventas_dash_total/1000:,.1f}K</b>', x=0.5, y=0.5, font_size=16, showarrow=False, font_color=t["text_primary"])]
             )
             fig_pie.update_traces(hovertemplate="<b>%{label}</b><br>Ventas: S/ %{value:,.2f}<br>Participación: %{percent}<extra></extra>")
             
             st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
 
         st.markdown("---")
-        st.markdown("### ⚖️ Análisis Fair Share: Participación de Espacio vs Rendimiento Financiero")
+        st.markdown(f"<div style='font-size: 1.05rem; font-weight: 800; margin-bottom: 12px; color: {t['text_primary']};'>⚖️ Fair Share Analysis: Espacio Físico vs Rentabilidad</div>", unsafe_allow_html=True)
         
         col_fs_dim, col_fs_met = st.columns([2, 2])
         with col_fs_dim:
@@ -1531,8 +1746,8 @@ if df_raw is not None:
                 name=f"% Espacio ({'Caras' if metrica_espacio == 'Caras (Facings)' else 'Unid. Bandeja'})",
                 text=df_fs['Pct_Espacio'].apply(lambda x: f"{x*100:.1f}%"),
                 textposition='auto',
-                textfont=dict(color='#ffffff', size=11, weight='bold'),
-                marker=dict(color='rgba(59, 130, 246, 0.85)', line=dict(color='#3b82f6', width=2)),
+                textfont=dict(color='#ffffff' if es_oscuro else '#0f172a', size=10, weight='bold'),
+                marker=dict(color='rgba(59, 130, 246, 0.85)', line=dict(color='#3b82f6', width=1.5)),
                 hovertemplate="<b>%{x}</b><br>% Espacio: %{y:.1%}<br>Total Físico: %{customdata:,.0f}<extra></extra>",
                 customdata=df_fs['Espacio_Total']
             ))
@@ -1543,8 +1758,8 @@ if df_raw is not None:
                 name="% Ventas (Monto S/)",
                 text=df_fs['Pct_Ventas'].apply(lambda x: f"{x*100:.1f}%"),
                 textposition='auto',
-                textfont=dict(color='#ffffff', size=11, weight='bold'),
-                marker=dict(color='rgba(16, 185, 129, 0.85)', line=dict(color='#10b981', width=2)),
+                textfont=dict(color='#ffffff' if es_oscuro else '#0f172a', size=10, weight='bold'),
+                marker=dict(color='rgba(16, 185, 129, 0.85)', line=dict(color='#10b981', width=1.5)),
                 hovertemplate="<b>%{x}</b><br>% Ventas: %{y:.1%}<br>Ventas S/: %{customdata:,.2f}<extra></extra>",
                 customdata=df_fs['Ventas_Total']
             ))
@@ -1555,8 +1770,8 @@ if df_raw is not None:
                 name="% Margen (Ganancia S/)",
                 text=df_fs['Pct_Margen'].apply(lambda x: f"{x*100:.1f}%"),
                 textposition='auto',
-                textfont=dict(color='#ffffff', size=11, weight='bold'),
-                marker=dict(color='rgba(245, 158, 11, 0.85)', line=dict(color='#f59e0b', width=2)),
+                textfont=dict(color='#ffffff' if es_oscuro else '#0f172a', size=10, weight='bold'),
+                marker=dict(color='rgba(245, 158, 11, 0.85)', line=dict(color='#f59e0b', width=1.5)),
                 hovertemplate="<b>%{x}</b><br>% Margen: %{y:.1%}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
                 customdata=df_fs['Margen_Total']
             ))
@@ -1566,10 +1781,10 @@ if df_raw is not None:
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
-                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color='#cbd5e1')),
+                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["text_secondary"], size=10)),
                 margin=dict(t=20, b=40, l=10, r=10),
-                xaxis=dict(showgrid=False, color='#cbd5e1', tickfont=dict(size=11, weight='bold')),
-                yaxis=dict(title="Participación Relativa (%)", showgrid=True, gridcolor='rgba(255,255,255,0.08)', color='#cbd5e1', tickformat=".0%")
+                xaxis=dict(showgrid=False, color=t["text_secondary"], tickfont=dict(size=10, weight='bold')),
+                yaxis=dict(title="Participación Relativa (%)", showgrid=True, gridcolor=t["grid_color"], color=t["text_secondary"], tickformat=".0%")
             )
             
             fig_fs.update_xaxes(fixedrange=True)
@@ -1595,8 +1810,7 @@ if df_raw is not None:
                     st.info("✅ No se detectan sobreasignaciones críticas de espacio físico.")
             
         st.markdown("---")
-        
-        st.markdown("### 📋 Reporte Detallado (SKUs Únicos)")
+        st.markdown(f"<div style='font-size: 1.05rem; font-weight: 800; margin-bottom: 12px; color: {t['text_primary']};'>📋 Reporte Operativo de SKUs Únicos</div>", unsafe_allow_html=True)
         
         col_filt, col_dl = st.columns([4, 1.5])
         with col_filt:
@@ -1645,15 +1859,12 @@ if df_raw is not None:
             with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
                 df_rep[cols_to_show].to_excel(writer, index=False, sheet_name='Reporte_SKUs')
                 
-            st.markdown("<div style='margin-top: 15px;'>", unsafe_allow_html=True)
             st.download_button(
-                label="📥 Descargar a Excel (.xlsx)",
+                label="📥 Exportar Excel (.xlsx)",
                 data=buffer.getvalue(),
-                file_name="reporte_planograma_skus_unicos.xlsx",
+                file_name="reporte_planograma_skus.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
-            st.markdown("</div>", unsafe_allow_html=True)
             
-        st.markdown("<p style='font-size: 0.85rem; color: #94a3b8; margin-top: -10px;'>💡 También puedes usar el ícono nativo de descarga que aparece al pasar el cursor sobre la esquina derecha de la tabla.</p>", unsafe_allow_html=True)
         st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True)
