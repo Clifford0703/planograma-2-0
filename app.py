@@ -68,15 +68,27 @@ st.markdown(f"""
         .block-container {{
             padding-left: 1.2rem !important;
             padding-right: 1.2rem !important;
-            padding-top: 1.5rem !important;
-            padding-bottom: 0rem !important;
+            padding-top: 1.2rem !important;
+            padding-bottom: 1.5rem !important;
             max-width: 100% !important;
+        }}
+        
+        /* SaaS Header & KPI Cards */
+        .saas-header {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: {t["bg_surface"]};
+            border: 1px solid {t["border"]};
+            border-radius: 12px;
+            margin-bottom: 16px;
         }}
         
         .fin-kpi-container {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 14px;
+            gap: 12px;
             margin-bottom: 18px;
         }}
         
@@ -88,7 +100,7 @@ st.markdown(f"""
             box-shadow: 0 2px 4px rgba(0,0,0,0.04);
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
             transition: transform 0.2s ease, border-color 0.2s ease;
         }}
         .fin-kpi-card:hover {{
@@ -114,22 +126,58 @@ st.markdown(f"""
             color: {t["text_primary"]};
             line-height: 1.1;
             font-feature-settings: "tnum";
+            margin-bottom: 4px;
+        }}
+
+        .fin-kpi-subtitle {{
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: {t["text_muted"]};
         }}
         
+        /* Insight Card Styling */
+        .insight-card {{
+            background: {t["bg_card"]};
+            border: 1px solid {t["border"]};
+            border-radius: 10px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+            height: 100%;
+        }}
+        .insight-header {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }}
+        .insight-body {{
+            font-size: 0.84rem;
+            color: {t["text_secondary"]};
+            line-height: 1.4;
+        }}
+        
+        /* St Tabs Customization */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px;
             background-color: {t["bg_surface"]};
             padding: 6px;
             border-radius: 10px;
             border: 1px solid {t["border"]};
+            margin-bottom: 15px;
         }}
         
         .stTabs [data-baseweb="tab"] {{
             height: 38px;
-            padding: 0 18px;
+            padding: 0 20px;
             border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.85rem;
+            font-weight: 700;
+            font-size: 0.86rem;
             color: {t["text_secondary"]};
             background-color: transparent;
             border: none !important;
@@ -204,7 +252,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (HTML/CSS ENTERPRISE CON BLOQUES COLOR COMPLETOS) ---
+# --- GENERADOR DEL PLANOGRAMA (HTML/CSS ENTERPRISE) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -403,7 +451,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         ::-webkit-scrollbar-track {{ background: {surface_bg}; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
 
-        /* Top Bar */
         .saas-top-bar {{
           display: flex;
           align-items: center;
@@ -425,7 +472,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           color: {text_primary};
         }}
 
-        /* KPI CONTAINER */
         .kpi-container {{ 
           display: flex; 
           gap: 8px; 
@@ -447,7 +493,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .kpi-title {{ font-size: 0.62rem; font-weight: 700; color: {text_secondary}; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px; }}
         .kpi-val {{ font-size: 1.35rem; font-weight: 900; line-height: 1.1; color: {text_primary}; font-feature-settings: "tnum"; }}
         
-        /* FILTROS */
         .filter-panel {{ 
           background: {surface_bg}; 
           border: 1px solid {border_col}; 
@@ -475,9 +520,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           min-width: 120px; 
           transition: border-color 0.2s;
         }}
-        .filter-select:focus, .filter-input:focus {{
-          border-color: #3b82f6;
-        }}
+        .filter-select:focus, .filter-input:focus {{ border-color: #3b82f6; }}
         .btn-group {{ display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; align-items: center; }}
         
         .btn-saas {{ 
@@ -499,7 +542,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .btn-fullscreen {{ background: #3b82f61a; color: #3b82f6; border: 1px solid #3b82f633; }}
         .btn-fullscreen:hover {{ background: #3b82f6; color: #fff; }}
         
-        /* LEYENDA */
         .legend-panel {{ 
           background: {surface_bg}; 
           border: 1px solid {border_col}; 
@@ -529,7 +571,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.04); box-shadow: 0 0 0 2px #3b82f6 !important; }}
         
-        /* CONTENEDOR PRINCIPAL DEL PLANOGRAMA */
         .aisle-wrapper {{ 
           display: flex;
           flex-direction: column;
@@ -544,7 +585,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden;
         }}
 
-        /* LEYENDA SUPERIOR EN PANTALLA COMPLETA */
         .fullscreen-legend-bar {{
           display: none;
           position: sticky;
@@ -591,7 +631,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           display: flex !important;
         }}
 
-        /* FLECHAS FLOTANTES DINÁMICAS */
         .nav-btn {{ 
           position: absolute;
           top: 50%;
@@ -628,7 +667,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           transition: transform 0.2s ease-out;
         }}
 
-        /* SCROLL BIDIRECCIONAL COMPLETO DEL PLANOGRAMA */
         .aisle-container {{ 
           display: flex; 
           flex-direction: row; 
@@ -698,7 +736,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
         
-        /* BLOQUES DE PRODUCTOS CON COLORACIÓN COMPLETA VISIBLE */
         .sku-card {{ 
           border-radius: 6px; 
           padding: 6px; 
@@ -770,7 +807,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .m-label {{ font-weight: 600; color: {text_secondary}; }}
         .m-val {{ font-weight: 700; text-align: right; max-width: 65%; font-feature-settings: "tnum"; }}
 
-        /* --- RESPONSIVE MOBILE --- */
         @media (max-width: 768px) {{
             .nav-btn {{ display: none !important; }}
             .aisle-container {{ padding: 8px 4px !important; touch-action: pan-x pan-y !important; }}
@@ -1529,42 +1565,61 @@ if df_raw is not None:
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma, es_oscuro=es_oscuro)
         components.html(html_pasillo, height=840, scrolling=False)
             
+    # =========================================================================
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO REDISEÑADO AL 100% ---
+    # =========================================================================
     with tab2:
-        top_n_fijo = 5
-        df_top_calc_dash = df_unicos.sort_values(by='Venta_Num', ascending=False)
-        skus_top_dash = df_top_calc_dash.head(top_n_fijo)['COD REAL'].astype(str).str.strip().tolist()
-        df_unicos['TOPVENTAS'] = df_unicos['COD REAL'].astype(str).str.strip().apply(lambda x: "TOP" if x in skus_top_dash else "NO")
-
+        # --- NIVEL 1: RESUMEN EJECUTIVO (EXECUTIVE KPI MATRIX) ---
         ventas_globales = df_unicos['Venta_Num'].sum()
         margen_global = df_unicos['Margen_Num'].sum()
         margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
         total_skus_activos = len(df_unicos)
+        promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
         
         st.markdown(f"""
             <div class="fin-kpi-container">
-                <div class="fin-kpi-card">
-                    <div class="fin-kpi-title"><span>Ventas Totales</span><span>💳</span></div>
+                <div class="fin-kpi-card" style="border-left: 4px solid #3b82f6;">
+                    <div class="fin-kpi-title">
+                        <span>Ventas Brutas</span>
+                        <span style="font-size: 1rem;">💳</span>
+                    </div>
                     <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
+                    <div class="fin-kpi-subtitle">Promedio por SKU: S/ {promedio_venta_sku:,.2f}</div>
                 </div>
-                <div class="fin-kpi-card">
-                    <div class="fin-kpi-title"><span>Margen Total</span><span>📈</span></div>
+                <div class="fin-kpi-card" style="border-left: 4px solid #10b981;">
+                    <div class="fin-kpi-title">
+                        <span>Margen Total Bruto</span>
+                        <span style="font-size: 1rem;">📈</span>
+                    </div>
                     <div class="fin-kpi-val" style="color: #10b981;">S/ {margen_global:,.2f}</div>
+                    <div class="fin-kpi-subtitle">Rentabilidad Monetaria Acumulada</div>
                 </div>
-                <div class="fin-kpi-card">
-                    <div class="fin-kpi-title"><span>Margen Global (%)</span><span>📊</span></div>
+                <div class="fin-kpi-card" style="border-left: 4px solid #8b5cf6;">
+                    <div class="fin-kpi-title">
+                        <span>Margen Global</span>
+                        <span style="font-size: 1rem;">📊</span>
+                    </div>
                     <div class="fin-kpi-val" style="color: #8b5cf6;">{margen_pct_global*100:.1f}%</div>
+                    <div class="fin-kpi-subtitle">Retorno sobre Venta Total</div>
                 </div>
-                <div class="fin-kpi-card">
-                    <div class="fin-kpi-title"><span>SKUs en Mueble</span><span>📦</span></div>
+                <div class="fin-kpi-card" style="border-left: 4px solid #f59e0b;">
+                    <div class="fin-kpi-title">
+                        <span>Surtido Activo</span>
+                        <span style="font-size: 1rem;">📦</span>
+                    </div>
                     <div class="fin-kpi-val">{total_skus_activos}</div>
+                    <div class="fin-kpi-subtitle">SKUs Únicos en Góndola</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
         
+        # --- TOOLBAR DE FILTROS SUPERIOR ---
         cats_disponibles = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
-        col_seg_cat, _ = st.columns([2, 2])
+        col_seg_cat, col_sp_info = st.columns([2.5, 7.5])
         with col_seg_cat:
             cat_seleccionada = st.selectbox("🎯 Filtrar Dashboard por Categoría:", ["Todas las Categorías"] + cats_disponibles)
+        with col_sp_info:
+            st.markdown(f"<div style='margin-top: 32px; font-size: 0.80rem; color: {t['text_muted']}; text-align: right;'>Visualizando métricas consolidadas en tiempo real</div>", unsafe_allow_html=True)
         
         df_dash_base = df_base.copy()
         if cat_seleccionada != "Todas las Categorías":
@@ -1572,10 +1627,19 @@ if df_raw is not None:
             
         df_dash_unicos = df_dash_base.drop_duplicates(subset=['COD REAL']).copy()
 
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS (VENTAS/MARGEN POR CUERPO + DONUT DE PARTICIPACIÓN) ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
-            st.markdown(f"<div style='font-size: 0.88rem; font-weight: 800; margin-bottom: 8px; color: {t['text_primary']};'>📈 Rendimiento Financiero por Cuerpo</div>", unsafe_allow_html=True)
+            st.markdown(f"""
+                <div style='background: {t["bg_surface"]}; border: 1px solid {t["border"]}; border-radius: 10px; padding: 14px 16px;'>
+                    <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;'>
+                        <span style='font-size: 0.88rem; font-weight: 800; color: {t["text_primary"]};'>📈 Rendimiento Comercial por Cuerpo</span>
+                        <span style='font-size: 0.72rem; font-weight: 700; color: {t["text_muted"]};'>VENTAS (S/) vs MARGEN (%)</span>
+                    </div>
+            """, unsafe_allow_html=True)
             
             bandeja_str = df_dash_base.get('Bandeja', pd.Series(["1.1"]*len(df_dash_base))).astype(str)
             df_dash_base['Cuerpo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
@@ -1595,8 +1659,8 @@ if df_raw is not None:
             
             def crear_etiqueta_eje(c_num):
                 cat_nombre = cat_por_cuerpo.get(c_num, "")
-                if cat_nombre and len(cat_nombre) > 16:
-                    cat_nombre = cat_nombre[:14] + ".."
+                if cat_nombre and len(cat_nombre) > 14:
+                    cat_nombre = cat_nombre[:12] + ".."
                 return f"Cuerpo {int(c_num)}<br><sub>{cat_nombre}</sub>" if cat_nombre else f"Cuerpo {int(c_num)}"
 
             ventas_cuerpo['Cuerpo_Label'] = ventas_cuerpo['Cuerpo_Ord'].apply(crear_etiqueta_eje)
@@ -1605,10 +1669,10 @@ if df_raw is not None:
                 axis=1
             )
             
-            col_ord, _ = st.columns([1.5, 2.5])
+            col_ord, _ = st.columns([2, 2])
             with col_ord:
-                orden_grafico = st.selectbox("Ordenar por:", 
-                    ["Cuerpo (Secuencial)", "Mayor a Menor Venta", "Mayor Margen (%)"],
+                orden_grafico = st.selectbox("Ordenar:", 
+                    ["Secuencial (Cuerpo 1..N)", "Mayor a Menor Venta", "Mayor Margen (%)"],
                     label_visibility="collapsed"
                 )
             
@@ -1626,7 +1690,7 @@ if df_raw is not None:
                     text=ventas_cuerpo['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
                     textposition='auto',
                     textfont=dict(color='#ffffff' if es_oscuro else '#0f172a', size=10, weight='bold'),
-                    marker=dict(color='rgba(59, 130, 246, 0.85)', line=dict(color='#3b82f6', width=1)),
+                    marker=dict(color='rgba(59, 130, 246, 0.85)', line=dict(color='#3b82f6', width=1.5)),
                     hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata}<extra></extra>",
                     customdata=ventas_cuerpo['SKUs_Total']
                 ), secondary_y=False
@@ -1641,7 +1705,7 @@ if df_raw is not None:
                     text=ventas_cuerpo['Margen_Pct'].apply(lambda x: f"{x*100:,.1f}%"),
                     textposition='top center',
                     textfont=dict(color='#10b981', size=11, weight='bold'),
-                    marker=dict(color="#10b981", size=8, symbol='circle'),
+                    marker=dict(color="#10b981", size=8, symbol='circle', line=dict(color=t["bg_surface"], width=2)),
                     line=dict(color="#10b981", width=3, shape='spline'),
                     hovertemplate="<b>%{x}</b><br>Margen: %{text}<extra></extra>"
                 ), secondary_y=True
@@ -1651,7 +1715,7 @@ if df_raw is not None:
                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
                 legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["text_secondary"], size=10)),
-                margin=dict(t=10, b=30, l=10, r=10),
+                margin=dict(t=10, b=20, l=10, r=10),
                 xaxis=dict(showgrid=False, color=t["text_secondary"], tickfont=dict(size=10, weight='bold')),
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["text_secondary"], zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color='#10b981', zeroline=False)
@@ -1660,11 +1724,18 @@ if df_raw is not None:
             fig.update_xaxes(fixedrange=True)
             fig.update_yaxes(fixedrange=True)
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            st.markdown("</div>", unsafe_allow_html=True)
             
         with col_graf_der:
-            st.markdown(f"<div style='font-size: 0.88rem; font-weight: 800; margin-bottom: 8px; color: {t['text_primary']};'>🍩 Distribución de Ventas</div>", unsafe_allow_html=True)
+            st.markdown(f"""
+                <div style='background: {t["bg_surface"]}; border: 1px solid {t["border"]}; border-radius: 10px; padding: 14px 16px;'>
+                    <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;'>
+                        <span style='font-size: 0.88rem; font-weight: 800; color: {t["text_primary"]};'>🍩 Mix de Venta</span>
+                        <span style='font-size: 0.72rem; font-weight: 700; color: {t["text_muted"]};'>PARTICIPACIÓN</span>
+                    </div>
+            """, unsafe_allow_html=True)
             
-            vista_anillo = st.selectbox("Analizar por:", 
+            vista_anillo = st.selectbox("Agrupar mix por:", 
                 ["Categoría", "Departamento", "Sección", "Grupo de artículo", "Marca"], 
                 label_visibility="collapsed"
             )
@@ -1676,7 +1747,7 @@ if df_raw is not None:
             fig_pie = go.Figure(data=[go.Pie(
                 labels=df_pie[vista_anillo], 
                 values=df_pie['Venta_Num'], 
-                hole=0.55,
+                hole=0.58,
                 textinfo='label+percent',
                 textposition='inside',
                 insidetextorientation='horizontal',
@@ -1690,14 +1761,25 @@ if df_raw is not None:
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 margin=dict(t=10, b=10, l=10, r=10),
-                annotations=[dict(text=f'<b>S/ {ventas_dash_total/1000:,.1f}K</b>', x=0.5, y=0.5, font_size=16, showarrow=False, font_color=t["text_primary"])]
+                annotations=[dict(text=f'<b>S/ {ventas_dash_total/1000:,.1f}K</b><br><span style="font-size:9px; color:{t["text_muted"]}">TOTAL</span>', x=0.5, y=0.5, font_size=15, showarrow=False, font_color=t["text_primary"])]
             )
             fig_pie.update_traces(hovertemplate="<b>%{label}</b><br>Ventas: S/ %{value:,.2f}<br>Participación: %{percent}<extra></extra>")
             
             st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
+            st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("---")
-        st.markdown(f"<div style='font-size: 1.05rem; font-weight: 800; margin-bottom: 12px; color: {t['text_primary']};'>⚖️ Fair Share Analysis: Espacio Físico vs Rentabilidad</div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+
+        # --- NIVEL 3: FAIR SHARE ANALYSIS & SMART INSIGHT BANNERS ---
+        st.markdown(f"""
+            <div style='background: {t["bg_surface"]}; border: 1px solid {t["border"]}; border-radius: 10px; padding: 18px 20px; margin-bottom: 14px;'>
+                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;'>
+                    <div>
+                        <span style='font-size: 0.98rem; font-weight: 800; color: {t["text_primary"]};'>⚖️ Fair Share: Comparativa de Espacio vs. Desempeño Financiero</span>
+                        <div style='font-size: 0.76rem; color: {t["text_muted"]}; margin-top: 2px;'>Evalúa si la asignación física de repisa (% Espacio) corresponde al volumen de venta (% Venta) y rentabilidad (% Margen).</div>
+                    </div>
+                </div>
+        """, unsafe_allow_html=True)
         
         col_fs_dim, col_fs_met = st.columns([2, 2])
         with col_fs_dim:
@@ -1780,7 +1862,7 @@ if df_raw is not None:
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
                 legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["text_secondary"], size=10)),
-                margin=dict(t=20, b=40, l=10, r=10),
+                margin=dict(t=20, b=30, l=10, r=10),
                 xaxis=dict(showgrid=False, color=t["text_secondary"], tickfont=dict(size=10, weight='bold')),
                 yaxis=dict(title="Participación Relativa (%)", showgrid=True, gridcolor=t["grid_color"], color=t["text_secondary"], tickformat=".0%")
             )
@@ -1789,35 +1871,78 @@ if df_raw is not None:
             fig_fs.update_yaxes(fixedrange=True)
             st.plotly_chart(fig_fs, use_container_width=True, config={'displayModeBar': False})
             
-            col_diag1, col_diag2 = st.columns(2)
+            # Smart Insight Banners
             subdimensionados = df_fs[df_fs['Brecha_Share'] > 0.03]
             sobredimensionados = df_fs[df_fs['Brecha_Share'] < -0.03]
             
+            col_diag1, col_diag2 = st.columns(2)
             with col_diag1:
                 if not subdimensionados.empty:
                     top_sub = subdimensionados.iloc[0]
-                    st.success(f"🚀 **Oportunidad de Crecimiento:** `{top_sub[dim_fs]}` genera el **{top_sub['Pct_Ventas']*100:.1f}%** de las ventas pero solo ocupa el **{top_sub['Pct_Espacio']*100:.1f}%** del espacio físico.")
+                    brecha_val = top_sub['Brecha_Share'] * 100
+                    st.markdown(f"""
+                        <div class="insight-card" style="border-left: 4px solid #10b981;">
+                            <div class="insight-header" style="color: #10b981;">
+                                <span>🚀 Oportunidad de Expansión de Espacio</span>
+                            </div>
+                            <div class="insight-body">
+                                <b>{top_sub[dim_fs]}</b> genera el <b>{top_sub['Pct_Ventas']*100:.1f}%</b> de la venta total pero solo ocupa el <b>{top_sub['Pct_Espacio']*100:.1f}%</b> de la repisa física (+{brecha_val:.1f}% de rendimiento positivo). Conviene ampliar facings.
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
                 else:
-                    st.info("✅ La asignación de espacio físico está equilibrada frente a las ventas.")
+                    st.markdown(f"""
+                        <div class="insight-card" style="border-left: 4px solid #3b82f6;">
+                            <div class="insight-header" style="color: #3b82f6;"><span>✅ Asignación Balanceada</span></div>
+                            <div class="insight-body">No se detectan categorías con subasignación crítica de espacio frente a su venta.</div>
+                        </div>
+                    """, unsafe_allow_html=True)
                     
             with col_diag2:
                 if not sobredimensionados.empty:
                     top_sobre = sobredimensionados.sort_values(by='Brecha_Share', ascending=True).iloc[0]
-                    st.warning(f"⚠️ **Alerta de Sobreasignación:** `{top_sobre[dim_fs]}` consume el **{top_sobre['Pct_Espacio']*100:.1f}%** del espacio pero solo aporta el **{top_sobre['Pct_Ventas']*100:.1f}%** de las ventas.")
+                    brecha_sobre = abs(top_sobre['Brecha_Share'] * 100)
+                    st.markdown(f"""
+                        <div class="insight-card" style="border-left: 4px solid #f59e0b;">
+                            <div class="insight-header" style="color: #f59e0b;">
+                                <span>⚠️ Alerta de Sobreasignación (Espacio Ocioso)</span>
+                            </div>
+                            <div class="insight-body">
+                                <b>{top_sobre[dim_fs]}</b> ocupa el <b>{top_sobre['Pct_Espacio']*100:.1f}%</b> de la repisa pero solo aporta el <b>{top_sobre['Pct_Ventas']*100:.1f}%</b> de las ventas ({brecha_sobre:.1f}% de espacio no rentable).
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
                 else:
-                    st.info("✅ No se detectan sobreasignaciones críticas de espacio físico.")
+                    st.markdown(f"""
+                        <div class="insight-card" style="border-left: 4px solid #3b82f6;">
+                            <div class="insight-header" style="color: #3b82f6;"><span>✅ Espacio Óptimo</span></div>
+                            <div class="insight-body">No se detectan saturaciones ni sobreasignaciones críticas de repisa.</div>
+                        </div>
+                    """, unsafe_allow_html=True)
             
-        st.markdown("---")
-        st.markdown(f"<div style='font-size: 1.05rem; font-weight: 800; margin-bottom: 12px; color: {t['text_primary']};'>📋 Reporte Operativo de SKUs Únicos</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+
+        # --- NIVEL 4: REPORTE OPERATIVO DE SKUS & EXPORT HUB ---
+        st.markdown(f"""
+            <div style='background: {t["bg_surface"]}; border: 1px solid {t["border"]}; border-radius: 10px; padding: 18px 20px;'>
+                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;'>
+                    <div>
+                        <span style='font-size: 0.98rem; font-weight: 800; color: {t["text_primary"]};'>📋 Detalle Operativo por SKU Único</span>
+                        <div style='font-size: 0.76rem; color: {t["text_muted"]}; margin-top: 2px;'>Auditoría completa de stock, cobertura y rentabilidad con mapeo de ubicación en góndola.</div>
+                    </div>
+                </div>
+        """, unsafe_allow_html=True)
         
         col_filt, col_dl = st.columns([4, 1.5])
         with col_filt:
-            filtro_reporte = st.selectbox("Filtrar Tabla Resumen:", [
-                "Todos los SKUs",
+            filtro_reporte = st.selectbox("Filtrar Tabla por Estado:", [
+                "Todos los SKUs Activos",
                 "Bloqueados (Estado B)",
-                "Sin Stock (Stock = 0)",
-                "Stock Bajo (Stock 1 a 5)",
-                "Cobertura Alta (≥ 30)"
+                "Sin Stock (Quiebre: Stock = 0)",
+                "Stock Bajo (Alerta: Stock 1 a 5)",
+                "Cobertura Alta (Sobreabastecido: ≥ 30 días)"
             ], label_visibility="collapsed")
         
         with col_dl:
@@ -1839,11 +1964,11 @@ if df_raw is not None:
             
             if filtro_reporte == "Bloqueados (Estado B)":
                 df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
-            elif filtro_reporte == "Sin Stock (Stock = 0)":
+            elif filtro_reporte == "Sin Stock (Quiebre: Stock = 0)":
                 df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
-            elif filtro_reporte == "Stock Bajo (Stock 1 a 5)":
+            elif filtro_reporte == "Stock Bajo (Alerta: Stock 1 a 5)":
                 df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
-            elif filtro_reporte == "Cobertura Alta (≥ 30)":
+            elif filtro_reporte == "Cobertura Alta (Sobreabastecido: ≥ 30 días)":
                 df_rep = df_rep[df_rep['Cob_Num'] >= 30]
                 
             col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
@@ -1866,3 +1991,4 @@ if df_raw is not None:
             )
             
         st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True)
+        st.markdown("</div>", unsafe_allow_html=True)
