@@ -42,10 +42,7 @@ theme_vars = {
         "input_border": "#1e3a8a",
         "input_text": "#ffffff",
         "popover_bg": "#111c30",
-        "popover_border": "#1e3a8a",
-        "popover_text": "#ffffff",
         "popover_hover": "#1e3a8a",
-        "popover_hover_text": "#60a5fa",
         "btn_bg": "#111c30",
         "btn_text": "#ffffff",
         "insight_green_bg": "rgba(16, 185, 129, 0.12)",
@@ -69,16 +66,13 @@ theme_vars = {
         "accent_purple": "#7c3aed",
         "accent_amber": "#d97706",
         "grid_color": "rgba(0, 0, 0, 0.06)",
-        "card_shadow": "0 2px 6px rgba(0,0,0,0.05)",
+        "card_shadow": "0 2px 6px rgba(0,0,0,0.06)",
         "plotly_text": "#334155",
         "input_bg": "#ffffff",
         "input_border": "#2563eb",
         "input_text": "#0f172a",
         "popover_bg": "#ffffff",
-        "popover_border": "#2563eb",
-        "popover_text": "#0f172a",
         "popover_hover": "#eff6ff",
-        "popover_hover_text": "#2563eb",
         "btn_bg": "#ffffff",
         "btn_text": "#0f172a",
         "insight_green_bg": "#dcfce7",
@@ -91,13 +85,13 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS GLOBAL (AFECTA DIRECTAMENTE A LOS MENÚS FLOTANTES POPOVERS)
+# INYECCIÓN CSS FORZADA DE MÁXIMA ESPECIFICIDAD
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         
-        /* FONDO GENERAL */
-        html, body, .stApp, [data-testid="stAppViewContainer"], .main, section.main, [data-testid="stHeader"] {{
+        /* FONDO GENERAL STREAMLIT */
+        html, body, .stApp, [data-testid="stAppViewContainer"], .main, section.main, [data-testid="stHeader"], [data-testid="stToolbar"] {{
             background-color: {t["bg_app"]} !important;
             background: {t["bg_app"]} !important;
             color: {t["text_primary"]} !important;
@@ -116,10 +110,21 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* CAJA PRINCIPAL DEL SELECTBOX */
-        [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
+        /* OVERRIDE TOTAL Y AGRESIVO DE SELECTBOXES EN STREAMLIT */
+        [data-testid="stSelectbox"],
+        [data-testid="stSelectbox"] > div,
+        [data-testid="stSelectbox"] div[data-baseweb="select"],
+        [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+        [data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
+        [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus,
+        [data-testid="stSelectbox"] [class*="st-emotion-cache"] {{
             background-color: {t["input_bg"]} !important;
             background: {t["input_bg"]} !important;
+            border-color: {t["input_border"]} !important;
+            color: {t["input_text"]} !important;
+        }}
+
+        [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
             border: 2px solid {t["input_border"]} !important;
             border-radius: 6px !important;
             min-height: 38px !important;
@@ -134,9 +139,10 @@ st.markdown(f"""
 
         [data-testid="stSelectbox"] svg {{
             fill: {t["text_secondary"]} !important;
+            color: {t["text_secondary"]} !important;
         }}
         
-        /* OVERRIDE GLOBAL DE LOS MENÚS FLOTANTES POPOVERS (REACT PORTAL EN BODY) */
+        /* POPOVERS Y MENÚS DESPLEGABLES */
         div[data-baseweb="popover"],
         div[data-baseweb="popover"] > div,
         div[data-baseweb="menu"],
@@ -144,31 +150,25 @@ st.markdown(f"""
         div[data-baseweb="popover"] [class*="st-emotion-cache"] {{
             background-color: {t["popover_bg"]} !important;
             background: {t["popover_bg"]} !important;
-            border: 1.5px solid {t["popover_border"]} !important;
-            border-radius: 8px !important;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.18) !important;
+            color: {t["input_text"]} !important;
+            border: 1.5px solid {t["input_border"]} !important;
+            border-radius: 6px !important;
         }}
         
-        div[data-baseweb="popover"] li,
-        div[data-baseweb="menu"] li,
         li[role="option"] {{
             background-color: {t["popover_bg"]} !important;
             background: {t["popover_bg"]} !important;
-            color: {t["popover_text"]} !important;
-            -webkit-text-fill-color: {t["popover_text"]} !important;
+            color: {t["input_text"]} !important;
+            -webkit-text-fill-color: {t["input_text"]} !important;
             font-weight: 600 !important;
-            font-size: 0.86rem !important;
-            padding: 8px 14px !important;
+            font-size: 0.85rem !important;
         }}
         
-        div[data-baseweb="popover"] li:hover,
-        div[data-baseweb="menu"] li:hover,
-        li[role="option"]:hover,
-        li[aria-selected="true"] {{
+        li[role="option"]:hover, li[aria-selected="true"] {{
             background-color: {t["popover_hover"]} !important;
             background: {t["popover_hover"]} !important;
-            color: {t["popover_hover_text"]} !important;
-            -webkit-text-fill-color: {t["popover_hover_text"]} !important;
+            color: {t["accent"]} !important;
+            -webkit-text-fill-color: {t["accent"]} !important;
         }}
         
         /* BOTONES STREAMLIT */
@@ -1048,8 +1048,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'};">Sin Stock</button>
               <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'};">Stock 1-5</button>
               <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'};">Stock >5</button>
-              <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥30</button>
-              <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP</button>
+              <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥30</button>
+              <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP</button>
             </div>
             
             <div class="fs-cat-wrapper">
@@ -1720,7 +1720,7 @@ if df_raw is not None:
         components.html(html_pasillo, height=840, scrolling=False)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (FORMATO EXACTO A PESTAÑA 1) ---
     # =========================================================================
     with tab2:
         ventas_globales = df_unicos['Venta_Num'].sum()
@@ -1767,7 +1767,7 @@ if df_raw is not None:
             </div>
         """, unsafe_allow_html=True)
         
-        # --- FILTRO POR CATEGORÍA ---
+        # --- FILTRO POR CATEGORÍA ESTILIZADO CON EMOJI ---
         cats_disponibles = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
         col_seg_cat, col_sp_info = st.columns([3, 7])
         with col_seg_cat:
