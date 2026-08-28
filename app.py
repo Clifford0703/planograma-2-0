@@ -91,7 +91,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON CONTROL TOTAL DE LA LISTA DESPLEGABLE
+# INYECCIÓN CSS GLOBAL
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -115,7 +115,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* CAJA PRINCIPAL DE LA SEGMENTACIÓN */
+        /* OVERRIDE TOTAL DE SELECTBOXES */
         [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
             background-color: {t["input_bg"]} !important;
             background: {t["input_bg"]} !important;
@@ -137,7 +137,6 @@ st.markdown(f"""
             fill: {t["text_secondary"]} !important;
         }}
         
-        /* LISTA FLOTANTE QUE SE DESPLIEGA DEBAJO DE LA SEGMENTACIÓN (ROOT DOM PORTAL) */
         div[data-baseweb="popover"],
         div[data-baseweb="popover"] > div,
         div[data-baseweb="menu"],
@@ -212,7 +211,7 @@ st.markdown(f"""
             border-radius: 8px !important;
         }}
         
-        /* TARJETAS KPIS DEL DASHBOARD */
+        /* TARJETAS KPIS */
         .fin-kpi-container {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -263,7 +262,7 @@ st.markdown(f"""
             color: {t["text_muted"]};
         }}
         
-        /* CONTENEDORES DE GRÁFICOS Y FAIR SHARE */
+        /* CONTENEDORES DE GRÁFICOS */
         .dash-card {{
             background: {t["bg_card"]};
             border: 1px solid {t["border_subtle"]};
@@ -291,14 +290,12 @@ st.markdown(f"""
             gap: 6px;
         }}
         
-        /* LABELS DE WIDGETS */
         .stSelectbox label, .stRadio label {{
             color: {t["text_primary"]} !important;
             font-weight: 800 !important;
             font-size: 0.80rem !important;
         }}
         
-        /* PESTAÑAS (TABS) */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px;
             background-color: {t["bg_card"]};
@@ -325,7 +322,6 @@ st.markdown(f"""
             -webkit-text-fill-color: #ffffff !important;
         }}
 
-        /* TARJETAS DE INSIGHTS */
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -1051,8 +1047,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'};">Sin Stock</button>
               <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'};">Stock 1-5</button>
               <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'};">Stock >5</button>
-              <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥30</button>
-              <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP</button>
+              <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥30</button>
+              <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP</button>
             </div>
             
             <div class="fs-cat-wrapper">
@@ -1723,16 +1719,32 @@ if df_raw is not None:
         components.html(html_pasillo, height=840, scrolling=False)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (FORMATO EXACTO A PESTAÑA 1) ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO ---
     # =========================================================================
     with tab2:
-        ventas_globales = df_unicos['Venta_Num'].sum()
-        margen_global = df_unicos['Margen_Num'].sum()
+        # --- FILTRO GLOBAL DE CATEGORÍA QUE FILTRA TAMBIÉN LAS TARJETAS SUPERIORES ---
+        cats_disponibles = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
+        col_seg_cat, col_sp_info = st.columns([3, 7])
+        with col_seg_cat:
+            cat_seleccionada = st.selectbox("📂 CATEGORÍA:", ["Todas las Categorías"] + cats_disponibles)
+        with col_sp_info:
+            st.markdown(f"<div style='margin-top: 30px; font-size: 0.78rem; font-weight: 700; color: {t['text_muted']}; text-align: right;'>Métricas sincronizadas en tiempo real</div>", unsafe_allow_html=True)
+        
+        # Filtrado global aplicado primero
+        df_dash_base = df_base.copy()
+        if cat_seleccionada != "Todas las Categorías":
+            df_dash_base = df_dash_base[df_dash_base['Categoría'] == cat_seleccionada]
+            
+        df_dash_unicos = df_dash_base.drop_duplicates(subset=['COD REAL']).copy()
+
+        # Métricas calculadas con base al filtro global de categoría
+        ventas_globales = df_dash_unicos['Venta_Num'].sum()
+        margen_global = df_dash_unicos['Margen_Num'].sum()
         margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
-        total_skus_activos = len(df_unicos)
+        total_skus_activos = len(df_dash_unicos)
         promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
         
-        # --- TARJETAS KPIS ---
+        # --- TARJETAS KPIS DINÁMICAS ---
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #3b82f6;">
@@ -1770,30 +1782,41 @@ if df_raw is not None:
             </div>
         """, unsafe_allow_html=True)
         
-        # --- FILTRO POR CATEGORÍA ---
-        cats_disponibles = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
-        col_seg_cat, col_sp_info = st.columns([3, 7])
-        with col_seg_cat:
-            cat_seleccionada = st.selectbox("📂 CATEGORÍA:", ["Todas las Categorías"] + cats_disponibles)
-        with col_sp_info:
-            st.markdown(f"<div style='margin-top: 30px; font-size: 0.78rem; font-weight: 700; color: {t['text_muted']}; text-align: right;'>Métricas sincronizadas en tiempo real</div>", unsafe_allow_html=True)
-        
-        df_dash_base = df_base.copy()
-        if cat_seleccionada != "Todas las Categorías":
-            df_dash_base = df_dash_base[df_dash_base['Categoría'] == cat_seleccionada]
-            
-        df_dash_unicos = df_dash_base.drop_duplicates(subset=['COD REAL']).copy()
+        st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
+
+        # --- GESTIÓN DE ESTADO PARA ORDENAMIENTO (3 PUNTOS) Y ANALIZAR POR (CHIPS) ---
+        if "orden_rendimiento" not in st.session_state:
+            st.session_state.orden_rendimiento = "Secuencial (Cuerpo 1..N)"
+        if "analizar_por" not in st.session_state:
+            st.session_state.analizar_por = "Categoría"
 
         # --- NIVEL 2: GRÁFICOS OPERATIVOS ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
-            st.markdown(f"""
-                <div class="dash-card">
-                    <div class="dash-card-header">
-                        <span class="dash-card-title">📈 Rendimiento Comercial por Cuerpo</span>
-                        <span style="font-size: 0.70rem; font-weight: 800; color: {t['text_secondary']};">VENTAS (S/) vs MARGEN (%)</span>
+            # Encabezado del gráfico con menú contextual de 3 puntos (popover)
+            head_col1, head_col2 = st.columns([8, 2])
+            with head_col1:
+                st.markdown(f"""
+                    <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; display: flex; align-items: center; gap: 6px; padding-top: 6px;">
+                        📈 Rendimiento Comercial por Cuerpo <span style="font-size: 0.70rem; font-weight: 700; color: {t['text_muted']};">(VENTAS vs MARGEN)</span>
                     </div>
+                """, unsafe_allow_html=True)
+            with head_col2:
+                with st.popover("⋮", help="Opciones de ordenamiento"):
+                    st.markdown("**Ordenar gráfico por:**")
+                    if st.button("🔢 Secuencial (Cuerpo 1..N)", use_container_width=True):
+                        st.session_state.orden_rendimiento = "Secuencial (Cuerpo 1..N)"
+                        st.rerun()
+                    if st.button("💰 Mayor a Menor Venta", use_container_width=True):
+                        st.session_state.orden_rendimiento = "Mayor a Menor Venta"
+                        st.rerun()
+                    if st.button("📈 Mayor Margen (%)", use_container_width=True):
+                        st.session_state.orden_rendimiento = "Mayor Margen (%)"
+                        st.rerun()
+
+            st.markdown(f"""
+                <div class="dash-card" style="margin-top: 4px;">
             """, unsafe_allow_html=True)
             
             bandeja_str = df_dash_base.get('Bandeja', pd.Series(["1.1"]*len(df_dash_base))).astype(str)
@@ -1824,20 +1847,13 @@ if df_raw is not None:
                 axis=1
             )
             
-            col_ord, _ = st.columns([2.5, 1.5])
-            with col_ord:
-                orden_grafico = st.selectbox("📊 ORDENAR POR:", 
-                    ["Secuencial (Cuerpo 1..N)", "Mayor a Menor Venta", "Mayor Margen (%)"],
-                    label_visibility="visible"
-                )
-            
+            orden_grafico = st.session_state.orden_rendimiento
             if orden_grafico == "Mayor a Menor Venta": ventas_cuerpo = ventas_cuerpo.sort_values('Venta_Total', ascending=False)
             elif orden_grafico == "Mayor Margen (%)": ventas_cuerpo = ventas_cuerpo.sort_values('Margen_Pct', ascending=False)
             else: ventas_cuerpo = ventas_cuerpo.sort_values('Cuerpo_Ord')
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             
-            # Barras de Venta
             fig.add_trace(
                 go.Bar(
                     x=ventas_cuerpo['Cuerpo_Label'], 
@@ -1853,7 +1869,6 @@ if df_raw is not None:
                 ), secondary_y=False
             )
 
-            # Línea de Margen (%)
             fig.add_trace(
                 go.Scatter(
                     x=ventas_cuerpo['Cuerpo_Label'], 
@@ -1883,22 +1898,32 @@ if df_raw is not None:
             fig.update_xaxes(fixedrange=True)
             fig.update_yaxes(fixedrange=True)
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden actual: <b>{orden_grafico}</b></div></div>", unsafe_allow_html=True)
             
         with col_graf_der:
+            # Selector tipo leyenda / chips para Mix de Venta
             st.markdown(f"""
-                <div class="dash-card">
-                    <div class="dash-card-header">
-                        <span class="dash-card-title">🍩 Mix de Venta</span>
-                        <span style="font-size: 0.70rem; font-weight: 800; color: {t['text_secondary']};">PARTICIPACIÓN</span>
-                    </div>
+                <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px; margin-bottom: 6px;">
+                    🍩 Mix de Venta <span style="font-size: 0.70rem; font-weight: 700; color: {t['text_muted']};">({st.session_state.analizar_por.upper()})</span>
+                </div>
             """, unsafe_allow_html=True)
             
-            vista_anillo = st.selectbox("🏷️ ANALIZAR POR:", 
-                ["Categoría", "Departamento", "Sección", "Grupo de artículo", "Marca"], 
-                label_visibility="visible"
-            )
+            # Píldoras de selección interactiva
+            opciones_analizar = ["Categoría", "Departamento", "Sección", "Grupo de artículo", "Marca"]
+            cols_chips = st.columns(len(opciones_analizar))
+            for i, opt in enumerate(opciones_analizar):
+                with cols_chips[i]:
+                    is_active = st.session_state.analizar_por == opt
+                    btn_type = "primary" if is_active else "secondary"
+                    if st.button(opt, key=f"chip_mix_{opt}", use_container_width=True, type=btn_type):
+                        st.session_state.analizar_por = opt
+                        st.rerun()
+
+            st.markdown(f"""
+                <div class="dash-card" style="margin-top: 4px;">
+            """, unsafe_allow_html=True)
             
+            vista_anillo = st.session_state.analizar_por
             df_pie = df_dash_unicos.groupby(vista_anillo)['Venta_Num'].sum().reset_index()
             df_pie = df_pie[df_pie['Venta_Num'] > 0].sort_values(by='Venta_Num', ascending=False)
             ventas_dash_total = df_dash_unicos['Venta_Num'].sum()
@@ -1976,7 +2001,6 @@ if df_raw is not None:
             
             fig_fs = go.Figure()
             
-            # Barra % Espacio
             fig_fs.add_trace(go.Bar(
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Espacio'],
@@ -1990,7 +2014,6 @@ if df_raw is not None:
                 customdata=df_fs['Espacio_Total']
             ))
             
-            # Barra % Ventas
             fig_fs.add_trace(go.Bar(
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Ventas'],
@@ -2004,7 +2027,6 @@ if df_raw is not None:
                 customdata=df_fs['Ventas_Total']
             ))
 
-            # Barra % Margen
             fig_fs.add_trace(go.Bar(
                 x=df_fs[dim_fs],
                 y=df_fs['Pct_Margen'],
@@ -2033,7 +2055,6 @@ if df_raw is not None:
             fig_fs.update_yaxes(fixedrange=True)
             st.plotly_chart(fig_fs, use_container_width=True, config={'displayModeBar': False})
             
-            # DIAGNÓSTICOS SEMÁNTICOS CON TIPOGRAFÍA DE ALTO CONTRASTE
             subdimensionados = df_fs[df_fs['Brecha_Share'] > 0.03]
             sobredimensionados = df_fs[df_fs['Brecha_Share'] < -0.03]
             
