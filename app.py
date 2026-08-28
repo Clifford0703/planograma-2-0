@@ -1719,105 +1719,118 @@ if df_raw is not None:
         components.html(html_pasillo, height=840, scrolling=False)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (INDEPENDIENTE Y REDISEÑADO) ---
     # =========================================================================
     with tab2:
-        # --- FILTRO GLOBAL DE CATEGORÍA QUE FILTRA TAMBIÉN LAS TARJETAS SUPERIORES ---
-        cats_disponibles = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
-        col_seg_cat, col_sp_info = st.columns([3, 7])
-        with col_seg_cat:
-            cat_seleccionada = st.selectbox("📂 CATEGORÍA:", ["Todas las Categorías"] + cats_disponibles)
-        with col_sp_info:
-            st.markdown(f"<div style='margin-top: 30px; font-size: 0.78rem; font-weight: 700; color: {t['text_muted']}; text-align: right;'>Métricas sincronizadas en tiempo real</div>", unsafe_allow_html=True)
-        
-        # Filtrado global aplicado primero
-        df_dash_base = df_base.copy()
-        if cat_seleccionada != "Todas las Categorías":
-            df_dash_base = df_dash_base[df_dash_base['Categoría'] == cat_seleccionada]
-            
-        df_dash_unicos = df_dash_base.drop_duplicates(subset=['COD REAL']).copy()
+        # Inicialización de estados locales para el Dashboard
+        if "dash_orden" not in st.session_state:
+            st.session_state.dash_orden = "Secuencial (Cuerpo 1..N)"
+        if "dash_analizar" not in st.session_state:
+            st.session_state.dash_analizar = "Categoría"
 
-        # Métricas calculadas con base al filtro global de categoría
+        # --- FILTROS DE ESTA PESTAÑA (INDEPENDIENTES Y ORDENADOS EXACTAMENTE COMO PEDISTE) ---
+        st.markdown(f"<div style='font-size: 0.85rem; font-weight: 800; color: {t['text_secondary']}; margin-bottom: 8px; text-transform: uppercase;'>🎯 Filtros Operativos del Dashboard</div>", unsafe_allow_html=True)
+        
+        col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns(5)
+        
+        with col_f1:
+            deptos_disp = sorted([d for d in df_unicos['Departamento'].dropna().unique() if d not in ['S/D', 'nan', '']])
+            filtro_depto = st.selectbox("🏬 Departamento", ["Todos"] + deptos_disp, key="dash_depto_sel")
+        with col_f2:
+            secs_disp = sorted([s for s in df_unicos['Sección'].dropna().unique() if s not in ['S/S', 'nan', '']])
+            filtro_seccion = st.selectbox("📂 Sección", ["Todas"] + secs_disp, key="dash_seccion_sel")
+        with col_f3:
+            cats_disp = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
+            filtro_categoria = st.selectbox("📁 Categoría", ["Todas"] + cats_disp, key="dash_cat_sel")
+        with col_f4:
+            gas_disp = sorted([g for g in df_unicos['Grupo de artículo'].dropna().unique() if g not in ['S/G', 'nan', '']])
+            filtro_ga = st.selectbox("📦 Grupo Artículo", ["Todos"] + gas_disp, key="dash_ga_sel")
+        with col_f5:
+            marcas_disp = sorted([m for m in df_unicos['Marca'].dropna().unique() if m not in ['S/M', 'nan', '']])
+            filtro_marca = st.selectbox("🏷️ Marca", ["Todas"] + marcas_disp, key="dash_marca_sel")
+
+        # Aplicación exclusiva de filtros de la pestaña 2 a df_base y df_unicos locales
+        df_dash_base = df_base.copy()
+        df_dash_unicos = df_unicos.copy()
+
+        if filtro_depto != "Todos":
+            df_dash_base = df_dash_base[df_dash_base['Departamento'] == filtro_depto]
+            df_dash_unicos = df_dash_unicos[df_dash_unicos['Departamento'] == filtro_depto]
+        if filtro_seccion != "Todas":
+            df_dash_base = df_dash_base[df_dash_base['Sección'] == filtro_seccion]
+            df_dash_unicos = df_dash_unicos[df_dash_unicos['Sección'] == filtro_seccion]
+        if filtro_categoria != "Todas":
+            df_dash_base = df_dash_base[df_dash_base['Categoría'] == filtro_categoria]
+            df_dash_unicos = df_dash_unicos[df_dash_unicos['Categoría'] == filtro_categoria]
+        if filtro_ga != "Todos":
+            df_dash_base = df_dash_base[df_dash_base['Grupo de artículo'] == filtro_ga]
+            df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de artículo'] == filtro_ga]
+        if filtro_marca != "Todas":
+            df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
+            df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
+
+        st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+
+        # --- CÁLCULO DE KPIS CON FILTROS LOCALES ---
         ventas_globales = df_dash_unicos['Venta_Num'].sum()
         margen_global = df_dash_unicos['Margen_Num'].sum()
         margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
         total_skus_activos = len(df_dash_unicos)
         promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
         
-        # --- TARJETAS KPIS DINÁMICAS ---
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #3b82f6;">
-                    <div class="fin-kpi-title">
-                        <span>Ventas Brutas</span>
-                        <span>💳</span>
-                    </div>
+                    <div class="fin-kpi-title"><span>Ventas Brutas Filtradas</span><span>💳</span></div>
                     <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
                     <div class="fin-kpi-subtitle">Ticket Promedio/SKU: S/ {promedio_venta_sku:,.2f}</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #10b981;">
-                    <div class="fin-kpi-title">
-                        <span>Margen Total Bruto</span>
-                        <span>📈</span>
-                    </div>
+                    <div class="fin-kpi-title"><span>Margen Total Bruto</span><span>📈</span></div>
                     <div class="fin-kpi-val" style="color: {t['accent_green']};">S/ {margen_global:,.2f}</div>
                     <div class="fin-kpi-subtitle">Ganancia Monetaria Acumulada</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #8b5cf6;">
-                    <div class="fin-kpi-title">
-                        <span>Margen Global</span>
-                        <span>📊</span>
-                    </div>
+                    <div class="fin-kpi-title"><span>Margen Global (%)</span><span>📊</span></div>
                     <div class="fin-kpi-val" style="color: {t['accent_purple']};">{margen_pct_global*100:.1f}%</div>
                     <div class="fin-kpi-subtitle">Rentabilidad sobre Venta</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #fbbf24;">
-                    <div class="fin-kpi-title">
-                        <span>Surtido Activo</span>
-                        <span>📦</span>
-                    </div>
+                    <div class="fin-kpi-title"><span>Surtido Activo</span><span>📦</span></div>
                     <div class="fin-kpi-val" style="color: {t['accent_amber']};">{total_skus_activos}</div>
-                    <div class="fin-kpi-subtitle">SKUs Únicos en Mueble</div>
+                    <div class="fin-kpi-subtitle">SKUs Únicos Filtrados</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
         
-        st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
-
-        # --- GESTIÓN DE ESTADO PARA ORDENAMIENTO (3 PUNTOS) Y ANALIZAR POR (CHIPS) ---
-        if "orden_rendimiento" not in st.session_state:
-            st.session_state.orden_rendimiento = "Secuencial (Cuerpo 1..N)"
-        if "analizar_por" not in st.session_state:
-            st.session_state.analizar_por = "Categoría"
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
         # --- NIVEL 2: GRÁFICOS OPERATIVOS ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
-            # Encabezado del gráfico con menú contextual de 3 puntos (popover)
-            head_col1, head_col2 = st.columns([8, 2])
-            with head_col1:
+            # Cabecera con menú de 3 puntos (⋮) para ordenar
+            h_c1, h_c2 = st.columns([8, 2])
+            with h_c1:
                 st.markdown(f"""
-                    <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; display: flex; align-items: center; gap: 6px; padding-top: 6px;">
-                        📈 Rendimiento Comercial por Cuerpo <span style="font-size: 0.70rem; font-weight: 700; color: {t['text_muted']};">(VENTAS vs MARGEN)</span>
+                    <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px;">
+                        📈 Rendimiento Comercial por Cuerpo <span style="font-size: 0.68rem; color: {t['text_muted']}; font-weight: 600;">(VENTAS vs MARGEN)</span>
                     </div>
                 """, unsafe_allow_html=True)
-            with head_col2:
+            with h_c2:
                 with st.popover("⋮", help="Opciones de ordenamiento"):
-                    st.markdown("**Ordenar gráfico por:**")
-                    if st.button("🔢 Secuencial (Cuerpo 1..N)", use_container_width=True):
-                        st.session_state.orden_rendimiento = "Secuencial (Cuerpo 1..N)"
+                    st.markdown("**Ordenar por:**")
+                    if st.button("🔢 Secuencial", use_container_width=True, key="ord_seq"):
+                        st.session_state.dash_orden = "Secuencial (Cuerpo 1..N)"
                         st.rerun()
-                    if st.button("💰 Mayor a Menor Venta", use_container_width=True):
-                        st.session_state.orden_rendimiento = "Mayor a Menor Venta"
+                    if st.button("💰 Mayor Venta", use_container_width=True, key="ord_ven"):
+                        st.session_state.dash_orden = "Mayor a Menor Venta"
                         st.rerun()
-                    if st.button("📈 Mayor Margen (%)", use_container_width=True):
-                        st.session_state.orden_rendimiento = "Mayor Margen (%)"
+                    if st.button("📈 Mayor Margen", use_container_width=True, key="ord_mar"):
+                        st.session_state.dash_orden = "Mayor Margen (%)"
                         st.rerun()
 
-            st.markdown(f"""
-                <div class="dash-card" style="margin-top: 4px;">
-            """, unsafe_allow_html=True)
+            st.markdown(f'<div class="dash-card" style="margin-top: 4px;">', unsafe_allow_html=True)
             
             bandeja_str = df_dash_base.get('Bandeja', pd.Series(["1.1"]*len(df_dash_base))).astype(str)
             df_dash_base['Cuerpo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
@@ -1847,9 +1860,9 @@ if df_raw is not None:
                 axis=1
             )
             
-            orden_grafico = st.session_state.orden_rendimiento
-            if orden_grafico == "Mayor a Menor Venta": ventas_cuerpo = ventas_cuerpo.sort_values('Venta_Total', ascending=False)
-            elif orden_grafico == "Mayor Margen (%)": ventas_cuerpo = ventas_cuerpo.sort_values('Margen_Pct', ascending=False)
+            orden_activo = st.session_state.dash_orden
+            if orden_activo == "Mayor a Menor Venta": ventas_cuerpo = ventas_cuerpo.sort_values('Venta_Total', ascending=False)
+            elif orden_activo == "Mayor Margen (%)": ventas_cuerpo = ventas_cuerpo.sort_values('Margen_Pct', ascending=False)
             else: ventas_cuerpo = ventas_cuerpo.sort_values('Cuerpo_Ord')
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -1898,32 +1911,30 @@ if df_raw is not None:
             fig.update_xaxes(fixedrange=True)
             fig.update_yaxes(fixedrange=True)
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-            st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden actual: <b>{orden_grafico}</b></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
             
         with col_graf_der:
-            # Selector tipo leyenda / chips para Mix de Venta
+            # Selector de "Analizar Por" en orden exacto: Departamento -> Sección -> Categoría -> Grupo de artículo -> Marca
             st.markdown(f"""
                 <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px; margin-bottom: 6px;">
-                    🍩 Mix de Venta <span style="font-size: 0.70rem; font-weight: 700; color: {t['text_muted']};">({st.session_state.analizar_por.upper()})</span>
+                    🍩 Mix de Venta <span style="font-size: 0.68rem; color: {t['text_secondary']}; font-weight: 700;">({st.session_state.dash_analizar.upper()})</span>
                 </div>
             """, unsafe_allow_html=True)
             
-            # Píldoras de selección interactiva
-            opciones_analizar = ["Categoría", "Departamento", "Sección", "Grupo de artículo", "Marca"]
-            cols_chips = st.columns(len(opciones_analizar))
-            for i, opt in enumerate(opciones_analizar):
-                with cols_chips[i]:
-                    is_active = st.session_state.analizar_por == opt
-                    btn_type = "primary" if is_active else "secondary"
-                    if st.button(opt, key=f"chip_mix_{opt}", use_container_width=True, type=btn_type):
-                        st.session_state.analizar_por = opt
+            # Píldoras de dimensiones en orden estricto
+            dims_mix = ["Departamento", "Sección", "Categoría", "Grupo de artículo", "Marca"]
+            c_chips = st.columns(len(dims_mix))
+            for i, d_opt in enumerate(dims_mix):
+                with c_chips[i]:
+                    active = st.session_state.dash_analizar == d_opt
+                    btn_tp = "primary" if active else "secondary"
+                    if st.button(d_opt, key=f"mix_btn_{d_opt}", use_container_width=True, type=btn_tp):
+                        st.session_state.dash_analizar = d_opt
                         st.rerun()
 
-            st.markdown(f"""
-                <div class="dash-card" style="margin-top: 4px;">
-            """, unsafe_allow_html=True)
+            st.markdown(f'<div class="dash-card" style="margin-top: 4px;">', unsafe_allow_html=True)
             
-            vista_anillo = st.session_state.analizar_por
+            vista_anillo = st.session_state.dash_analizar
             df_pie = df_dash_unicos.groupby(vista_anillo)['Venta_Num'].sum().reset_index()
             df_pie = df_pie[df_pie['Venta_Num'] > 0].sort_values(by='Venta_Num', ascending=False)
             ventas_dash_total = df_dash_unicos['Venta_Num'].sum()
@@ -1941,11 +1952,10 @@ if df_raw is not None:
             )])
             
             fig_pie.update_layout(
-                showlegend=True,
-                legend=dict(font=dict(color=t["plotly_text"], size=9), orientation='h', yanchor='top', y=-0.1),
+                showlegend=False,  # Sin leyenda inferior masiva, limpio con tooltip flotante
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
-                margin=dict(t=10, b=25, l=10, r=10),
+                margin=dict(t=10, b=10, l=10, r=10),
                 annotations=[dict(text=f'<b>S/ {ventas_dash_total/1000:,.1f}K</b><br><span style="font-size:8px; color:{t["text_muted"]}">TOTAL</span>', x=0.5, y=0.5, font_size=15, showarrow=False, font_color=t["text_primary"])]
             )
             fig_pie.update_traces(hovertemplate="<b>%{label}</b><br>Ventas: S/ %{value:,.2f}<br>Participación: %{percent}<extra></extra>")
@@ -1966,7 +1976,7 @@ if df_raw is not None:
         with col_fs_dim:
             dim_fs = st.selectbox(
                 "⚖️ SEGMENTAR POR:", 
-                ["Categoría", "Sección", "Departamento", "Grupo de artículo", "Marca"],
+                ["Departamento", "Sección", "Categoría", "Grupo de artículo", "Marca"],
                 key="fs_dim_select"
             )
         with col_fs_met:
@@ -2126,7 +2136,7 @@ if df_raw is not None:
                 lambda x: ", ".join(sorted(list(set(x.dropna()))))
             ).to_dict()
 
-            df_rep = df_unicos.copy()
+            df_rep = df_dash_unicos.copy()
             df_rep['Ubicación(es)'] = df_rep['COD REAL'].map(ubicaciones_map)
             
             if filtro_reporte == "Bloqueados (Estado B)":
