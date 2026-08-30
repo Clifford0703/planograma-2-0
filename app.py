@@ -48,6 +48,7 @@ theme_vars = {
         "popover_hover_text": "#60a5fa",
         "btn_bg": "#111c30",
         "btn_text": "#ffffff",
+        "tab_inactive_text": "#94a3b8",
         "insight_green_bg": "rgba(16, 185, 129, 0.12)",
         "insight_green_text": "#6ee7b7",
         "insight_amber_bg": "rgba(245, 158, 11, 0.12)",
@@ -81,6 +82,7 @@ theme_vars = {
         "popover_hover_text": "#2563eb",
         "btn_bg": "#ffffff",
         "btn_text": "#0f172a",
+        "tab_inactive_text": "#0f172a",
         "insight_green_bg": "#dcfce7",
         "insight_green_text": "#14532d",
         "insight_amber_bg": "#fef3c7",
@@ -91,7 +93,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON CONTROL TOTAL DE BOTONES Y WIDGETS
+# INYECCIÓN CSS GLOBAL
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -115,7 +117,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* CAJA PRINCIPAL DE LA SEGMENTACIÓN */
+        /* SELECTBOXES */
         [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
             background-color: {t["input_bg"]} !important;
             background: {t["input_bg"]} !important;
@@ -137,7 +139,7 @@ st.markdown(f"""
             fill: {t["text_secondary"]} !important;
         }}
         
-        /* LISTA FLOTANTE QUE SE DESPLIEGA (ROOT DOM PORTAL) */
+        /* LISTA FLOTANTE POPOVER */
         div[data-baseweb="popover"],
         div[data-baseweb="popover"] > div,
         div[data-baseweb="menu"],
@@ -176,7 +178,10 @@ st.markdown(f"""
             -webkit-text-fill-color: {t["popover_hover_text"]} !important;
         }}
         
-        /* BOTONES STREAMLIT: CURSOR Y COLORES FORZADOS */
+        /* BOTONES STREAMLIT: ÁREA DE CLIC 100% FUNCIONAL */
+        .stButton {{
+            position: relative;
+        }}
         .stButton > button {{
             background-color: {t["btn_bg"]} !important;
             background: {t["btn_bg"]} !important;
@@ -186,17 +191,22 @@ st.markdown(f"""
             border-radius: 6px !important;
             font-weight: 700 !important;
             box-shadow: {t["card_shadow"]} !important;
-            cursor: pointer !important;
-            user-select: none !important;
             transition: all 0.2s ease !important;
+            cursor: pointer !important;
+            width: 100% !important;
+            height: 38px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 12px !important;
         }}
         
-        .stButton > button * {{
+        .stButton > button p, .stButton > button span, .stButton > button div {{
             color: {t["btn_text"]} !important;
             -webkit-text-fill-color: {t["btn_text"]} !important;
-            cursor: pointer !important;
             pointer-events: none !important;
-            user-select: none !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
         }}
         
         .stButton > button:hover {{
@@ -207,7 +217,7 @@ st.markdown(f"""
             background: {t["popover_hover"]} !important;
         }}
 
-        .stButton > button:hover * {{
+        .stButton > button:hover p, .stButton > button:hover span {{
             color: {t["accent"]} !important;
             -webkit-text-fill-color: {t["accent"]} !important;
         }}
@@ -282,7 +292,7 @@ st.markdown(f"""
             color: {t["text_muted"]};
         }}
         
-        /* CONTENEDORES DE GRÁFICOS Y FAIR SHARE */
+        /* CONTENEDORES DE GRÁFICOS */
         .dash-card {{
             background: {t["bg_card"]};
             border: 1px solid {t["border_subtle"]};
@@ -310,17 +320,16 @@ st.markdown(f"""
             gap: 6px;
         }}
         
-        /* LABELS DE WIDGETS */
         .stSelectbox label, .stRadio label {{
             color: {t["text_primary"]} !important;
             font-weight: 800 !important;
             font-size: 0.80rem !important;
         }}
         
-        /* PESTAÑAS (TABS) */
+        /* PESTAÑAS (TABS) CON MÁXIMO CONTRASTE */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px;
-            background-color: {t["bg_card"]};
+            background-color: {t["bg_card"]} !important;
             padding: 6px;
             border-radius: 8px;
             border: 1px solid {t["border_subtle"]};
@@ -328,23 +337,32 @@ st.markdown(f"""
         }}
         
         .stTabs [data-baseweb="tab"] {{
-            height: 36px;
+            height: 38px;
             padding: 0 18px;
             border-radius: 6px;
             font-weight: 800;
-            font-size: 0.84rem;
-            color: {t["text_muted"]} !important;
+            font-size: 0.86rem;
+            color: {t["tab_inactive_text"]} !important;
             background-color: transparent !important;
             border: none !important;
+        }}
+        
+        .stTabs [data-baseweb="tab"] p, .stTabs [data-baseweb="tab"] span {{
+            color: {t["tab_inactive_text"]} !important;
+            -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
+            font-weight: 800 !important;
         }}
         
         .stTabs [aria-selected="true"] {{
             background-color: {t["accent"]} !important;
             color: #ffffff !important;
+        }}
+        
+        .stTabs [aria-selected="true"] p, .stTabs [aria-selected="true"] span {{
+            color: #ffffff !important;
             -webkit-text-fill-color: #ffffff !important;
         }}
 
-        /* TARJETAS DE INSIGHTS */
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -417,7 +435,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA ---
+# --- GENERADOR DEL PLANOGRAMA (HTML/JS) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -617,7 +635,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         ::-webkit-scrollbar-track {{ background: {card_bg}; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
 
-        /* BARRA SUPERIOR */
         .saas-top-bar {{
           display: flex;
           align-items: center;
@@ -639,27 +656,46 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           color: {text_primary};
         }}
 
-        /* KPIS */
+        /* KPIS CENTRADOS EN MONITORES ANCHOS */
         .kpi-container {{ 
-          display: flex; 
+          display: grid; 
+          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
           gap: 8px; 
           margin-bottom: 8px; 
-          flex-wrap: wrap; 
-          justify-content: space-between; 
+          width: 100%;
           flex-shrink: 0; 
         }}
         .kpi-card {{ 
-          flex: 1; 
-          min-width: 100px; 
           background: {card_bg}; 
           border: 1px solid {t["border_subtle"]}; 
           border-radius: 8px; 
-          padding: 8px 12px; 
-          text-align: left; 
+          padding: 10px 8px; 
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center; 
           box-shadow: {t["card_shadow"]}; 
         }}
-        .kpi-title {{ font-size: 0.62rem; font-weight: 800; color: {text_secondary}; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px; }}
-        .kpi-val {{ font-size: 1.35rem; font-weight: 900; line-height: 1.1; color: {text_primary}; font-feature-settings: "tnum"; }}
+        .kpi-title {{ 
+          font-size: 0.65rem; 
+          font-weight: 800; 
+          color: {text_secondary}; 
+          text-transform: uppercase; 
+          margin-bottom: 2px; 
+          letter-spacing: 0.5px;
+          text-align: center;
+          width: 100%;
+        }}
+        .kpi-val {{ 
+          font-size: 1.45rem; 
+          font-weight: 900; 
+          line-height: 1.1; 
+          color: {text_primary}; 
+          font-feature-settings: "tnum"; 
+          text-align: center;
+          width: 100%;
+        }}
         
         /* FILTROS */
         .filter-panel {{ 
@@ -742,12 +778,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         
         /* CONTENEDOR DEL PLANOGRAMA */
         .aisle-wrapper {{ 
-          display: flex;
-          flex-direction: column;
+          display: flex; 
+          flex-direction: column; 
           width: 100%; 
           position: relative; 
-          flex: 1;
-          min-height: 0;
+          flex: 1; 
+          min-height: 0; 
           background: {card_bg}; 
           border-radius: 10px; 
           border: 1px solid {t["border_subtle"]}; 
@@ -1025,15 +1061,15 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           </div>
         </div>
 
-        <!-- TARJETAS KPIS -->
+        <!-- TARJETAS KPIS CON CENTRADO EN MONITORES ANCHOS -->
         <div class="kpi-container">
-          <div class="kpi-card" style="border-left: 3px solid #3b82f6;"><span class="kpi-title">Total SKUs</span><span class="kpi-val" id="t-total">0</span></div>
-          <div class="kpi-card" style="border-left: 3px solid #ef4444;"><span class="kpi-title">Bloqueados</span><span class="kpi-val" id="t-bloq" style="color: #ef4444;">0</span></div>
-          <div class="kpi-card" style="border-left: 3px solid #f97316;"><span class="kpi-title">Sin Stock (0)</span><span class="kpi-val" id="t-sin" style="color: #f97316;">0</span></div>
-          <div class="kpi-card" style="border-left: 3px solid #eab308;"><span class="kpi-title">Stock Bajo (1-5)</span><span class="kpi-val" id="t-bajo" style="color: #eab308;">0</span></div>
-          <div class="kpi-card" style="border-left: 3px solid #10b981;"><span class="kpi-title">Stock OK (>5)</span><span class="kpi-val" id="t-ok" style="color: #10b981;">0</span></div>
-          <div class="kpi-card" style="border-left: 3px solid #ec4899;"><span class="kpi-title">Cob. Alta (≥30)</span><span class="kpi-val" id="t-cob" style="color: #ec4899;">0</span></div>
-          <div class="kpi-card" style="border-left: 3px solid #f59e0b;"><span class="kpi-title">★ Top Ventas</span><span class="kpi-val" id="t-top" style="color: #f59e0b;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #3b82f6;"><span class="kpi-title">Total SKUs</span><span class="kpi-val" id="t-total">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #ef4444;"><span class="kpi-title">Bloqueados</span><span class="kpi-val" id="t-bloq" style="color: #ef4444;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #f97316;"><span class="kpi-title">Sin Stock (0)</span><span class="kpi-val" id="t-sin" style="color: #f97316;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #eab308;"><span class="kpi-title">Stock Bajo (1-5)</span><span class="kpi-val" id="t-bajo" style="color: #eab308;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #10b981;"><span class="kpi-title">Stock OK (>5)</span><span class="kpi-val" id="t-ok" style="color: #10b981;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #ec4899;"><span class="kpi-title">Cob. Alta (≥30)</span><span class="kpi-val" id="t-cob" style="color: #ec4899;">0</span></div>
+          <div class="kpi-card" style="border-bottom: 3px solid #f59e0b;"><span class="kpi-title">★ Top Ventas</span><span class="kpi-val" id="t-top" style="color: #f59e0b;">0</span></div>
         </div>
 
         <div class="filter-panel">
@@ -1587,7 +1623,7 @@ with col_head2:
 with col_head3:
     col_act, col_time = st.columns([1, 2])
     with col_act:
-        if st.button("🔄 Sync", use_container_width=True, help="Sincronizar base central"):
+        if st.button("🔄", use_container_width=True, help="Sincronizar base central"):
             st.cache_data.clear()
             st.rerun()
     with col_time:
@@ -1937,7 +1973,6 @@ if df_raw is not None:
             st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
             
         with col_graf_der:
-            # Título del Mix de Venta con Píldoras de orden estricto: Departamento -> Sección -> Categoría -> Grupo de artículo -> Marca
             st.markdown(f"""
                 <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px; margin-bottom: 6px;">
                     🍩 Mix de Venta <span style="font-size: 0.68rem; color: {t['text_secondary']}; font-weight: 700;">({st.session_state.dash_analizar.upper()})</span>
