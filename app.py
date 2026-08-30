@@ -48,6 +48,7 @@ theme_vars = {
         "popover_hover_text": "#60a5fa",
         "btn_bg": "#111c30",
         "btn_text": "#ffffff",
+        "tab_inactive_bg": "#0f172a",
         "tab_inactive_text": "#94a3b8",
         "insight_green_bg": "rgba(16, 185, 129, 0.12)",
         "insight_green_text": "#6ee7b7",
@@ -82,6 +83,7 @@ theme_vars = {
         "popover_hover_text": "#2563eb",
         "btn_bg": "#ffffff",
         "btn_text": "#0f172a",
+        "tab_inactive_bg": "#f1f5f9",
         "tab_inactive_text": "#0f172a",
         "insight_green_bg": "#dcfce7",
         "insight_green_text": "#14532d",
@@ -93,7 +95,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS GLOBAL
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -115,6 +117,54 @@ st.markdown(f"""
             padding-top: 1rem !important;
             padding-bottom: 1.5rem !important;
             max-width: 100% !important;
+        }}
+        
+        /* PESTAÑAS (TABS) - VISIBILIDAD GARANTIZADA AL 100% */
+        .stTabs [data-baseweb="tab-list"] {{
+            gap: 8px !important;
+            background-color: {t["bg_card"]} !important;
+            padding: 6px !important;
+            border-radius: 8px !important;
+            border: 1.5px solid {t["border_subtle"]} !important;
+            margin-bottom: 14px !important;
+        }}
+        
+        .stTabs [data-baseweb="tab"] {{
+            height: 38px !important;
+            padding: 0 20px !important;
+            border-radius: 6px !important;
+            font-weight: 800 !important;
+            font-size: 0.86rem !important;
+            background-color: {t["tab_inactive_bg"]} !important;
+            color: {t["tab_inactive_text"]} !important;
+            border: 1px solid {t["border_subtle"]} !important;
+            opacity: 1 !important;
+        }}
+        
+        .stTabs [data-baseweb="tab"] p,
+        .stTabs [data-baseweb="tab"] span,
+        .stTabs [data-baseweb="tab"] div,
+        .stTabs [data-baseweb="tab"] * {{
+            color: {t["tab_inactive_text"]} !important;
+            -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
+            font-weight: 800 !important;
+            opacity: 1 !important;
+        }}
+        
+        .stTabs [aria-selected="true"] {{
+            background-color: {t["accent"]} !important;
+            background: {t["accent"]} !important;
+            color: #ffffff !important;
+            border-color: {t["accent"]} !important;
+        }}
+        
+        .stTabs [aria-selected="true"] p,
+        .stTabs [aria-selected="true"] span,
+        .stTabs [aria-selected="true"] div,
+        .stTabs [aria-selected="true"] * {{
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            font-weight: 900 !important;
         }}
         
         /* SELECTBOXES */
@@ -178,7 +228,7 @@ st.markdown(f"""
             -webkit-text-fill-color: {t["popover_hover_text"]} !important;
         }}
         
-        /* BOTONES STREAMLIT: ÁREA DE CLIC 100% FUNCIONAL */
+        /* BOTONES STREAMLIT */
         .stButton {{
             position: relative;
         }}
@@ -325,43 +375,6 @@ st.markdown(f"""
             font-weight: 800 !important;
             font-size: 0.80rem !important;
         }}
-        
-        /* PESTAÑAS (TABS) CON MÁXIMO CONTRASTE */
-        .stTabs [data-baseweb="tab-list"] {{
-            gap: 8px;
-            background-color: {t["bg_card"]} !important;
-            padding: 6px;
-            border-radius: 8px;
-            border: 1px solid {t["border_subtle"]};
-            margin-bottom: 12px;
-        }}
-        
-        .stTabs [data-baseweb="tab"] {{
-            height: 38px;
-            padding: 0 18px;
-            border-radius: 6px;
-            font-weight: 800;
-            font-size: 0.86rem;
-            color: {t["tab_inactive_text"]} !important;
-            background-color: transparent !important;
-            border: none !important;
-        }}
-        
-        .stTabs [data-baseweb="tab"] p, .stTabs [data-baseweb="tab"] span {{
-            color: {t["tab_inactive_text"]} !important;
-            -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
-            font-weight: 800 !important;
-        }}
-        
-        .stTabs [aria-selected="true"] {{
-            background-color: {t["accent"]} !important;
-            color: #ffffff !important;
-        }}
-        
-        .stTabs [aria-selected="true"] p, .stTabs [aria-selected="true"] span {{
-            color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
-        }}
 
         .insight-box {{
             border-radius: 8px;
@@ -435,7 +448,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (HTML/JS) ---
+# --- GENERADOR DEL PLANOGRAMA ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -635,6 +648,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         ::-webkit-scrollbar-track {{ background: {card_bg}; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
 
+        /* BARRA SUPERIOR */
         .saas-top-bar {{
           display: flex;
           align-items: center;
@@ -1973,6 +1987,7 @@ if df_raw is not None:
             st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
             
         with col_graf_der:
+            # Selector de dimensión Mix de Venta
             st.markdown(f"""
                 <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px; margin-bottom: 6px;">
                     🍩 Mix de Venta <span style="font-size: 0.68rem; color: {t['text_secondary']}; font-weight: 700;">({st.session_state.dash_analizar.upper()})</span>
@@ -2020,39 +2035,33 @@ if df_raw is not None:
             st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
             st.markdown("</div>", unsafe_allow_html=True)
 
-        # --- NIVEL 3: FAIR SHARE ANALYSIS ---
+        # --- NIVEL 3: FAIR SHARE ANALYSIS (SIEMPRE POR CATEGORÍA) ---
         st.markdown(f"""
             <div class="dash-card">
                 <div class="dash-card-header">
-                    <span class="dash-card-title">⚖️ Fair Share: Espacio Físico vs Rendimiento</span>
-                    <span style="font-size: 0.70rem; font-weight: 800; color: {t['text_secondary']};">ANÁLISIS DE EFICIENCIA</span>
+                    <span class="dash-card-title">⚖️ Fair Share: Espacio Físico vs Rendimiento y Margen</span>
+                    <span style="font-size: 0.70rem; font-weight: 800; color: {t['text_secondary']};">ANÁLISIS POR CATEGORÍA</span>
                 </div>
         """, unsafe_allow_html=True)
         
-        col_fs_dim, col_fs_met = st.columns([2, 2])
-        with col_fs_dim:
-            dim_fs = st.selectbox(
-                "⚖️ SEGMENTAR POR:", 
-                ["Departamento", "Sección", "Categoría", "Grupo de artículo", "Marca"],
-                key="fs_dim_select"
-            )
-        with col_fs_met:
-            metrica_espacio = st.radio(
-                "📏 MÉTRICA DE ESPACIO:",
-                ["Caras (Facings)", "Total Unidades en Bandeja"],
-                horizontal=True,
-                key="fs_met_radio"
-            )
+        # Métrica de espacio seleccionable directamente
+        metrica_espacio = st.radio(
+            "📏 MÉTRICA DE ESPACIO A COMPARAR:",
+            ["Caras (Facings)", "Total Unidades en Bandeja"],
+            horizontal=True,
+            key="fs_met_radio"
+        )
 
         col_espacio_elegida = 'Caras_Num' if metrica_espacio == "Caras (Facings)" else 'Unid_Bandeja_Num'
         
-        df_fs = df_dash_base.groupby(dim_fs).agg(
+        # Cálculo estricto y directo por Categoría
+        df_fs = df_dash_base.groupby('Categoría').agg(
             Espacio_Total=(col_espacio_elegida, 'sum'),
             Ventas_Total=('Venta_Num', 'sum'),
             Margen_Total=('Margen_Num', 'sum')
         ).reset_index()
         
-        df_fs = df_fs[~df_fs[dim_fs].isin(['S/D', 'S/C', 'S/S', 'S/G', 'nan', ''])].copy()
+        df_fs = df_fs[~df_fs['Categoría'].isin(['S/D', 'S/C', 'S/S', 'S/G', 'nan', ''])].copy()
         
         total_espacio_sum = df_fs['Espacio_Total'].sum()
         total_ventas_sum = df_fs['Ventas_Total'].sum()
@@ -2063,13 +2072,15 @@ if df_raw is not None:
             df_fs['Pct_Ventas'] = df_fs['Ventas_Total'] / total_ventas_sum
             df_fs['Pct_Margen'] = df_fs['Margen_Total'] / total_margen_sum if total_margen_sum > 0 else 0.0
             df_fs['Brecha_Share'] = df_fs['Pct_Ventas'] - df_fs['Pct_Espacio']
+            df_fs['Brecha_Margen'] = df_fs['Pct_Margen'] - df_fs['Pct_Espacio']
             
             df_fs = df_fs.sort_values(by='Pct_Ventas', ascending=False)
             
             fig_fs = go.Figure()
             
+            # Barra % Espacio
             fig_fs.add_trace(go.Bar(
-                x=df_fs[dim_fs],
+                x=df_fs['Categoría'],
                 y=df_fs['Pct_Espacio'],
                 name=f"% Espacio ({'Caras' if metrica_espacio == 'Caras (Facings)' else 'Unid. Bandeja'})",
                 text=df_fs['Pct_Espacio'].apply(lambda x: f"{x*100:.1f}%"),
@@ -2081,8 +2092,9 @@ if df_raw is not None:
                 customdata=df_fs['Espacio_Total']
             ))
             
+            # Barra % Ventas
             fig_fs.add_trace(go.Bar(
-                x=df_fs[dim_fs],
+                x=df_fs['Categoría'],
                 y=df_fs['Pct_Ventas'],
                 name="% Ventas (Monto S/)",
                 text=df_fs['Pct_Ventas'].apply(lambda x: f"{x*100:.1f}%"),
@@ -2094,8 +2106,9 @@ if df_raw is not None:
                 customdata=df_fs['Ventas_Total']
             ))
 
+            # Barra % Margen
             fig_fs.add_trace(go.Bar(
-                x=df_fs[dim_fs],
+                x=df_fs['Categoría'],
                 y=df_fs['Pct_Margen'],
                 name="% Margen (Ganancia S/)",
                 text=df_fs['Pct_Margen'].apply(lambda x: f"{x*100:.1f}%"),
@@ -2103,7 +2116,7 @@ if df_raw is not None:
                 insidetextanchor='middle',
                 textfont=dict(color='#ffffff', size=10, family='Inter', weight='bold'),
                 marker=dict(color='#d97706', line=dict(color='#b45309', width=1)),
-                hovertemplate="<b>%{x}</b><br>% Margen: %{text}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
+                hovertemplate="<b>%{x}</b><br>% Margen: %{y:.1%}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
                 customdata=df_fs['Margen_Total']
             ))
             
@@ -2122,39 +2135,38 @@ if df_raw is not None:
             fig_fs.update_yaxes(fixedrange=True)
             st.plotly_chart(fig_fs, use_container_width=True, config={'displayModeBar': False})
             
-            subdimensionados = df_fs[df_fs['Brecha_Share'] > 0.03]
-            sobredimensionados = df_fs[df_fs['Brecha_Share'] < -0.03]
+            # DIAGNÓSTICOS SEMÁNTICOS EVALUANDO APORTE DE MARGEN
+            subdimensionados = df_fs[(df_fs['Brecha_Share'] > 0.03) | (df_fs['Brecha_Margen'] > 0.03)]
+            sobredimensionados = df_fs[(df_fs['Brecha_Share'] < -0.03) & (df_fs['Brecha_Margen'] < -0.03)]
             
             col_diag1, col_diag2 = st.columns(2)
             with col_diag1:
                 if not subdimensionados.empty:
-                    top_sub = subdimensionados.iloc[0]
-                    brecha_val = top_sub['Brecha_Share'] * 100
+                    top_sub = subdimensionados.sort_values(by='Brecha_Margen', ascending=False).iloc[0]
                     st.markdown(f"""
                         <div class="insight-box" style="background-color: {t['insight_green_bg']}; border-left: 4px solid #10b981; color: {t['insight_green_text']};">
-                            <b>🚀 Oportunidad de Crecimiento:</b> <b>{top_sub[dim_fs]}</b> genera el <b>{top_sub['Pct_Ventas']*100:.1f}%</b> de la venta pero ocupa el <b>{top_sub['Pct_Espacio']*100:.1f}%</b> del espacio (+{brecha_val:.1f}% de rendimiento positivo).
+                            <b>🚀 Categoría Altamente Rentable:</b> La categoría <b>{top_sub['Categoría']}</b> aporta el <b>{top_sub['Pct_Margen']*100:.1f}%</b> del margen total y el <b>{top_sub['Pct_Ventas']*100:.1f}%</b> de la venta, pero solo ocupa el <b>{top_sub['Pct_Espacio']*100:.1f}%</b> del espacio físico. Su alta rentabilidad justifica asignarle mayor cantidad de caras.
                         </div>
                     """, unsafe_allow_html=True)
                 else:
                     st.markdown(f"""
                         <div class="insight-box" style="background-color: {t['insight_blue_bg']}; border-left: 4px solid #3b82f6; color: {t['insight_blue_text']};">
-                            <b>✅ Asignación Balanceada:</b> No se detectan categorías con subasignación crítica de espacio.
+                            <b>✅ Asignación Balanceada:</b> El espacio de cada categoría guarda proporción equilibrada frente a sus ventas y margen aportado.
                         </div>
                     """, unsafe_allow_html=True)
                     
             with col_diag2:
                 if not sobredimensionados.empty:
                     top_sobre = sobredimensionados.sort_values(by='Brecha_Share', ascending=True).iloc[0]
-                    brecha_sobre = abs(top_sobre['Brecha_Share'] * 100)
                     st.markdown(f"""
                         <div class="insight-box" style="background-color: {t['insight_amber_bg']}; border-left: 4px solid #f59e0b; color: {t['insight_amber_text']};">
-                            <b>⚠️ Alerta de Sobreasignación:</b> <b>{top_sobre[dim_fs]}</b> ocupa el <b>{top_sobre['Pct_Espacio']*100:.1f}%</b> de la repisa pero solo aporta el <b>{top_sobre['Pct_Ventas']*100:.1f}%</b> de las ventas ({brecha_sobre:.1f}% de espacio no rentable).
+                            <b>⚠️ Alerta de Espacio Ocioso/Bajo Margen:</b> La categoría <b>{top_sobre['Categoría']}</b> consume el <b>{top_sobre['Pct_Espacio']*100:.1f}%</b> de la repisa pero solo aporta el <b>{top_sobre['Pct_Ventas']*100:.1f}%</b> de las ventas y el <b>{top_sobre['Pct_Margen']*100:.1f}%</b> del margen. Se sugiere evaluar reducción de facings.
                         </div>
                     """, unsafe_allow_html=True)
                 else:
                     st.markdown(f"""
                         <div class="insight-box" style="background-color: {t['insight_blue_bg']}; border-left: 4px solid #3b82f6; color: {t['insight_blue_text']};">
-                            <b>✅ Espacio Óptimo:</b> No se detectan saturaciones ni sobreasignaciones críticas de repisa.
+                            <b>✅ Retorno de Espacio Óptimo:</b> Ninguna categoría presenta saturación improductiva en repisa.
                         </div>
                     """, unsafe_allow_html=True)
             
