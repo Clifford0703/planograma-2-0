@@ -70,7 +70,7 @@ theme_vars = {
         "accent_amber": "#d97706",
         "grid_color": "rgba(0, 0, 0, 0.06)",
         "card_shadow": "0 2px 6px rgba(0,0,0,0.05)",
-        "plotly_text": "#0f172a",  # Texto oscuro nítido en modo claro para los ejes de gráficos
+        "plotly_text": "#0f172a",
         "input_bg": "#ffffff",
         "input_border": "#cbd5e1",
         "input_text": "#0f172a",
@@ -91,7 +91,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS GLOBAL
+# INYECCIÓN CSS CON CONTROL TOTAL DE BOTONES Y WIDGETS
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -115,7 +115,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* OVERRIDE TOTAL DE SELECTBOXES */
+        /* CAJA PRINCIPAL DE LA SEGMENTACIÓN */
         [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
             background-color: {t["input_bg"]} !important;
             background: {t["input_bg"]} !important;
@@ -137,6 +137,7 @@ st.markdown(f"""
             fill: {t["text_secondary"]} !important;
         }}
         
+        /* LISTA FLOTANTE QUE SE DESPLIEGA (ROOT DOM PORTAL) */
         div[data-baseweb="popover"],
         div[data-baseweb="popover"] > div,
         div[data-baseweb="menu"],
@@ -175,7 +176,7 @@ st.markdown(f"""
             -webkit-text-fill-color: {t["popover_hover_text"]} !important;
         }}
         
-        /* BOTONES STREAMLIT */
+        /* BOTONES STREAMLIT: CURSOR Y COLORES FORZADOS */
         .stButton > button {{
             background-color: {t["btn_bg"]} !important;
             background: {t["btn_bg"]} !important;
@@ -185,10 +186,28 @@ st.markdown(f"""
             border-radius: 6px !important;
             font-weight: 700 !important;
             box-shadow: {t["card_shadow"]} !important;
+            cursor: pointer !important;
+            user-select: none !important;
             transition: all 0.2s ease !important;
         }}
+        
+        .stButton > button * {{
+            color: {t["btn_text"]} !important;
+            -webkit-text-fill-color: {t["btn_text"]} !important;
+            cursor: pointer !important;
+            pointer-events: none !important;
+            user-select: none !important;
+        }}
+        
         .stButton > button:hover {{
             border-color: {t["accent"]} !important;
+            color: {t["accent"]} !important;
+            -webkit-text-fill-color: {t["accent"]} !important;
+            background-color: {t["popover_hover"]} !important;
+            background: {t["popover_hover"]} !important;
+        }}
+
+        .stButton > button:hover * {{
             color: {t["accent"]} !important;
             -webkit-text-fill-color: {t["accent"]} !important;
         }}
@@ -202,6 +221,7 @@ st.markdown(f"""
             border-radius: 6px !important;
             font-weight: 800 !important;
             box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+            cursor: pointer !important;
         }}
         
         /* TABLA DE DATAFRAME */
@@ -211,7 +231,7 @@ st.markdown(f"""
             border-radius: 8px !important;
         }}
         
-        /* TARJETAS KPIS */
+        /* TARJETAS KPIS DEL DASHBOARD */
         .fin-kpi-container {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -262,7 +282,7 @@ st.markdown(f"""
             color: {t["text_muted"]};
         }}
         
-        /* CONTENEDORES DE GRÁFICOS */
+        /* CONTENEDORES DE GRÁFICOS Y FAIR SHARE */
         .dash-card {{
             background: {t["bg_card"]};
             border: 1px solid {t["border_subtle"]};
@@ -290,12 +310,14 @@ st.markdown(f"""
             gap: 6px;
         }}
         
+        /* LABELS DE WIDGETS */
         .stSelectbox label, .stRadio label {{
             color: {t["text_primary"]} !important;
             font-weight: 800 !important;
             font-size: 0.80rem !important;
         }}
         
+        /* PESTAÑAS (TABS) */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px;
             background-color: {t["bg_card"]};
@@ -322,6 +344,7 @@ st.markdown(f"""
             -webkit-text-fill-color: #ffffff !important;
         }}
 
+        /* TARJETAS DE INSIGHTS */
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -587,7 +610,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           display: flex; 
           flex-direction: column; 
           box-sizing: border-box;
-          overflow: hidden;
+          overflow: hidden; 
         }}
 
         ::-webkit-scrollbar {{ height: 6px; width: 6px; }}
@@ -664,7 +687,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           outline: none; 
           width: 100%; 
           min-width: 120px; 
-          box-shadow: {t["card_shadow"]};
+          box-shadow: {t["card_shadow"]}; 
         }}
         .btn-group {{ display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; align-items: center; }}
         
@@ -725,69 +748,69 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           position: relative; 
           flex: 1;
           min-height: 0;
-          background: {card_bg};
-          border-radius: 10px;
-          border: 1px solid {t["border_subtle"]};
-          padding: 0;
-          overflow: hidden;
+          background: {card_bg}; 
+          border-radius: 10px; 
+          border: 1px solid {t["border_subtle"]}; 
+          padding: 0; 
+          overflow: hidden; 
         }}
 
         .fullscreen-legend-bar {{
-          display: none;
-          position: sticky;
-          top: 0;
-          left: 0;
-          right: 0;
-          background: {card_bg};
-          border-bottom: 1px solid {t["border_subtle"]};
-          padding: 12px 20px;
-          z-index: 10000;
-          backdrop-filter: blur(8px);
-          align-items: center;
-          gap: 12px;
-          overflow-x: auto;
-          white-space: nowrap;
+          display: none; 
+          position: sticky; 
+          top: 0; 
+          left: 0; 
+          right: 0; 
+          background: {card_bg}; 
+          border-bottom: 1px solid {t["border_subtle"]}; 
+          padding: 12px 20px; 
+          z-index: 10000; 
+          backdrop-filter: blur(8px); 
+          align-items: center; 
+          gap: 12px; 
+          overflow-x: auto; 
+          white-space: nowrap; 
         }}
         
         .fs-cat-wrapper {{
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-left: auto;
+          display: flex; 
+          align-items: center; 
+          gap: 8px; 
+          margin-left: auto; 
         }}
         .fs-cat-select {{
-          background: {input_bg};
-          border: 1.5px solid {border_col};
-          color: {text_primary};
-          padding: 5px 10px;
-          border-radius: 6px;
-          font-size: 0.80rem;
-          font-weight: 700;
-          outline: none;
+          background: {input_bg}; 
+          border: 1.5px solid {border_col}; 
+          color: {text_primary}; 
+          padding: 5px 10px; 
+          border-radius: 6px; 
+          font-size: 0.80rem; 
+          font-weight: 700; 
+          outline: none; 
         }}
         
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
-          background: {app_bg} !important;
-          width: 100vw !important;
-          height: 100vh !important;
-          padding: 0 !important;
-          border: none !important;
+          background: {app_bg} !important; 
+          width: 100vw !important; 
+          height: 100vh !important; 
+          padding: 0 !important; 
+          border: none !important; 
         }}
         .aisle-wrapper:fullscreen .fullscreen-legend-bar, 
         .aisle-wrapper:-webkit-full-screen .fullscreen-legend-bar {{
-          display: flex !important;
+          display: flex !important; 
         }}
 
         .nav-btn {{ 
-          position: absolute;
-          top: 50%;
-          transform: translateY(-50%);
+          position: absolute; 
+          top: 50%; 
+          transform: translateY(-50%); 
           background: {card_bg}; 
           color: {text_primary}; 
           border: 1px solid {t["border_subtle"]}; 
           border-radius: 50%; 
           width: 40px; 
-          height: 40px;
+          height: 40px; 
           font-size: 1.2rem; 
           font-weight: 700; 
           cursor: pointer; 
@@ -796,7 +819,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           align-items: center; 
           justify-content: center; 
           box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
-          transition: all 0.2s;
+          transition: all 0.2s; 
         }}
         .nav-btn:hover {{ background: {t["accent"]}; color: #ffffff; border-color: {t["accent"]}; transform: translateY(-50%) scale(1.08); }}
         .nav-btn-prev {{ left: 10px; }}
@@ -804,14 +827,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .nav-btn:disabled {{ opacity: 0; pointer-events: none; }}
         
         .zoom-layer {{
-          display: flex;
-          width: 100%;
-          height: 100%;
-          transform-origin: 50% 0;
-          will-change: transform;
-          justify-content: center;
-          align-items: stretch;
-          transition: transform 0.2s ease-out;
+          display: flex; 
+          width: 100%; 
+          height: 100%; 
+          transform-origin: 50% 0; 
+          will-change: transform; 
+          justify-content: center; 
+          align-items: stretch; 
+          transition: transform 0.2s ease-out; 
         }}
 
         .aisle-container {{ 
@@ -825,8 +848,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           scroll-behavior: smooth; 
           scroll-snap-type: x mandatory; 
           width: 100%; 
-          height: 100%;
-          box-sizing: border-box;
+          height: 100%; 
+          box-sizing: border-box; 
         }}
         
         .bay-column {{ 
@@ -840,8 +863,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           height: fit-content; 
           scroll-snap-align: center; 
           padding-bottom: 12px; 
-          box-sizing: border-box;
-          box-shadow: {t["card_shadow"]};
+          box-sizing: border-box; 
+          box-shadow: {t["card_shadow"]}; 
         }}
         .bay-column.hidden {{ display: none !important; }}
         
@@ -896,11 +919,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           cursor: pointer; 
           align-items: stretch; 
           flex-shrink: 0; 
-          box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.15); 
         }}
         .sku-card:hover {{
-          transform: translateY(-2px);
-          box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+          transform: translateY(-2px); 
+          box-shadow: 0 4px 10px rgba(0,0,0,0.25); 
         }}
         .sku-card.is-top {{ outline: 2.5px solid #f59e0b !important; outline-offset: -1px; }}
         .sku-header-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }}
@@ -921,19 +944,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         /* MODAL OVERLAY */
         .modal-overlay {{ 
           position: fixed !important; 
-          inset: 0 !important;
-          width: 100vw !important;
-          height: 100vh !important;
+          inset: 0 !important; 
+          width: 100vw !important; 
+          height: 100vh !important; 
           background: rgba(0,0,0,0.65) !important; 
           z-index: 9999999 !important; 
           opacity: 0; 
           pointer-events: none; 
           transition: opacity 0.2s ease; 
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          padding: 16px !important;
-          backdrop-filter: blur(6px);
+          display: flex !important; 
+          align-items: center !important; 
+          justify-content: center !important; 
+          padding: 16px !important; 
+          backdrop-filter: blur(6px); 
         }}
         .modal-overlay.active {{ opacity: 1 !important; pointer-events: auto !important; }}
         .modal-content {{ 
@@ -947,7 +970,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow-y: auto !important; 
           border: 1px solid {t["border_subtle"]} !important; 
           box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important; 
-          position: relative !important;
+          position: relative !important; 
         }}
         .modal-close {{ position: absolute; top: 12px; right: 16px; font-size: 1.5rem; cursor: pointer; color: {text_secondary}; font-weight: 700; }}
         .modal-close:hover {{ color: {text_primary}; }}
@@ -1542,7 +1565,7 @@ df_fotos_raw = None
 info_hora = None
 error_nube = None
 
-# --- HEADER SAAS UNIFICADO ---
+# --- HEADER SAAS UNIFICADO CON CRÉDITO DE AUTORÍA ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
 
 with col_head1:
@@ -1574,9 +1597,9 @@ with st.spinner("Sincronizando base de datos central..."):
     df_nube, df_aux_nube, df_jer_nube, df_fotos_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE, URL_JERARQUIA, URL_FOTOS)
 
 header_time_placeholder.markdown(f"""
-    <div style="text-align: right; line-height: 1.2;">
-        <div style="font-size: 0.75rem; font-weight: 700; color: {t['text_primary']};">Tienda Central</div>
-        <div style="font-size: 0.65rem; color: {t['text_muted']};">{info_hora if info_hora else 'En línea'}</div>
+    <div style="text-align: right; line-height: 1.3;">
+        <div style="font-size: 0.78rem; font-weight: 800; color: {t['text_primary']};">Desarrollado por <b>Alfredo H.M.</b></div>
+        <div style="font-size: 0.68rem; color: {t['text_muted']};">{info_hora if info_hora else 'En línea'}</div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -1729,7 +1752,7 @@ if df_raw is not None:
 
         st.markdown(f"<div style='font-size: 0.85rem; font-weight: 800; color: {t['text_secondary']}; margin-bottom: 8px; text-transform: uppercase;'>🎯 Filtros Operativos del Dashboard Analítico</div>", unsafe_allow_html=True)
         
-        # Orden exacto solicitado: Departamento -> Sección -> Categoría -> Grupo de artículo -> Marca
+        # Orden exacto: Departamento -> Sección -> Categoría -> Grupo de artículo -> Marca
         col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns(5)
         
         with col_f1:
@@ -1903,7 +1926,6 @@ if df_raw is not None:
                 hovermode="x unified",
                 legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
                 margin=dict(t=10, b=10, l=10, r=10),
-                # Eje X con color dinámico de alta legibilidad en modo claro y oscuro
                 xaxis=dict(showgrid=False, color=t["plotly_text"], tickfont=dict(size=10, weight='bold', color=t["plotly_text"])),
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["plotly_text"], zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color=t["accent_green"], zeroline=False)
