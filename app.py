@@ -459,7 +459,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (INTERFAZ ORIGINAL RESTAURADA) ---
+# --- GENERADOR DEL PLANOGRAMA (DISEÑO ORIGINAL INTACTO) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -1061,7 +1061,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept"></span></div>
             <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec"></span></div>
             <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
-            <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga"></span></div>
+            <div class="m-row"><span class="m-label">Grupo de Artículo:</span><span class="m-val" id="m-ga"></span></div>
             <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
             <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
             <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
@@ -1656,7 +1656,7 @@ def cargar_todas_las_fuentes():
             df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p in df_vta_raw.columns else -999.0
             df_vta = df_vta[df_vta['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 4. Código de Barras (dimCodbarras -> CBARRAS / Material -> Grupo de A as G.A.)
+        # 4. Código de Barras (dimCodbarras -> CBARRAS / Material -> Grupo de A como G.A.)
         df_bar_raw = leer_tabla_por_ancla(url_barras, "Material", sheet_target=0, skiprows_fallback=2)
         df_bar = pd.DataFrame()
         col_mat_bar = 'Material' if 'Material' in df_bar_raw.columns else ('COD REAL' if 'COD REAL' in df_bar_raw.columns else None)
@@ -1666,14 +1666,9 @@ def cargar_todas_las_fuentes():
             
             bar_map = {str(c).strip().lower(): c for c in df_bar_raw.columns}
             col_ga_orig = bar_map.get('grupo de a', bar_map.get('grupo de artículo', None))
-            col_depto_orig = bar_map.get('departamen', bar_map.get('departamento', None))
-            col_sec_orig = bar_map.get('denomin. d', bar_map.get('sección', None))
-            col_cat_orig = bar_map.get('denomin. á', bar_map.get('categoría', None))
-
+            
+            # Formatear estrictamente G.A. en texto antes de cruzar
             df_bar['G.A.'] = df_bar_raw[col_ga_orig].astype(str).apply(clean_sku) if col_ga_orig else 'SIN DATOS'
-            df_bar['Dept_Fallback'] = df_bar_raw[col_depto_orig].fillna('SIN DATOS').astype(str).str.strip() if col_depto_orig else 'SIN DATOS'
-            df_bar['Sec_Fallback'] = df_bar_raw[col_sec_orig].fillna('SIN DATOS').astype(str).str.strip() if col_sec_orig else 'SIN DATOS'
-            df_bar['Cat_Fallback'] = df_bar_raw[col_cat_orig].fillna('SIN DATOS').astype(str).str.strip() if col_cat_orig else 'SIN DATOS'
             df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
         # 5. Nueva Jerarquía Comercial SAP (Hoja: 'NuevaJqGA' -> CodGA)
@@ -1683,6 +1678,7 @@ def cargar_todas_las_fuentes():
         
         col_codga_sap = sap_map.get('CODGA', sap_map.get('CODGA 1', None))
         if col_codga_sap:
+            # Formatear estrictamente CodGA en texto plano antes de cruzar
             df_sap['CodGA_Str'] = df_sap_raw[col_codga_sap].astype(str).apply(clean_sku)
             
             col_dep_sap = sap_map.get('DEPARTAMENTO (2)', None)
@@ -1690,13 +1686,13 @@ def cargar_todas_las_fuentes():
             col_cat_sap = sap_map.get('CATEGORIA (4)', None)
             col_ga_sap = sap_map.get('DESC.ABREV GRUPO ARTICULO', sap_map.get('GRUPO ARTICULO (6)', None))
 
-            df_sap['Departamento_SAP'] = df_sap_raw[col_dep_sap].fillna('SIN DATOS').astype(str).str.strip() if col_dep_sap else 'SIN DATOS'
-            df_sap['Sección_SAP'] = df_sap_raw[col_sec_sap].fillna('SIN DATOS').astype(str).str.strip() if col_sec_sap else 'SIN DATOS'
-            df_sap['Categoría_SAP'] = df_sap_raw[col_cat_sap].fillna('SIN DATOS').astype(str).str.strip() if col_cat_sap else 'SIN DATOS'
-            df_sap['Grupo_Art_SAP'] = df_sap_raw[col_ga_sap].fillna('SIN DATOS').astype(str).str.strip() if col_ga_sap else 'SIN DATOS'
+            df_sap['Departamento'] = df_sap_raw[col_dep_sap].fillna('SIN DATOS').astype(str).str.strip() if col_dep_sap else 'SIN DATOS'
+            df_sap['Sección'] = df_sap_raw[col_sec_sap].fillna('SIN DATOS').astype(str).str.strip() if col_sec_sap else 'SIN DATOS'
+            df_sap['Categoría'] = df_sap_raw[col_cat_sap].fillna('SIN DATOS').astype(str).str.strip() if col_cat_sap else 'SIN DATOS'
+            df_sap['Grupo de Artículo'] = df_sap_raw[col_ga_sap].fillna('SIN DATOS').astype(str).str.strip() if col_ga_sap else 'SIN DATOS'
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- APLICACIÓN DE CRUCES ESTRICTOS EN TEXTO ---
+        # --- APLICACIÓN DE CRUCES EN SECUENCIA ESTRICTA (TEXTO A TEXTO) ---
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
@@ -1705,46 +1701,34 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
+        # Cruce con dimCodbarras para traer G.A.
         if not df_bar.empty:
-            df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.', 'Dept_Fallback', 'Sec_Fallback', 'Cat_Fallback']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
+            df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
+        # Formatear G.A. en formato texto plano para usarlo como llave contra CodGA
         if 'G.A.' in df_matriz.columns:
             df_matriz['G.A._Str'] = df_matriz['G.A.'].astype(str).apply(clean_sku)
         else:
             df_matriz['G.A._Str'] = ""
 
+        # Cruce con V28_Nueva Jerarquia Comercial Peru SAP usando G.A._Str contra CodGA_Str
         if not df_sap.empty:
-            df_matriz = df_matriz.merge(df_sap[['CodGA_Str', 'Departamento_SAP', 'Sección_SAP', 'Categoría_SAP', 'Grupo_Art_SAP']], left_on='G.A._Str', right_on='CodGA_Str', how='left')
+            df_matriz = df_matriz.merge(
+                df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], 
+                left_on='G.A._Str', 
+                right_on='CodGA_Str', 
+                how='left',
+                suffixes=('', '_sap')
+            )
             df_matriz.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
 
-        def consolidar_columna(df, col_sap, col_fall, col_dest):
-            if col_sap in df.columns and col_fall in df.columns:
-                df[col_dest] = df[col_sap].replace(['SIN DATOS', 'nan', 'None', '', 'NaN'], pd.NA).fillna(df[col_fall])
-            elif col_sap in df.columns:
-                df[col_dest] = df[col_sap]
-            elif col_fall in df.columns:
-                df[col_dest] = df[col_fall]
-            else:
-                df[col_dest] = 'SIN DATOS'
-            df[col_dest] = df[col_dest].fillna('SIN DATOS').astype(str).str.strip()
-
-        consolidar_columna(df_matriz, 'Departamento_SAP', 'Dept_Fallback', 'Departamento')
-        consolidar_columna(df_matriz, 'Sección_SAP', 'Sec_Fallback', 'Sección')
-        consolidar_columna(df_matriz, 'Categoría_SAP', 'Cat_Fallback', 'Categoría')
-        
-        if 'Grupo_Art_SAP' in df_matriz.columns:
-            df_matriz['Grupo de Artículo'] = df_matriz['Grupo_Art_SAP'].replace(['SIN DATOS', 'nan', 'None', '', 'NaN'], pd.NA).fillna(df_matriz.get('G.A.', 'SIN DATOS'))
-        else:
-            df_matriz['Grupo de Artículo'] = df_matriz.get('G.A.', 'SIN DATOS')
-
-        df_matriz.drop(columns=['Departamento_SAP', 'Sección_SAP', 'Categoría_SAP', 'Grupo_Art_SAP', 'Dept_Fallback', 'Sec_Fallback', 'Cat_Fallback'], inplace=True, errors='ignore')
-
+        # Rellenar nulos
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
             df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
         for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS')]:
-            df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
+            df_matriz[col] = df_matriz[col].fillna(val_def).astype(str).str.strip() if col in df_matriz.columns else val_def
 
         if 'Bandeja' in df_matriz.columns and 'EAN' in df_matriz.columns:
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
