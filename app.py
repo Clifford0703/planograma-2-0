@@ -1575,7 +1575,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- CARGA INTEGRADA DE FUENTES Y CRUCE CON URL DE JERARQUÍA OFICIAL ---
+# --- CARGA INTEGRADA DE FUENTES Y CRUCE DE FOTOS ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -1584,6 +1584,8 @@ def cargar_todas_las_fuentes():
         url_ventas = "https://docs.google.com/spreadsheets/d/1NdEQXgbsb5bXbhIs2keFin9Wk5mC4dK7N_Y3dbv6fcg/export?format=xlsx"
         url_barras = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
         url_jerarquia = "https://docs.google.com/spreadsheets/d/1JI4Ef0138lwI-fJsQmX5lz-fqXvemZQD/export?format=xlsx"
+        # URL del archivo de links de fotos (Links de fotos 03.09)
+        url_fotos = "https://docs.google.com/spreadsheets/d/1y8P_GVLySBrbGkm-1nc0BiTwGCorhVtF/export?format=xlsx"
 
         def leer_tabla_por_ancla(url, palabra_ancla, sheet_target=0, skiprows_fallback=0):
             try:
@@ -1670,7 +1672,20 @@ def cargar_todas_las_fuentes():
             df_bar['G.A.'] = df_bar_raw[col_ga_orig].astype(str).apply(clean_sku) if col_ga_orig else 'SIN DATOS'
             df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 5. Nueva Jerarquía Comercial SAP (Hoja: 'NuevaJqGA' -> Columna K: CodGA, D: Depto, F: Sección, H: Categoría)
+        # 5. Links de Fotos (Links de fotos 03.09 -> _SKUReferenceCode / SKUReferenceCode <-> Links de fotos)
+        df_fotos_raw = leer_tabla_por_ancla(url_fotos, "SKUReferenceCode", sheet_target=0, skiprows_fallback=0)
+        df_fotos = pd.DataFrame()
+        if not df_fotos_raw.empty:
+            fotos_map = {str(c).strip().lower(): c for c in df_fotos_raw.columns}
+            col_sku_foto = fotos_map.get('_skureferencecode', fotos_map.get('skureferencecode', None))
+            col_link_foto = fotos_map.get('links de fotos', fotos_map.get('link', None))
+            
+            if col_sku_foto and col_link_foto:
+                df_fotos['Sku_Foto_Str'] = df_fotos_raw[col_sku_foto].astype(str).apply(clean_sku)
+                df_fotos['Links de fotos'] = df_fotos_raw[col_link_foto].astype(str).str.strip()
+                df_fotos = df_fotos[df_fotos['Sku_Foto_Str'] != ""].drop_duplicates(subset=['Sku_Foto_Str'])
+
+        # 6. Nueva Jerarquía Comercial SAP (Hoja: 'NuevaJqGA')
         try:
             df_sap_raw = pd.read_excel(url_jerarquia, sheet_name='NuevaJqGA', skiprows=2)
         except Exception:
@@ -1704,17 +1719,20 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Cruce 1: factPlano <-> dimCodBarras para traer G.A.
         if not df_bar.empty:
             df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+
+        # Cruce con Fotos (COD_REAL_Str <-> Sku_Foto_Str)
+        if not df_fotos.empty:
+            df_matriz = df_matriz.merge(df_fotos[['Sku_Foto_Str', 'Links de fotos']], left_on='COD_REAL_Str', right_on='Sku_Foto_Str', how='left')
+            df_matriz.drop(columns=['Sku_Foto_Str'], inplace=True, errors='ignore')
 
         if 'G.A.' in df_matriz.columns:
             df_matriz['G.A._Str'] = df_matriz['G.A.'].astype(str).apply(clean_sku)
         else:
             df_matriz['G.A._Str'] = ""
 
-        # Cruce 2: factPlano (G.A.) <-> V28_Nueva Jerarquia Comercial Peru SAP (CodGA)
         if not df_sap.empty:
             df_matriz = df_matriz.merge(
                 df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], 
@@ -1723,7 +1741,6 @@ def cargar_todas_las_fuentes():
                 how='left',
                 suffixes=('', '_sap')
             )
-            # Reemplazar con los valores de SAP si están disponibles
             for col_target in ['Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']:
                 col_sap_name = f"{col_target}_sap"
                 if col_sap_name in df_matriz.columns:
@@ -1736,7 +1753,7 @@ def cargar_todas_las_fuentes():
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
             df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
-        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS')]:
+        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS')]:
             df_matriz[col] = df_matriz[col].fillna(val_def).astype(str).str.strip() if col in df_matriz.columns else val_def
 
         if 'Bandeja' in df_matriz.columns and 'EAN' in df_matriz.columns:
@@ -1878,7 +1895,6 @@ if df_raw is not None and not df_raw.empty:
 
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
-        # Cálculo de métricas financieras exclusivas sobre SKUs únicos (evitando duplicidad por pasillo físico)
         ventas_globales = df_dash_unicos['Venta_Num'].sum()
         margen_global = df_dash_unicos['Margen_Num'].sum()
         margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
@@ -2069,7 +2085,7 @@ if df_raw is not None and not df_raw.empty:
             st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
             st.markdown("</div>", unsafe_allow_html=True)
 
-        # --- NIVEL 3: FAIR SHARE ANALYSIS (CORREGIDO PARA EVITAR DUPLICIDAD DE VENTAS) ---
+        # --- NIVEL 3: FAIR SHARE ANALYSIS ---
         st.markdown(f"""
             <div class="dash-card">
                 <div class="dash-card-header">
@@ -2087,12 +2103,10 @@ if df_raw is not None and not df_raw.empty:
 
         col_espacio_elegida = 'Caras_Num' if metrica_espacio == "Caras (Facings)" else 'Unid_Bandeja_Num'
         
-        # 1. Agrupar espacio físico por categoría sumando todas sus posiciones/caras en los pasillos
         df_espacio_cat = df_dash_base.groupby('Categoría').agg(
             Espacio_Total=(col_espacio_elegida, 'sum')
         ).reset_index()
 
-        # 2. Agrupar ventas y margen basándose estrictamente en SKUs únicos por categoría para evitar duplicidad
         df_unicos_cat = df_dash_base.drop_duplicates(subset=['COD REAL', 'Categoría']).copy()
         df_fin_cat = df_unicos_cat.groupby('Categoría').agg(
             Ventas_Total=('Venta_Num', 'sum'),
