@@ -99,7 +99,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON BLINDAJE ABSOLUTO PARA PESTAÑAS Y TEXTOS
+# INYECCIÓN CSS CON FORZADO TOTAL DE TEXTO Y CONTRASTE EN MODO CLARO
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -123,7 +123,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* PESTAÑAS (TABS) - VISIBILIDAD FORZADA INTACTA */
+        /* PESTAÑAS (TABS) - VISIBILIDAD FORZADA AL 100% */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
             background-color: {t["tab_container_bg"]} !important;
@@ -137,13 +137,15 @@ st.markdown(f"""
             height: 40px !important;
             padding: 0 20px !important;
             border-radius: 6px !important;
+            font-weight: 800 !important;
+            font-size: 0.88rem !important;
             background-color: {t["tab_inactive_bg"]} !important;
             border: 1.5px solid {t["tab_inactive_border"]} !important;
             opacity: 1 !important;
             transition: all 0.2s ease !important;
         }}
         
-        /* FORZAR VISIBILIDAD DE LETRAS EN PESTAÑAS INACTIVAS (SIN HOVER) */
+        /* FORZADO DE TEXTO EN PESTAÑAS INACTIVAS */
         .stTabs [data-baseweb="tab"],
         .stTabs [data-baseweb="tab"] *,
         .stTabs [data-baseweb="tab"] p,
@@ -153,19 +155,7 @@ st.markdown(f"""
             color: {t["tab_inactive_text"]} !important;
             -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
             font-weight: 800 !important;
-            font-size: 0.88rem !important;
             opacity: 1 !important;
-        }}
-        
-        .stTabs [data-baseweb="tab"]:hover {{
-            border-color: {t["accent"]} !important;
-        }}
-        
-        .stTabs [data-baseweb="tab"]:hover *,
-        .stTabs [data-baseweb="tab"]:hover p,
-        .stTabs [data-baseweb="tab"]:hover span {{
-            color: {t["accent"]} !important;
-            -webkit-text-fill-color: {t["accent"]} !important;
         }}
         
         /* PESTAÑA ACTIVA */
@@ -185,6 +175,21 @@ st.markdown(f"""
             color: #ffffff !important;
             -webkit-text-fill-color: #ffffff !important;
             font-weight: 900 !important;
+        }}
+        
+        /* OPCIONES DE RADIO (REALOGRAMA / BLOQUES) - FORZADO DE TEXTO */
+        [data-testid="stRadio"],
+        [data-testid="stRadio"] *,
+        [data-testid="stRadio"] label,
+        [data-testid="stRadio"] p,
+        [data-testid="stRadio"] span,
+        [data-testid="stRadio"] div,
+        [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p,
+        label[data-baseweb="radio"] * {{
+            color: {t["text_primary"]} !important;
+            -webkit-text-fill-color: {t["text_primary"]} !important;
+            font-weight: 700 !important;
+            opacity: 1 !important;
         }}
         
         /* SELECTBOXES */
@@ -478,7 +483,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA ---
+# --- GENERADOR DEL PLANOGRAMA (CON DISTRIBUCIÓN EXPANDIDA space-between) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -2073,7 +2078,6 @@ if df_raw is not None and not df_raw.empty:
                 </div>
             """, unsafe_allow_html=True)
             
-            # Restringido estrictamente a Categoría, Grupo de Artículo y Marca
             dims_mix = ["Categoría", "Grupo de Artículo", "Marca"]
             if st.session_state.dash_analizar not in dims_mix:
                 st.session_state.dash_analizar = "Categoría"
