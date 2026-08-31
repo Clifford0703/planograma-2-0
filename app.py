@@ -387,8 +387,8 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # --- FUNCIONES AUXILIARES ---
-def safe_float(val, default=0.0):
-    if pd.isna(val): return default
+def safe_float(val, default=-999.0):
+    if pd.isna(val) or val == "SIN DATOS": return default
     try:
         if isinstance(val, str):
             val = val.replace('%', '').replace(',', '').strip()
@@ -397,6 +397,7 @@ def safe_float(val, default=0.0):
         return default
 
 def format_pct(val):
+    if val == -999.0: return "SIN DATOS"
     return f"{val*100:.2f}%" if val < 1 else f"{val:.2f}%"
 
 def clean_sku(val):
@@ -413,6 +414,12 @@ def obtener_estado_y_color(estado, stock_val, dark=True):
         tc = "#fca5a5" if dark else "#991b1b"
         name_c = "#fecaca" if dark else "#7f1d1d"
         return bg, border, tc, name_c, "Bloqueado"
+    elif estado == "SIN DATOS":
+        bg = "#1e293b" if dark else "#f1f5f9"
+        border = "#475569" if dark else "#94a3b8"
+        tc = "#94a3b8" if dark else "#475569"
+        name_c = "#f8fafc" if dark else "#0f172a"
+        return bg, border, tc, name_c, "Sin Datos"
     elif estado == "A":
         if stock_val <= 0: 
             bg = "#431407" if dark else "#ffedd5"
@@ -442,6 +449,7 @@ def obtener_estado_y_color(estado, stock_val, dark=True):
 def obtener_alerta_css(estado, stock_val):
     estado = str(estado).strip().upper()
     if estado == "B": return "alerta-bloqueado", "Bloqueado"
+    elif estado == "SIN DATOS": return "alerta-desconocido", "Sin Datos"
     elif estado == "A":
         if stock_val <= 0: return "alerta-sinstock", "Sin Stock"
         elif stock_val <= 5: return "alerta-stockbajo", "Stock Bajo"
@@ -484,7 +492,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         html_niveles = ""
         
         todos_items_cuerpo = [it for sublist in niveles_dict.values() for it in sublist]
-        cats_cuerpo = [str(it.get('Categoría', '')) for it in todos_items_cuerpo if str(it.get('Categoría', '')) not in ['', 'S/C', 'nan']]
+        cats_cuerpo = [str(it.get('Categoría', '')) for it in todos_items_cuerpo if str(it.get('Categoría', '')) not in ['', 'S/C', 'SIN DATOS', 'nan']]
         cat_predominante = max(set(cats_cuerpo), key=cats_cuerpo.count) if cats_cuerpo else ""
 
         for b_nombre in niveles_ordenados:
@@ -504,20 +512,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 caras = int(caras_val) if caras_val.isdigit() and int(caras_val) > 0 else 1
                 pos = str(it.get("N°", "-")) if not pd.isna(it.get("N°", "-")) else "-"
 
-                stock_val = safe_float(it.get("Stock", 0))
-                cob_val = safe_float(it.get("Cobertura", 0))
-                venta_val = safe_float(it.get("Venta", 0))
-                part_val = safe_float(it.get("% Part", 0))
+                stock_val = safe_float(it.get("Stock", -999.0))
+                cob_val = safe_float(it.get("Cobertura", -999.0))
+                venta_val = safe_float(it.get("Venta", -999.0))
+                part_val = safe_float(it.get("% Part", -999.0))
                 
-                dept_val = str(it.get("Departamento", "S/D")).replace('"', '&quot;')
-                sec_val = str(it.get("Sección", "S/S")).replace('"', '&quot;')
-                catjer_val = str(it.get("Categoría", "S/C")).replace('"', '&quot;')
-                ga_val = str(it.get("Grupo de artículo", "S/G")).replace('"', '&quot;')
+                dept_val = str(it.get("Departamento", "SIN DATOS")).replace('"', '&quot;')
+                sec_val = str(it.get("Sección", "SIN DATOS")).replace('"', '&quot;')
+                catjer_val = str(it.get("Categoría", "SIN DATOS")).replace('"', '&quot;')
+                ga_val = str(it.get("Grupo de artículo", "SIN DATOS")).replace('"', '&quot;')
                 
                 part_fmt = format_pct(part_val)
-                stock_fmt = f"{stock_val:.2f}"
-                cob_fmt = f"{cob_val:.2f}"
-                estilo_cobertura = "color: #ef4444; font-weight: 800;" if cob_val >= 30 else ""
+                stock_fmt = f"{stock_val:.2f}" if stock_val != -999.0 else "SIN DATOS"
+                cob_fmt = f"{cob_val:.2f}" if cob_val != -999.0 else "SIN DATOS"
+                estilo_cobertura = "color: #ef4444; font-weight: 800;" if cob_val != -999.0 and cob_val >= 30 else ""
                 
                 if es_realograma:
                     link_foto = str(it.get("Links de fotos", ""))
@@ -603,7 +611,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         """
 
     options_marcas = "".join([f'<option value="{m}">{m}</option>' for m in todas_marcas])
-    options_categorias = "".join([f'<option value="{c}">{c}</option>' for c in todas_categorias if c not in ['S/C', 'nan', '']])
+    options_categorias = "".join([f'<option value="{c}">{c}</option>' for c in todas_categorias if c not in ['S/C', 'SIN DATOS', 'nan', '']])
     options_cuerpos = "".join([f'<option value="{k.replace("Cuerpo ", "")}">{k}</option>' for k in cuerpos.keys()])
     options_niveles = "".join([f'<option value="{int(lvl)}">Nivel {int(lvl)}</option>' for lvl in todos_niveles])
 
@@ -1538,7 +1546,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 
                 const ventaStr = card.getAttribute('data-venta') || "0";
                 const ventaVal = parseFloat(ventaStr.replace(/,/g, '')) || 0;
-                document.getElementById('m-venta').textContent = "S/ " + ventaVal.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}});
+                document.getElementById('m-venta').textContent = ventaVal === -999 ? "SIN DATOS" : "S/ " + ventaVal.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}});
                 
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
@@ -1580,11 +1588,11 @@ def cargar_todas_las_fuentes():
                     return cols_normalizadas[p.lower()]
             return None
 
-        # 1. Matriz de Planos (factPlano / PLANOS)
+        # 1. Matriz de Planos (PLANOS)
         df_matriz = pd.read_excel(url_planos, sheet_name=0, skiprows=3)
         df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
         
-        # 2. Coberturas y Stock (factCoberturas)
+        # 2. Coberturas y Stock (factCoberturas) - Llave: Material (en formato texto)
         df_cob_raw = pd.read_excel(url_coberturas, sheet_name=0, skiprows=1)
         df_cob_raw.columns = [str(c).strip() for c in df_cob_raw.columns]
         col_mat_cob = encontrar_columna(df_cob_raw, ['Material', 'COD REAL', 'SKU', 'Codigo'])
@@ -1594,13 +1602,13 @@ def cargar_todas_las_fuentes():
 
         df_cob = pd.DataFrame()
         if col_mat_cob:
-            df_cob['Material_Str'] = df_cob_raw[col_mat_cob].apply(clean_sku)
+            df_cob['Material_Str'] = df_cob_raw[col_mat_cob].astype(str).apply(clean_sku)
             df_cob['Estado'] = df_cob_raw[col_est_cob].astype(str).str.extract(r'([ABab])')[0].str.upper().fillna('A') if col_est_cob else 'A'
             df_cob['Stock'] = df_cob_raw[col_stk_cob].apply(safe_float) if col_stk_cob else 0.0
             df_cob['Cobertura'] = df_cob_raw[col_cob_cob].apply(safe_float) if col_cob_cob else 0.0
             df_cob = df_cob.drop_duplicates(subset=['Material_Str'])
 
-        # 3. Ventas y Margen (factVentas)
+        # 3. Ventas y Margen (factVentas) - Llave: Material (en formato texto)
         df_vta_raw = pd.read_excel(url_ventas, sheet_name=0, skiprows=2)
         df_vta_raw.columns = [str(c).strip() for c in df_vta_raw.columns]
         col_mat_vta = encontrar_columna(df_vta_raw, ['Material', 'COD REAL', 'SKU', 'Codigo'])
@@ -1610,50 +1618,50 @@ def cargar_todas_las_fuentes():
 
         df_vta = pd.DataFrame()
         if col_mat_vta:
-            df_vta['Material_Str'] = df_vta_raw[col_mat_vta].apply(clean_sku)
+            df_vta['Material_Str'] = df_vta_raw[col_mat_vta].astype(str).apply(clean_sku)
             df_vta = df_vta[df_vta['Material_Str'] != ""]
             df_vta['Venta'] = df_vta_raw[col_v].apply(safe_float) if col_v else 0.0
             df_vta['Monto Margen'] = df_vta_raw[col_m].apply(safe_float) if col_m else 0.0
             df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p else 0.0
             df_vta = df_vta.drop_duplicates(subset=['Material_Str'])
 
-        # 4. Código de Barras / Jerarquía (dimCodBarras)
+        # 4. Código de Barras / Jerarquía (dimCodBarras) - Llave: Material (en formato texto)
         df_bar_raw = pd.read_excel(url_barras, sheet_name=0, skiprows=2)
         df_bar_raw.columns = [str(c).strip() for c in df_bar_raw.columns]
         col_mat_bar = encontrar_columna(df_bar_raw, ['Material', 'COD REAL', 'SKU', 'Codigo'])
         
         df_bar = pd.DataFrame()
         if col_mat_bar:
-            df_bar['Material_Str'] = df_bar_raw[col_mat_bar].apply(clean_sku)
+            df_bar['Material_Str'] = df_bar_raw[col_mat_bar].astype(str).apply(clean_sku)
             col_ean = encontrar_columna(df_bar_raw, ['Código EAN/UPC', 'EAN'])
             col_dept = encontrar_columna(df_bar_raw, ['Departamen', 'Departamento'])
             col_sec = encontrar_columna(df_bar_raw, ['Denomin. D', 'Seccion', 'Sección'])
             col_cat = encontrar_columna(df_bar_raw, ['Denomin. Á', 'Categoria', 'Categoría'])
             col_ga = encontrar_columna(df_bar_raw, ['Grupo de A', 'Grupo de articulo'])
 
-            df_bar['EAN_Master'] = df_bar_raw[col_ean].apply(clean_sku) if col_ean else ""
-            df_bar['Departamento'] = df_bar_raw[col_dept].fillna('S/D') if col_dept else 'S/D'
-            df_bar['Sección'] = df_bar_raw[col_sec].fillna('S/S') if col_sec else 'S/S'
-            df_bar['Categoría'] = df_bar_raw[col_cat].fillna('S/C') if col_cat else 'S/C'
-            df_bar['Grupo de artículo'] = df_bar_raw[col_ga].fillna('S/G') if col_ga else 'S/G'
+            df_bar['EAN_Master'] = df_bar_raw[col_ean].astype(str).apply(clean_sku) if col_ean else ""
+            df_bar['Departamento'] = df_bar_raw[col_dept].fillna('SIN DATOS') if col_dept else 'SIN DATOS'
+            df_bar['Sección'] = df_bar_raw[col_sec].fillna('SIN DATOS') if col_sec else 'SIN DATOS'
+            df_bar['Categoría'] = df_bar_raw[col_cat].fillna('SIN DATOS') if col_cat else 'SIN DATOS'
+            df_bar['Grupo de artículo'] = df_bar_raw[col_ga].fillna('SIN DATOS') if col_ga else 'SIN DATOS'
             df_bar = df_bar.drop_duplicates(subset=['Material_Str'])
 
-        # --- CONSOLIDACIÓN MAESTRA EN MEMORIA (USANDO COD REAL PARA PLANO Y MATERIAL PARA AUXILIARES) ---
+        # --- CONSOLIDACIÓN MAESTRA EN MEMORIA (KEYS ESTRICTAMENTE EN TEXTO) ---
         col_mat_matriz = encontrar_columna(df_matriz, ['COD REAL', 'Material', 'SKU', 'Codigo'])
         if col_mat_matriz:
-            df_matriz['COD_REAL_Str'] = df_matriz[col_mat_matriz].apply(clean_sku)
+            df_matriz['COD_REAL_Str'] = df_matriz[col_mat_matriz].astype(str).apply(clean_sku)
             df_matriz['COD REAL'] = df_matriz[col_mat_matriz]
         else:
             first_col = df_matriz.columns[0]
-            df_matriz['COD_REAL_Str'] = df_matriz[first_col].apply(clean_sku)
+            df_matriz['COD_REAL_Str'] = df_matriz[first_col].astype(str).apply(clean_sku)
             df_matriz['COD REAL'] = df_matriz[first_col]
 
-        # Merge Coberturas (Stock, Estado, Cobertura)
+        # Merge Coberturas
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Merge Ventas (Venta, Monto Margen, % Part)
+        # Merge Ventas
         if not df_vta.empty:
             df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
@@ -1663,17 +1671,18 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'Departamento', 'Sección', 'Categoría', 'Grupo de artículo']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Rellenar valores por defecto
-        df_matriz['Stock'] = df_matriz.get('Stock', 0.0).fillna(0.0)
-        df_matriz['Cobertura'] = df_matriz.get('Cobertura', 0.0).fillna(0.0)
-        df_matriz['Venta'] = df_matriz.get('Venta', 0.0).fillna(0.0)
-        df_matriz['Monto Margen'] = df_matriz.get('Monto Margen', 0.0).fillna(0.0)
-        df_matriz['% Part'] = df_matriz.get('% Part', 0.0).fillna(0.0)
-        df_matriz['Estado'] = df_matriz.get('Estado', 'A').fillna('A')
-        df_matriz['Departamento'] = df_matriz.get('Departamento', 'S/D').fillna('S/D')
-        df_matriz['Sección'] = df_matriz.get('Sección', 'S/S').fillna('S/S')
-        df_matriz['Categoría'] = df_matriz.get('Categoría', 'S/C').fillna('S/C')
-        df_matriz['Grupo de artículo'] = df_matriz.get('Grupo de artículo', 'S/G').fillna('S/G')
+        # Valores por defecto diferenciados (SIN DATOS o -999.0 si no hace match)
+        for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
+            if col in df_matriz.columns:
+                df_matriz[col] = df_matriz[col].fillna(val_def)
+            else:
+                df_matriz[col] = val_def
+
+        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de artículo', 'SIN DATOS')]:
+            if col in df_matriz.columns:
+                df_matriz[col] = df_matriz[col].fillna(val_def)
+            else:
+                df_matriz[col] = val_def
 
         if 'Bandeja' in df_matriz.columns and 'EAN' in df_matriz.columns:
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
@@ -1728,11 +1737,11 @@ if error_nube:
 if df_raw is not None and not df_raw.empty:
     df_base = df_raw.copy()
     
-    df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
-    df_base['Margen_Num'] = df_base['Monto Margen'].apply(safe_float)
-    df_base['Part_Num'] = df_base['% Part'].apply(safe_float)
-    df_base['Stock_Num'] = df_base['Stock'].apply(safe_float)
-    df_base['Cob_Num'] = df_base['Cobertura'].apply(safe_float)
+    df_base['Venta_Num'] = df_base['Venta'].apply(lambda x: safe_float(x, 0.0) if safe_float(x, -999.0) != -999.0 else 0.0)
+    df_base['Margen_Num'] = df_base['Monto Margen'].apply(lambda x: safe_float(x, 0.0) if safe_float(x, -999.0) != -999.0 else 0.0)
+    df_base['Part_Num'] = df_base['% Part'].apply(lambda x: safe_float(x, 0.0) if safe_float(x, -999.0) != -999.0 else 0.0)
+    df_base['Stock_Num'] = df_base['Stock'].apply(lambda x: safe_float(x, 0.0) if safe_float(x, -999.0) != -999.0 else 0.0)
+    df_base['Cob_Num'] = df_base['Cobertura'].apply(lambda x: safe_float(x, 0.0) if safe_float(x, -999.0) != -999.0 else 0.0)
     df_base['Caras_Num'] = df_base['Caras'].apply(lambda x: safe_float(x, default=1.0))
     
     col_unid_bandeja = 'Total Unid en Bandeja' if 'Total Unid en Bandeja' in df_base.columns else ('Total_Unidades' if 'Total_Unidades' in df_base.columns else 'Stock')
@@ -1775,19 +1784,19 @@ if df_raw is not None and not df_raw.empty:
         col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns(5)
         
         with col_f1:
-            deptos_disp = sorted([d for d in df_unicos['Departamento'].dropna().unique() if d not in ['S/D', 'nan', '']])
+            deptos_disp = sorted([d for d in df_unicos['Departamento'].dropna().unique() if d not in ['SIN DATOS', 'S/D', 'nan', '']])
             filtro_depto = st.selectbox("🏬 Departamento", ["Todos"] + deptos_disp, key="dash_depto_sel")
         with col_f2:
-            secs_disp = sorted([s for s in df_unicos['Sección'].dropna().unique() if s not in ['S/S', 'nan', '']])
+            secs_disp = sorted([s for s in df_unicos['Sección'].dropna().unique() if s not in ['SIN DATOS', 'S/S', 'nan', '']])
             filtro_seccion = st.selectbox("📂 Sección", ["Todas"] + secs_disp, key="dash_seccion_sel")
         with col_f3:
-            cats_disp = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['S/C', 'nan', '']])
+            cats_disp = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['SIN DATOS', 'S/C', 'nan', '']])
             filtro_categoria = st.selectbox("📁 Categoría", ["Todas"] + cats_disp, key="dash_cat_sel")
         with col_f4:
-            gas_disp = sorted([g for g in df_unicos['Grupo de artículo'].dropna().unique() if g not in ['S/G', 'nan', '']])
+            gas_disp = sorted([g for g in df_unicos['Grupo de artículo'].dropna().unique() if g not in ['SIN DATOS', 'S/G', 'nan', '']])
             filtro_ga = st.selectbox("📦 Grupo de Artículo", ["Todos"] + gas_disp, key="dash_ga_sel")
         with col_f5:
-            marcas_disp = sorted([m for m in df_unicos['Marca'].dropna().unique() if m not in ['S/M', 'nan', '']])
+            marcas_disp = sorted([m for m in df_unicos['Marca'].dropna().unique() if m not in ['SIN DATOS', 'S/M', 'nan', '']])
             filtro_marca = st.selectbox("🏷️ Marca", ["Todas"] + marcas_disp, key="dash_marca_sel")
 
         # Aislamiento total de los filtros en la pestaña 2 (no afectan a Pestaña 1)
@@ -1880,7 +1889,7 @@ if df_raw is not None and not df_raw.empty:
             df_sku_cuerpo = df_dash_base.drop_duplicates(subset=['COD REAL', 'Cuerpo_Ord']).copy()
             
             cat_por_cuerpo = df_sku_cuerpo.groupby('Cuerpo_Ord')['Categoría'].agg(
-                lambda x: max(set([str(i) for i in x if str(i) not in ['S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['S/C', 'nan', '']]) > 0 else ""
+                lambda x: max(set([str(i) for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]) > 0 else ""
             ).to_dict()
             
             ventas_cuerpo = df_sku_cuerpo.groupby('Cuerpo_Ord').agg(
@@ -2026,7 +2035,7 @@ if df_raw is not None and not df_raw.empty:
             Margen_Total=('Margen_Num', 'sum')
         ).reset_index()
         
-        df_fs = df_fs[~df_fs['Categoría'].isin(['S/D', 'S/C', 'S/S', 'S/G', 'nan', ''])].copy()
+        df_fs = df_fs[~df_fs['Categoría'].isin(['SIN DATOS', 'S/D', 'S/C', 'S/S', 'S/G', 'nan', ''])].copy()
         
         total_espacio_sum = df_fs['Espacio_Total'].sum()
         total_ventas_sum = df_fs['Ventas_Total'].sum()
