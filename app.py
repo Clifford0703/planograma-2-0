@@ -50,7 +50,7 @@ theme_vars = {
         "btn_text": "#ffffff",
         "tab_container_bg": "#0f172a",
         "tab_inactive_bg": "#111c30",
-        "tab_inactive_text": "#94a3b8",
+        "tab_inactive_text": "#cbd5e1",
         "tab_inactive_border": "#1e293b",
         "insight_green_bg": "rgba(16, 185, 129, 0.12)",
         "insight_green_text": "#6ee7b7",
@@ -99,7 +99,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
+# INYECCIÓN CSS CON FORZADO TOTAL DE TEXTO Y CONTRASTE EN MODO CLARO
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -123,7 +123,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* PESTAÑAS (TABS) - VISIBILIDAD REFORZADA 100% */
+        /* PESTAÑAS (TABS) - VISIBILIDAD FORZADA AL 100% */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
             background-color: {t["tab_container_bg"]} !important;
@@ -140,45 +140,56 @@ st.markdown(f"""
             font-weight: 800 !important;
             font-size: 0.88rem !important;
             background-color: {t["tab_inactive_bg"]} !important;
-            color: {t["tab_inactive_text"]} !important;
-            -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
             border: 1.5px solid {t["tab_inactive_border"]} !important;
             opacity: 1 !important;
             transition: all 0.2s ease !important;
         }}
         
-        .stTabs [data-baseweb="tab"]:hover {{
-            border-color: {t["accent"]} !important;
-            color: {t["accent"]} !important;
-            -webkit-text-fill-color: {t["accent"]} !important;
-        }}
-        
+        /* FORZADO DE TEXTO EN PESTAÑAS INACTIVAS */
+        .stTabs [data-baseweb="tab"],
+        .stTabs [data-baseweb="tab"] *,
         .stTabs [data-baseweb="tab"] p,
         .stTabs [data-baseweb="tab"] span,
         .stTabs [data-baseweb="tab"] div,
-        .stTabs [data-baseweb="tab"] * {{
+        .stTabs [data-baseweb="tab"] [data-testid="stMarkdownContainer"] p {{
             color: {t["tab_inactive_text"]} !important;
             -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
             font-weight: 800 !important;
             opacity: 1 !important;
         }}
         
-        .stTabs [aria-selected="true"] {{
+        /* PESTAÑA ACTIVA */
+        .stTabs [aria-selected="true"],
+        .stTabs [data-baseweb="tab"][aria-selected="true"] {{
             background-color: {t["accent"]} !important;
             background: {t["accent"]} !important;
-            color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
             border-color: {t["accent"]} !important;
             box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
         }}
         
+        .stTabs [aria-selected="true"] *,
         .stTabs [aria-selected="true"] p,
         .stTabs [aria-selected="true"] span,
         .stTabs [aria-selected="true"] div,
-        .stTabs [aria-selected="true"] * {{
+        .stTabs [aria-selected="true"] [data-testid="stMarkdownContainer"] p {{
             color: #ffffff !important;
             -webkit-text-fill-color: #ffffff !important;
             font-weight: 900 !important;
+        }}
+        
+        /* OPCIONES DE RADIO (REALOGRAMA / BLOQUES) - FORZADO DE TEXTO */
+        [data-testid="stRadio"],
+        [data-testid="stRadio"] *,
+        [data-testid="stRadio"] label,
+        [data-testid="stRadio"] p,
+        [data-testid="stRadio"] span,
+        [data-testid="stRadio"] div,
+        [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p,
+        label[data-baseweb="radio"] * {{
+            color: {t["text_primary"]} !important;
+            -webkit-text-fill-color: {t["text_primary"]} !important;
+            font-weight: 700 !important;
+            opacity: 1 !important;
         }}
         
         /* SELECTBOXES */
@@ -356,7 +367,6 @@ st.markdown(f"""
             color: {t["text_muted"]};
         }}
         
-        /* CONTENEDORES DE GRÁFICOS */
         .dash-card {{
             background: {t["bg_card"]};
             border: 1px solid {t["border_subtle"]};
@@ -2068,7 +2078,6 @@ if df_raw is not None and not df_raw.empty:
                 </div>
             """, unsafe_allow_html=True)
             
-            # Restringido estrictamente a Categoría, Grupo de Artículo y Marca
             dims_mix = ["Categoría", "Grupo de Artículo", "Marca"]
             if st.session_state.dash_analizar not in dims_mix:
                 st.session_state.dash_analizar = "Categoría"
