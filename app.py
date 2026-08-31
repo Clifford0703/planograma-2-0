@@ -95,7 +95,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON MÁXIMO CONTRASTE
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -119,29 +119,274 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        .stTabs [data-baseweb="tab-list"] {{ gap: 8px !important; background-color: {t["bg_card"]} !important; padding: 6px !important; border-radius: 8px !important; border: 1.5px solid {t["border_subtle"]} !important; margin-bottom: 14px !important; }}
-        .stTabs [data-baseweb="tab"] {{ height: 38px !important; padding: 0 20px !important; border-radius: 6px !important; font-weight: 800 !important; font-size: 0.86rem !important; background-color: {t["tab_inactive_bg"]} !important; color: {t["tab_inactive_text"]} !important; border: 1px solid {t["border_subtle"]} !important; opacity: 1 !important; }}
-        .stTabs [aria-selected="true"] {{ background-color: {t["accent"]} !important; background: {t["accent"]} !important; color: #ffffff !important; border-color: {t["accent"]} !important; }}
-        .stTabs [aria-selected="true"] p, .stTabs [aria-selected="true"] span {{ color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; font-weight: 900 !important; }}
+        /* PESTAÑAS (TABS) - VISIBILIDAD GARANTIZADA AL 100% */
+        .stTabs [data-baseweb="tab-list"] {{
+            gap: 8px !important;
+            background-color: {t["bg_card"]} !important;
+            padding: 6px !important;
+            border-radius: 8px !important;
+            border: 1.5px solid {t["border_subtle"]} !important;
+            margin-bottom: 14px !important;
+        }}
         
-        [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{ background-color: {t["input_bg"]} !important; border: 1.5px solid {t["input_border"]} !important; border-radius: 6px !important; min-height: 38px !important; box-shadow: {t["card_shadow"]} !important; }}
-        [data-testid="stSelectbox"] div[data-baseweb="select"] span {{ color: {t["input_text"]} !important; font-weight: 700 !important; }}
+        .stTabs [data-baseweb="tab"] {{
+            height: 38px !important;
+            padding: 0 20px !important;
+            border-radius: 6px !important;
+            font-weight: 800 !important;
+            font-size: 0.86rem !important;
+            background-color: {t["tab_inactive_bg"]} !important;
+            color: {t["tab_inactive_text"]} !important;
+            border: 1px solid {t["border_subtle"]} !important;
+            opacity: 1 !important;
+        }}
         
-        .fin-kpi-container {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 14px; }}
-        .fin-kpi-card {{ background: {t["bg_card"]}; border: 1px solid {t["border_subtle"]}; border-radius: 8px; padding: 14px 18px; box-shadow: {t["card_shadow"]}; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s ease, border-color 0.2s ease; }}
-        .fin-kpi-card:hover {{ border-color: {t["accent"]}; transform: translateY(-2px); }}
-        .fin-kpi-title {{ font-size: 0.68rem; font-weight: 800; color: {t["text_secondary"]}; text-transform: uppercase; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }}
-        .fin-kpi-val {{ font-size: 1.85rem; font-weight: 900; color: {t["text_primary"]}; line-height: 1.1; font-feature-settings: "tnum"; margin-bottom: 4px; }}
-        .fin-kpi-subtitle {{ font-size: 0.72rem; font-weight: 600; color: {t["text_muted"]}; }}
+        .stTabs [data-baseweb="tab"] p,
+        .stTabs [data-baseweb="tab"] span,
+        .stTabs [data-baseweb="tab"] div,
+        .stTabs [data-baseweb="tab"] * {{
+            color: {t["tab_inactive_text"]} !important;
+            -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
+            font-weight: 800 !important;
+            opacity: 1 !important;
+        }}
         
-        .dash-card {{ background: {t["bg_card"]}; border: 1px solid {t["border_subtle"]}; border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; box-shadow: {t["card_shadow"]}; }}
-        .dash-card-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid {t["border_subtle"]}; }}
-        .dash-card-title {{ font-size: 0.85rem; font-weight: 800; color: {t["text_primary"]}; display: flex; align-items: center; gap: 6px; }}
-        .insight-box {{ border-radius: 8px; padding: 14px 16px; line-height: 1.45; font-size: 0.84rem; box-shadow: {t["card_shadow"]}; }}
+        .stTabs [aria-selected="true"] {{
+            background-color: {t["accent"]} !important;
+            background: {t["accent"]} !important;
+            color: #ffffff !important;
+            border-color: {t["accent"]} !important;
+        }}
+        
+        .stTabs [aria-selected="true"] p,
+        .stTabs [aria-selected="true"] span,
+        .stTabs [aria-selected="true"] div,
+        .stTabs [aria-selected="true"] * {{
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            font-weight: 900 !important;
+        }}
+        
+        /* SELECTBOXES */
+        [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
+            background-color: {t["input_bg"]} !important;
+            background: {t["input_bg"]} !important;
+            border: 1.5px solid {t["input_border"]} !important;
+            border-radius: 6px !important;
+            min-height: 38px !important;
+            box-shadow: {t["card_shadow"]} !important;
+        }}
+        
+        [data-testid="stSelectbox"] div[data-baseweb="select"] span,
+        [data-testid="stSelectbox"] div[data-baseweb="select"] div,
+        [data-testid="stSelectbox"] div[data-baseweb="select"] input {{
+            color: {t["input_text"]} !important;
+            -webkit-text-fill-color: {t["input_text"]} !important;
+            font-weight: 700 !important;
+        }}
+
+        [data-testid="stSelectbox"] svg {{
+            fill: {t["text_secondary"]} !important;
+        }}
+        
+        /* LISTA FLOTANTE POPOVER */
+        div[data-baseweb="popover"],
+        div[data-baseweb="popover"] > div,
+        div[data-baseweb="menu"],
+        div[data-baseweb="popover"] ul,
+        ul[role="listbox"],
+        div[data-baseweb="popover"] [class*="st-emotion-cache"] {{
+            background-color: {t["popover_bg"]} !important;
+            background: {t["popover_bg"]} !important;
+            border: 1px solid {t["popover_border"]} !important;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+        }}
+        
+        div[data-baseweb="popover"] li,
+        div[data-baseweb="menu"] li,
+        li[role="option"],
+        ul[role="listbox"] li {{
+            background-color: {t["popover_bg"]} !important;
+            background: {t["popover_bg"]} !important;
+            color: {t["popover_text"]} !important;
+            -webkit-text-fill-color: {t["popover_text"]} !important;
+            font-weight: 600 !important;
+            font-size: 0.86rem !important;
+            padding: 8px 14px !important;
+        }}
+        
+        div[data-baseweb="popover"] li:hover,
+        div[data-baseweb="menu"] li:hover,
+        li[role="option"]:hover,
+        li[aria-selected="true"],
+        ul[role="listbox"] li:hover,
+        ul[role="listbox"] li[aria-selected="true"] {{
+            background-color: {t["popover_hover"]} !important;
+            background: {t["popover_hover"]} !important;
+            color: {t["popover_hover_text"]} !important;
+            -webkit-text-fill-color: {t["popover_hover_text"]} !important;
+        }}
+        
+        /* BOTONES STREAMLIT */
+        .stButton {{
+            position: relative;
+        }}
+        .stButton > button {{
+            background-color: {t["btn_bg"]} !important;
+            background: {t["btn_bg"]} !important;
+            color: {t["btn_text"]} !important;
+            -webkit-text-fill-color: {t["btn_text"]} !important;
+            border: 1.5px solid {t["border_subtle"]} !important;
+            border-radius: 6px !important;
+            font-weight: 700 !important;
+            box-shadow: {t["card_shadow"]} !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+            width: 100% !important;
+            height: 38px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 12px !important;
+        }}
+        
+        .stButton > button p, .stButton > button span, .stButton > button div {{
+            color: {t["btn_text"]} !important;
+            -webkit-text-fill-color: {t["btn_text"]} !important;
+            pointer-events: none !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
+        }}
+        
+        .stButton > button:hover {{
+            border-color: {t["accent"]} !important;
+            color: {t["accent"]} !important;
+            -webkit-text-fill-color: {t["accent"]} !important;
+            background-color: {t["popover_hover"]} !important;
+            background: {t["popover_hover"]} !important;
+        }}
+
+        .stButton > button:hover p, .stButton > button:hover span {{
+            color: {t["accent"]} !important;
+            -webkit-text-fill-color: {t["accent"]} !important;
+        }}
+        
+        .stDownloadButton > button {{
+            background-color: #10b981 !important;
+            background: #10b981 !important;
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            border: none !important;
+            border-radius: 6px !important;
+            font-weight: 800 !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+            cursor: pointer !important;
+        }}
+        
+        /* TABLA DE DATAFRAME */
+        [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {{
+            background-color: {t["bg_card"]} !important;
+            border: 1px solid {t["border_subtle"]} !important;
+            border-radius: 8px !important;
+        }}
+        
+        /* TARJETAS KPIS DEL DASHBOARD */
+        .fin-kpi-container {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-bottom: 14px;
+        }}
+        
+        .fin-kpi-card {{
+            background: {t["bg_card"]};
+            border: 1px solid {t["border_subtle"]};
+            border-radius: 8px;
+            padding: 14px 18px;
+            box-shadow: {t["card_shadow"]};
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }}
+        .fin-kpi-card:hover {{
+            border-color: {t["accent"]};
+            transform: translateY(-2px);
+        }}
+        
+        .fin-kpi-title {{
+            font-size: 0.68rem;
+            font-weight: 800;
+            color: {t["text_secondary"]};
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }}
+        
+        .fin-kpi-val {{
+            font-size: 1.85rem;
+            font-weight: 900;
+            color: {t["text_primary"]};
+            line-height: 1.1;
+            font-feature-settings: "tnum";
+            margin-bottom: 4px;
+        }}
+
+        .fin-kpi-subtitle {{
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: {t["text_muted"]};
+        }}
+        
+        /* CONTENEDORES DE GRÁFICOS */
+        .dash-card {{
+            background: {t["bg_card"]};
+            border: 1px solid {t["border_subtle"]};
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            box-shadow: {t["card_shadow"]};
+        }}
+        
+        .dash-card-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid {t["border_subtle"]};
+        }}
+        
+        .dash-card-title {{
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: {t["text_primary"]};
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }}
+        
+        .stSelectbox label, .stRadio label {{
+            color: {t["text_primary"]} !important;
+            font-weight: 800 !important;
+            font-size: 0.80rem !important;
+        }}
+
+        .insight-box {{
+            border-radius: 8px;
+            padding: 14px 16px;
+            line-height: 1.45;
+            font-size: 0.84rem;
+            box-shadow: {t["card_shadow"]};
+        }}
     </style>
 """, unsafe_allow_html=True)
 
-# --- FUNCIONES AUXILIARES ROBUSTAS ---
+# --- FUNCIONES AUXILIARES ---
 def safe_float(val, default=-999.0):
     if pd.isna(val) or str(val).strip().upper() in ["SIN DATOS", "NAN", "NONE", ""]: return default
     try:
@@ -214,7 +459,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (DISEÑO ORIGINAL INTACTO) ---
+# --- GENERADOR DEL PLANOGRAMA (INTERFAZ ORIGINAL RESTAURADA) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -232,7 +477,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     )
 
     cuerpos = {}
-    todas_marcas = sorted([m for m in df["Marca"].dropna().unique() if m not in ['SIN DATOS', 'S/M', 'nan', '']]) if "Marca" in df.columns else []
+    todas_marcas = sorted(list(df["Marca"].dropna().unique())) if "Marca" in df.columns else []
     todas_categorias = sorted([c for c in df["Categoría"].dropna().unique() if c not in ['SIN DATOS', 'S/C', 'nan', '']]) if "Categoría" in df.columns else []
     todos_niveles = sorted(list(df["Nivel_Ord"].dropna().unique()), reverse=True)
 
@@ -816,7 +1061,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept"></span></div>
             <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec"></span></div>
             <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
-            <div class="m-row"><span class="m-label">Grupo de Artículo:</span><span class="m-val" id="m-ga"></span></div>
+            <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga"></span></div>
             <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
             <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
             <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
@@ -1330,7 +1575,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- CARGA INTEGRADA DE FUENTES Y DOBLE CRUCE DE JERARQUÍA ---
+# --- CARGA INTEGRADA DE FUENTES Y CRUCE CON URL DE JERARQUÍA OFICIAL ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -1338,7 +1583,8 @@ def cargar_todas_las_fuentes():
         url_coberturas = "https://docs.google.com/spreadsheets/d/1deT1W2MA2kZzm-vJVSp6eL1IsLAKyaYLFCrZYxNU7-c/export?format=xlsx"
         url_ventas = "https://docs.google.com/spreadsheets/d/1NdEQXgbsb5bXbhIs2keFin9Wk5mC4dK7N_Y3dbv6fcg/export?format=xlsx"
         url_barras = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
-        url_jerarquia = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
+        # URL exacta de V28_Nueva Jerarquia Comercial Peru SAP
+        url_jerarquia = "https://docs.google.com/spreadsheets/d/1JI4Ef0138lwI-fJsQmX5lz-fqXvemZQD/export?format=xlsx"
 
         def leer_tabla_por_ancla(url, palabra_ancla, sheet_target=0, skiprows_fallback=0):
             try:
@@ -1411,67 +1657,48 @@ def cargar_todas_las_fuentes():
             df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p in df_vta_raw.columns else -999.0
             df_vta = df_vta[df_vta['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 4. Código de Barras (dimCodbarras -> CBARRAS / Material -> Grupo de A as G.A.)
-        # Utilizaremos pd.ExcelFile para buscar a través de todas las hojas para asegurar que tomamos la correcta
-        xls_barras = pd.ExcelFile(url_barras)
-        df_bar_raw = pd.DataFrame()
-        for sheet in xls_barras.sheet_names:
-            temp_head = pd.read_excel(xls_barras, sheet_name=sheet, header=None, nrows=10)
-            for idx, row in temp_head.iterrows():
-                row_str = " ".join([str(v).strip().upper() for v in row.values if pd.notna(v)])
-                if "MATERIAL" in row_str and ("GRUPO DE A" in row_str or "GRUPO DE ARTÍCULO" in row_str):
-                    df_bar_raw = pd.read_excel(xls_barras, sheet_name=sheet, skiprows=idx)
-                    df_bar_raw.columns = [str(c).strip() for c in df_bar_raw.columns]
-                    break
-            if not df_bar_raw.empty:
-                break
-        
+        # 4. Código de Barras (dimCodbarras -> CBARRAS / Material -> Grupo de A como G.A.)
+        df_bar_raw = leer_tabla_por_ancla(url_barras, "Material", sheet_target=0, skiprows_fallback=2)
         df_bar = pd.DataFrame()
-        if not df_bar_raw.empty:
-            bar_map = {str(c).strip().upper(): c for c in df_bar_raw.columns}
-            col_mat_bar = bar_map.get('MATERIAL', bar_map.get('COD REAL', None))
-            if col_mat_bar:
-                df_bar['Material_Str'] = df_bar_raw[col_mat_bar].astype(str).apply(clean_sku)
-                col_ean = bar_map.get('CÓDIGO EAN/UPC', bar_map.get('CODIGO EAN/UPC', None))
-                col_ga_orig = bar_map.get('GRUPO DE A', bar_map.get('GRUPO DE ARTÍCULO', None))
-                
-                df_bar['EAN_Master'] = df_bar_raw[col_ean].astype(str).apply(clean_sku) if col_ean else ""
-                df_bar['G.A.'] = df_bar_raw[col_ga_orig].astype(str).apply(clean_sku) if col_ga_orig else 'SIN DATOS'
-                df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
+        col_mat_bar = 'Material' if 'Material' in df_bar_raw.columns else ('COD REAL' if 'COD REAL' in df_bar_raw.columns else None)
+        if col_mat_bar:
+            df_bar['Material_Str'] = df_bar_raw[col_mat_bar].astype(str).apply(clean_sku)
+            df_bar['EAN_Master'] = df_bar_raw['Código EAN/UPC'].astype(str).apply(clean_sku) if 'Código EAN/UPC' in df_bar_raw.columns else ""
+            
+            bar_map = {str(c).strip().lower(): c for c in df_bar_raw.columns}
+            col_ga_orig = bar_map.get('grupo de a', bar_map.get('grupo de artículo', None))
+            
+            # Formatear estrictamente G.A. a texto plano
+            df_bar['G.A.'] = df_bar_raw[col_ga_orig].astype(str).apply(clean_sku) if col_ga_orig else 'SIN DATOS'
+            df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 5. Nueva Jerarquía Comercial SAP (Hoja: 'NuevaJqGA' -> CodGA)
-        xls_jerarquia = pd.ExcelFile(url_jerarquia)
-        df_sap_raw = pd.DataFrame()
-        for sheet in xls_jerarquia.sheet_names:
-            temp_head = pd.read_excel(xls_jerarquia, sheet_name=sheet, header=None, nrows=10)
-            for idx, row in temp_head.iterrows():
-                row_str = " ".join([str(v).strip().upper() for v in row.values if pd.notna(v)])
-                if "CODGA" in row_str and ("CATEGORIA (4)" in row_str or "DEPARTAMENTO (2)" in row_str):
-                    df_sap_raw = pd.read_excel(xls_jerarquia, sheet_name=sheet, skiprows=idx)
-                    df_sap_raw.columns = [str(c).strip() for c in df_sap_raw.columns]
-                    break
-            if not df_sap_raw.empty:
-                break
+        # 5. Nueva Jerarquía Comercial SAP (Hoja: 'NuevaJqGA' -> Columna K: CodGA, D: Depto, F: Sección, H: Categoría)
+        try:
+            df_sap_raw = pd.read_excel(url_jerarquia, sheet_name='NuevaJqGA', skiprows=2)
+        except Exception:
+            try:
+                df_sap_raw = pd.read_excel(url_jerarquia, sheet_name=0, skiprows=2)
+            except Exception:
+                df_sap_raw = pd.DataFrame()
 
         df_sap = pd.DataFrame()
-        if not df_sap_raw.empty:
-            sap_map = {str(c).strip().upper(): c for c in df_sap_raw.columns}
-            col_codga_sap = sap_map.get('CODGA', sap_map.get('CODGA 1', None))
-            if col_codga_sap:
-                df_sap['CodGA_Str'] = df_sap_raw[col_codga_sap].astype(str).apply(clean_sku)
-                
-                col_dep_sap = sap_map.get('DEPARTAMENTO (2)', None)
-                col_sec_sap = sap_map.get('SECCIÓN (3)', sap_map.get('SECCION (3)', None))
-                col_cat_sap = sap_map.get('CATEGORIA (4)', None)
-                col_ga_sap = sap_map.get('DESC.ABREV GRUPO ARTICULO', sap_map.get('GRUPO ARTICULO (6)', None))
+        if not df_sap_raw.empty and len(df_sap_raw.columns) >= 11:
+            # Extracción posicional directa de las columnas (D=3, F=5, H=7, K=10)
+            col_k_codga = df_sap_raw.columns[10]  # Columna K
+            col_d_depto = df_sap_raw.columns[3]   # Columna D
+            col_f_seccion = df_sap_raw.columns[5] # Columna F
+            col_h_cat = df_sap_raw.columns[7]     # Columna H
+            col_n_ga = df_sap_raw.columns[13] if len(df_sap_raw.columns) > 13 else df_sap_raw.columns[10] # Columna N
 
-                df_sap['Departamento'] = df_sap_raw[col_dep_sap].fillna('SIN DATOS').astype(str).str.strip() if col_dep_sap else 'SIN DATOS'
-                df_sap['Sección'] = df_sap_raw[col_sec_sap].fillna('SIN DATOS').astype(str).str.strip() if col_sec_sap else 'SIN DATOS'
-                df_sap['Categoría'] = df_sap_raw[col_cat_sap].fillna('SIN DATOS').astype(str).str.strip() if col_cat_sap else 'SIN DATOS'
-                df_sap['Grupo de Artículo'] = df_sap_raw[col_ga_sap].fillna('SIN DATOS').astype(str).str.strip() if col_ga_sap else 'SIN DATOS'
-                df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
+            df_sap['CodGA_Str'] = df_sap_raw[col_k_codga].astype(str).apply(clean_sku)
+            df_sap['Departamento'] = df_sap_raw[col_d_depto].fillna('SIN DATOS').astype(str).str.strip()
+            df_sap['Sección'] = df_sap_raw[col_f_seccion].fillna('SIN DATOS').astype(str).str.strip()
+            df_sap['Categoría'] = df_sap_raw[col_h_cat].fillna('SIN DATOS').astype(str).str.strip()
+            df_sap['Grupo de Artículo'] = df_sap_raw[col_n_ga].fillna('SIN DATOS').astype(str).str.strip()
+            
+            df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- APLICACIÓN DE CRUCES EN SECUENCIA ESTRICTA (TEXTO A TEXTO) ---
+        # --- APLICACIÓN DE CRUCES SECUENCIALES (TEXTO A TEXTO) ---
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
@@ -1480,18 +1707,17 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Cruce con dimCodbarras para traer G.A.
+        # Cruce 1: factPlano <-> dimCodBarras para traer G.A.
         if not df_bar.empty:
             df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Formatear G.A. en formato texto plano para usarlo como llave contra CodGA
         if 'G.A.' in df_matriz.columns:
             df_matriz['G.A._Str'] = df_matriz['G.A.'].astype(str).apply(clean_sku)
         else:
             df_matriz['G.A._Str'] = ""
 
-        # Cruce con V28_Nueva Jerarquia Comercial Peru SAP usando G.A._Str contra CodGA_Str
+        # Cruce 2: factPlano (G.A.) <-> V28_Nueva Jerarquia Comercial Peru SAP (CodGA)
         if not df_sap.empty:
             df_matriz = df_matriz.merge(
                 df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], 
@@ -1561,7 +1787,6 @@ if error_nube:
 if df_raw is not None and not df_raw.empty:
     df_base = df_raw.copy()
     
-    # Exclusión de -999 para cálculos analíticos limpios
     df_base['Venta_Num'] = df_base['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     df_base['Part_Num'] = df_base['% Part'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
