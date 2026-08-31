@@ -99,7 +99,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON FORZADO TOTAL DE TEXTO Y CONTRASTE EN MODO CLARO
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -145,7 +145,6 @@ st.markdown(f"""
             transition: all 0.2s ease !important;
         }}
         
-        /* FORZADO DE TEXTO EN PESTAÑAS INACTIVAS */
         .stTabs [data-baseweb="tab"],
         .stTabs [data-baseweb="tab"] *,
         .stTabs [data-baseweb="tab"] p,
@@ -158,7 +157,6 @@ st.markdown(f"""
             opacity: 1 !important;
         }}
         
-        /* PESTAÑA ACTIVA */
         .stTabs [aria-selected="true"],
         .stTabs [data-baseweb="tab"][aria-selected="true"] {{
             background-color: {t["accent"]} !important;
@@ -177,7 +175,7 @@ st.markdown(f"""
             font-weight: 900 !important;
         }}
         
-        /* OPCIONES DE RADIO (REALOGRAMA / BLOQUES) - FORZADO DE TEXTO */
+        /* OPCIONES DE RADIO */
         [data-testid="stRadio"],
         [data-testid="stRadio"] *,
         [data-testid="stRadio"] label,
@@ -316,7 +314,7 @@ st.markdown(f"""
             border-radius: 8px !important;
         }}
         
-        /* TARJETAS KPIS DEL DASHBOARD */
+        /* TARJETAS KPIS */
         .fin-kpi-container {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1611,7 +1609,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- CARGA INTEGRADA DE FUENTES Y CRUCE CON URL DE JERARQUÍA OFICIAL ---
+# --- CARGA INTEGRADA DE FUENTES Y CRUCE DE FOTOS ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -1654,7 +1652,7 @@ def cargar_todas_las_fuentes():
 
         df_matriz['COD_REAL_Str'] = df_matriz['COD REAL'].astype(str).apply(clean_sku)
 
-        # 2. Coberturas y Stock (TCOBERT -> Material <-> Cob./días)
+        # 2. Coberturas y Stock (TCOBERT)
         df_cob_raw = leer_tabla_por_ancla(url_coberturas, "Material", sheet_target=0, skiprows_fallback=3)
         if "Material" not in df_cob_raw.columns:
             df_cob_raw = pd.read_excel(url_coberturas, sheet_name=0, skiprows=3)
@@ -1678,12 +1676,15 @@ def cargar_todas_las_fuentes():
             df_cob['Cobertura'] = df_cob_raw[col_cob].apply(safe_float) if col_cob else -999.0
             df_cob = df_cob[df_cob['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 3. Ventas y Margen (factVentas)
+        # 3. Ventas y Margen (factVentas) - FILTRADO ESTRICTO: SIN GUIÓN "-"
         df_vta_raw = leer_tabla_por_ancla(url_ventas, "Material", sheet_target=0, skiprows_fallback=2)
         df_vta = pd.DataFrame()
         col_mat_vta = 'Material' if 'Material' in df_vta_raw.columns else ('COD REAL' if 'COD REAL' in df_vta_raw.columns else None)
         if col_mat_vta:
             df_vta['Material_Str'] = df_vta_raw[col_mat_vta].astype(str).apply(clean_sku)
+            # REQUISITO: Excluir los materiales que contengan el carácter "-"
+            df_vta = df_vta[~df_vta['Material_Str'].str.contains('-')].copy()
+
             col_v = 'Monto Venta Neta' if 'Monto Venta Neta' in df_vta_raw.columns else 'Venta'
             col_m = 'Monto Margen' if 'Monto Margen' in df_vta_raw.columns else 'Margen'
             col_p = '% PART' if '% PART' in df_vta_raw.columns else '% Part'
@@ -1693,7 +1694,7 @@ def cargar_todas_las_fuentes():
             df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p in df_vta_raw.columns else -999.0
             df_vta = df_vta[df_vta['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 4. Código de Barras (dimCodbarras -> CBARRAS / Material -> Grupo de A como G.A.)
+        # 4. Código de Barras (dimCodbarras)
         df_bar_raw = leer_tabla_por_ancla(url_barras, "Material", sheet_target=0, skiprows_fallback=2)
         df_bar = pd.DataFrame()
         col_mat_bar = 'Material' if 'Material' in df_bar_raw.columns else ('COD REAL' if 'COD REAL' in df_bar_raw.columns else None)
@@ -1707,7 +1708,7 @@ def cargar_todas_las_fuentes():
             df_bar['G.A.'] = df_bar_raw[col_ga_orig].astype(str).apply(clean_sku) if col_ga_orig else 'SIN DATOS'
             df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 5. Links de Fotos (Links de fotos 03.09 -> SKUReferenceCode)
+        # 5. Links de Fotos
         df_fotos_raw = leer_tabla_por_ancla(url_fotos, "SKUReferenceCode", sheet_target=0, skiprows_fallback=0)
         df_fotos = pd.DataFrame()
         if not df_fotos_raw.empty:
@@ -1720,7 +1721,7 @@ def cargar_todas_las_fuentes():
                 df_fotos['Links de fotos'] = df_fotos_raw[col_link_foto].astype(str).str.strip()
                 df_fotos = df_fotos[df_fotos['Sku_Foto_Str'] != ""].drop_duplicates(subset=['Sku_Foto_Str'])
 
-        # 6. Nueva Jerarquía Comercial SAP (Hoja: 'NuevaJqGA' -> Columna K: CodGA, D: Depto, F: Sección, H: Categoría)
+        # 6. Nueva Jerarquía Comercial SAP ('NuevaJqGA')
         try:
             df_sap_raw = pd.read_excel(url_jerarquia, sheet_name='NuevaJqGA', skiprows=2)
         except Exception:
@@ -1745,22 +1746,38 @@ def cargar_todas_las_fuentes():
             
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- APLICACIÓN DE CRUCES SECUENCIALES ---
-        if not df_cob.empty:
-            df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
-            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
-
+        # --- CONSTRUCCIÓN DEL CATÁLOGO BASE DE SKUS ÚNICOS (FACTVENTAS SIN GUIONES + FACTPLANO) ---
         if not df_vta.empty:
-            df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
-            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+            # Lista de materiales limpios de ventas sin guion
+            materiales_vta_validos = df_vta[['Material_Str']].drop_duplicates()
+            # Anexar con COD REAL de la matriz de planos
+            planos_skus = df_matriz[['COD_REAL_Str']].drop_duplicates().rename(columns={'COD_REAL_Str': 'Material_Str'})
+            
+            # Combinación de ambos catálogos sin duplicados
+            df_catalogo_base = pd.concat([materiales_vta_validos, planos_skus]).drop_duplicates(subset=['Material_Str'])
+        else:
+            df_catalogo_base = df_matriz[['COD_REAL_Str']].drop_duplicates().rename(columns={'COD_REAL_Str': 'Material_Str'})
 
+        # Cruzar el catálogo base con Coberturas, Ventas y Matriz de Planos
+        df_maestro = df_catalogo_base.merge(df_matriz, left_on='Material_Str', right_on='COD_REAL_Str', how='left')
+        
+        if not df_cob.empty:
+            df_maestro = df_maestro.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], on='Material_Str', how='left')
+        if not df_vta.empty:
+            df_maestro = df_maestro.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], on='Material_Str', how='left')
         if not df_bar.empty:
-            df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
-            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
-
+            df_maestro = df_maestro.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], on='Material_Str', how='left')
         if not df_fotos.empty:
-            df_matriz = df_matriz.merge(df_fotos[['Sku_Foto_Str', 'Links de fotos']], left_on='COD_REAL_Str', right_on='Sku_Foto_Str', how='left')
-            df_matriz.drop(columns=['Sku_Foto_Str'], inplace=True, errors='ignore')
+            df_maestro = df_maestro.merge(df_fotos[['Sku_Foto_Str', 'Links de fotos']], left_on='Material_Str', right_on='Sku_Foto_Str', how='left')
+            df_maestro.drop(columns=['Sku_Foto_Str'], errors='ignore', inplace=True)
+
+        # Asignar COD REAL oficial si proviene de ventas puras
+        if 'COD REAL' in df_maestro.columns:
+            df_maestro['COD REAL'] = df_maestro['COD REAL'].fillna(df_maestro['Material_Str'])
+        else:
+            df_maestro['COD REAL'] = df_maestro['Material_Str']
+
+        df_matriz = df_maestro.copy()
 
         if 'G.A.' in df_matriz.columns:
             df_matriz['G.A._Str'] = df_matriz['G.A.'].astype(str).apply(clean_sku)
@@ -1783,15 +1800,12 @@ def cargar_todas_las_fuentes():
 
             df_matriz.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
 
-        # Rellenar nulos
+        # Asignación estricta de valores por defecto (Si no hay datos -> SIN DATOS / -999.0)
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
             df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
         for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS')]:
             df_matriz[col] = df_matriz[col].fillna(val_def).astype(str).str.strip() if col in df_matriz.columns else val_def
-
-        if 'Bandeja' in df_matriz.columns and 'EAN' in df_matriz.columns:
-            df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
         return df_matriz, hora_lectura, None
