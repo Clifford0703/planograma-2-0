@@ -459,7 +459,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (INTERFAZ ORIGINAL RESTAURADA) ---
+# --- GENERADOR DEL PLANOGRAMA ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -1583,7 +1583,6 @@ def cargar_todas_las_fuentes():
         url_coberturas = "https://docs.google.com/spreadsheets/d/1deT1W2MA2kZzm-vJVSp6eL1IsLAKyaYLFCrZYxNU7-c/export?format=xlsx"
         url_ventas = "https://docs.google.com/spreadsheets/d/1NdEQXgbsb5bXbhIs2keFin9Wk5mC4dK7N_Y3dbv6fcg/export?format=xlsx"
         url_barras = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
-        # URL exacta de V28_Nueva Jerarquia Comercial Peru SAP
         url_jerarquia = "https://docs.google.com/spreadsheets/d/1JI4Ef0138lwI-fJsQmX5lz-fqXvemZQD/export?format=xlsx"
 
         def leer_tabla_por_ancla(url, palabra_ancla, sheet_target=0, skiprows_fallback=0):
@@ -1683,11 +1682,10 @@ def cargar_todas_las_fuentes():
 
         df_sap = pd.DataFrame()
         if not df_sap_raw.empty and len(df_sap_raw.columns) >= 11:
-            # Extracción posicional directa de las columnas (D=3, F=5, H=7, K=10)
-            col_k_codga = df_sap_raw.columns[10]  # Columna K
-            col_d_depto = df_sap_raw.columns[3]   # Columna D
-            col_f_seccion = df_sap_raw.columns[5] # Columna F
-            col_h_cat = df_sap_raw.columns[7]     # Columna H
+            col_k_codga = df_sap_raw.columns[10]  # Columna K (CodGA)
+            col_d_depto = df_sap_raw.columns[3]   # Columna D (DEPARTAMENTO (2))
+            col_f_seccion = df_sap_raw.columns[5] # Columna F (SECCIÓN (3))
+            col_h_cat = df_sap_raw.columns[7]     # Columna H (CATEGORIA (4))
             col_n_ga = df_sap_raw.columns[13] if len(df_sap_raw.columns) > 13 else df_sap_raw.columns[10] # Columna N
 
             df_sap['CodGA_Str'] = df_sap_raw[col_k_codga].astype(str).apply(clean_sku)
@@ -1698,7 +1696,7 @@ def cargar_todas_las_fuentes():
             
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- APLICACIÓN DE CRUCES SECUENCIALES (TEXTO A TEXTO) ---
+        # --- APLICACIÓN DE CRUCES SECUENCIALES ---
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
