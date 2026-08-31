@@ -1575,7 +1575,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- CARGA INTEGRADA DE FUENTES Y CRUCES DE JERARQUÍA SAP ---
+# --- CARGA INTEGRADA DE FUENTES Y DOBLE CRUCE DE JERARQUÍA ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -1649,7 +1649,7 @@ def cargar_todas_las_fuentes():
             df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p in df_vta_raw.columns else -999.0
             df_vta = df_vta[df_vta['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 4. Código de Barras / Jerarquía Base (dimCodbarras -> CBARRAS / Material -> Grupo de A as G.A.)
+        # 4. Código de Barras (dimCodbarras -> CBARRAS / Material -> Grupo de A as G.A.)
         df_bar_raw = leer_tabla_por_ancla(url_barras, "Material", 2)
         df_bar = pd.DataFrame()
         col_mat_bar = 'Material' if 'Material' in df_bar_raw.columns else ('COD REAL' if 'COD REAL' in df_bar_raw.columns else None)
@@ -1657,32 +1657,32 @@ def cargar_todas_las_fuentes():
             df_bar['Material_Str'] = df_bar_raw[col_mat_bar].astype(str).apply(clean_sku)
             df_bar['EAN_Master'] = df_bar_raw['Código EAN/UPC'].astype(str).apply(clean_sku) if 'Código EAN/UPC' in df_bar_raw.columns else ""
             
-            col_grupo_a = None
-            for c in df_bar_raw.columns:
-                if 'grupo' in str(c).lower() and 'a' in str(c).lower():
-                    col_grupo_a = c
-                    break
-            df_bar['G.A.'] = df_bar_raw[col_grupo_a].astype(str).apply(clean_sku) if col_grupo_a else 'SIN DATOS'
+            bar_map = {str(c).strip().lower(): c for c in df_bar_raw.columns}
+            col_ga_orig = bar_map.get('grupo de a', bar_map.get('grupo de artículo', None))
+            df_bar['G.A.'] = df_bar_raw[col_ga_orig].astype(str).apply(clean_sku) if col_ga_orig else 'SIN DATOS'
             df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 5. Nueva Jerarquía Comercial SAP (V28_Nueva Jerarquia Comercial Peru SAP -> CodGA)
-        df_sap_raw = leer_tabla_por_ancla(url_jerarquia, "CodGA", 1)
+        # 5. Nueva Jerarquía Comercial SAP (V28_Nueva Jerarquia Comercial Peru SAP -> CodGA exacto)
+        df_sap_raw = leer_tabla_por_ancla(url_jerarquia, "CodGA", 2)
         df_sap = pd.DataFrame()
-        col_codga_sap = None
-        for c in df_sap_raw.columns:
-            if 'codga' in str(c).lower():
-                col_codga_sap = c
-                break
+        sap_map = {str(c).strip().upper(): c for c in df_sap_raw.columns}
         
+        col_codga_sap = sap_map.get('CODGA', sap_map.get('CODGA 1', None))
         if col_codga_sap:
             df_sap['CodGA_Str'] = df_sap_raw[col_codga_sap].astype(str).apply(clean_sku)
-            df_sap['Departamento'] = df_sap_raw['DEPARTAMENTO (2)'].fillna('SIN DATOS') if 'DEPARTAMENTO (2)' in df_sap_raw.columns else 'SIN DATOS'
-            df_sap['Sección'] = df_sap_raw['SECCIÓN (3)'].fillna('SIN DATOS') if 'SECCIÓN (3)' in df_sap_raw.columns else 'SIN DATOS'
-            df_sap['Categoría'] = df_sap_raw['CATEGORIA (4)'].fillna('SIN DATOS') if 'CATEGORIA (4)' in df_sap_raw.columns else 'SIN DATOS'
-            df_sap['Grupo de Artículo'] = df_sap_raw['DESC.ABREV GRUPO ARTICULO'].fillna('SIN DATOS') if 'DESC.ABREV GRUPO ARTICULO' in df_sap_raw.columns else 'SIN DATOS'
+            
+            col_dep_sap = sap_map.get('DEPARTAMENTO (2)', None)
+            col_sec_sap = sap_map.get('SECCIÓN (3)', sap_map.get('SECCION (3)', None))
+            col_cat_sap = sap_map.get('CATEGORIA (4)', None)
+            col_ga_sap = sap_map.get('DESC.ABREV GRUPO ARTICULO', sap_map.get('GRUPO ARTICULO (6)', None))
+
+            df_sap['Departamento'] = df_sap_raw[col_dep_sap].fillna('SIN DATOS').astype(str).str.strip() if col_dep_sap else 'SIN DATOS'
+            df_sap['Sección'] = df_sap_raw[col_sec_sap].fillna('SIN DATOS').astype(str).str.strip() if col_sec_sap else 'SIN DATOS'
+            df_sap['Categoría'] = df_sap_raw[col_cat_sap].fillna('SIN DATOS').astype(str).str.strip() if col_cat_sap else 'SIN DATOS'
+            df_sap['Grupo de Artículo'] = df_sap_raw[col_ga_sap].fillna('SIN DATOS').astype(str).str.strip() if col_ga_sap else 'SIN DATOS'
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- CRUCES MAESTROS ESTRICTOS ---
+        # --- APLICACIÓN DE CRUCES ESTRICTOS EN TEXTO ---
         # Cruce 1: Coberturas
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
@@ -1698,18 +1698,18 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Limpieza estricta de G.A. a texto plano para el cruce SAP
+        # Formatear G.A. estrictamente a texto plano para el cruce SAP
         if 'G.A.' in df_matriz.columns:
             df_matriz['G.A._Str'] = df_matriz['G.A.'].astype(str).apply(clean_sku)
         else:
             df_matriz['G.A._Str'] = ""
 
-        # Cruce 4: Jerarquía SAP usando G.A. contra CodGA
+        # Cruce 4: Jerarquía SAP usando G.A._Str contra CodGA_Str
         if not df_sap.empty:
             df_matriz = df_matriz.merge(df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], left_on='G.A._Str', right_on='CodGA_Str', how='left')
             df_matriz.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
 
-        # Rellenar nulos de campos numéricos y de texto con valores por defecto
+        # Rellenar nulos de campos numéricos y de texto
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
             df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
