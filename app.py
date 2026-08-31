@@ -1601,7 +1601,7 @@ def cargar_todas_las_fuentes():
                 df.columns = [str(c).strip() for c in df.columns]
                 return df
 
-        # 1. Matriz de Planos (DATOST)
+        # 1. Matriz de Planos (DATOST -> COD REAL)
         df_matriz = leer_tabla_por_ancla(url_planos, "COD REAL", 3)
         if "COD REAL" not in df_matriz.columns:
             df_matriz = pd.read_excel(url_planos, sheet_name=0, skiprows=2)
@@ -1609,7 +1609,7 @@ def cargar_todas_las_fuentes():
 
         df_matriz['COD_REAL_Str'] = df_matriz['COD REAL'].astype(str).apply(clean_sku)
 
-        # 2. Coberturas y Stock (TCOBERT)
+        # 2. Coberturas y Stock (TCOBERT -> Material <-> Cob./días)
         df_cob_raw = leer_tabla_por_ancla(url_coberturas, "Material", 3)
         if "Material" not in df_cob_raw.columns:
             df_cob_raw = pd.read_excel(url_coberturas, sheet_name=0, skiprows=3)
@@ -1619,13 +1619,21 @@ def cargar_todas_las_fuentes():
         if "Material" in df_cob_raw.columns:
             df_cob['Material_Str'] = df_cob_raw['Material'].astype(str).apply(clean_sku)
             
-            col_est = 'Estado Material' if 'Estado Material' in df_cob_raw.columns else ('Estado' if 'Estado' in df_cob_raw.columns else None)
-            col_stk = 'Stock Actual' if 'Stock Actual' in df_cob_raw.columns else ('Stock' if 'Stock' in df_cob_raw.columns else None)
-            col_cob = 'Cob/día' if 'Cob/día' in df_cob_raw.columns else ('Cobertura' if 'Cobertura' in df_cob_raw.columns else None)
+            cols_map = {str(c).strip().lower(): c for c in df_cob_raw.columns}
+            
+            col_est = cols_map.get('estado material', cols_map.get('estado', None))
+            col_stk = cols_map.get('stock actual', cols_map.get('stock', None))
+            
+            # Búsqueda exacta y tolerante de 'Cob./días' o 'Cob./día'
+            col_cob = None
+            for k, original_name in cols_map.items():
+                if 'cob' in k and ('dia' in k or 'días' in k or 'día' in k):
+                    col_cob = original_name
+                    break
 
             df_cob['Estado'] = df_cob_raw[col_est].astype(str).str.extract(r'([ABab])')[0].str.upper().fillna('A') if col_est else 'A'
             df_cob['Stock'] = df_cob_raw[col_stk].apply(safe_float) if col_stk else 0.0
-            df_cob['Cobertura'] = df_cob_raw[col_cob].apply(safe_float) if col_cob else 0.0
+            df_cob['Cobertura'] = df_cob_raw[col_cob].apply(safe_float) if col_cob else -999.0
             
             df_cob = df_cob[df_cob['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
