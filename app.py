@@ -83,8 +83,8 @@ theme_vars = {
         "popover_hover_text": "#2563eb",
         "btn_bg": "#ffffff",
         "btn_text": "#0f172a",
-        "tab_inactive_bg": "#f1f5f9",
-        "tab_inactive_text": "#0f172a",
+        "tab_inactive_bg": "#e2e8f0",
+        "tab_inactive_text": "#000000",
         "insight_green_bg": "#dcfce7",
         "insight_green_text": "#14532d",
         "insight_amber_bg": "#fef3c7",
@@ -95,7 +95,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE Y TEXTO NEGRO EN MODO CLARO PARA TABS
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -119,7 +119,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* PESTAÑAS (TABS) - VISIBILIDAD GARANTIZADA AL 100% */
+        /* PESTAÑAS (TABS) - TEXTO NEGRO ASEGURADO EN MODO CLARO */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
             background-color: {t["bg_card"]} !important;
@@ -189,109 +189,7 @@ st.markdown(f"""
             fill: {t["text_secondary"]} !important;
         }}
         
-        /* LISTA FLOTANTE POPOVER */
-        div[data-baseweb="popover"],
-        div[data-baseweb="popover"] > div,
-        div[data-baseweb="menu"],
-        div[data-baseweb="popover"] ul,
-        ul[role="listbox"],
-        div[data-baseweb="popover"] [class*="st-emotion-cache"] {{
-            background-color: {t["popover_bg"]} !important;
-            background: {t["popover_bg"]} !important;
-            border: 1px solid {t["popover_border"]} !important;
-            border-radius: 8px !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
-        }}
-        
-        div[data-baseweb="popover"] li,
-        div[data-baseweb="menu"] li,
-        li[role="option"],
-        ul[role="listbox"] li {{
-            background-color: {t["popover_bg"]} !important;
-            background: {t["popover_bg"]} !important;
-            color: {t["popover_text"]} !important;
-            -webkit-text-fill-color: {t["popover_text"]} !important;
-            font-weight: 600 !important;
-            font-size: 0.86rem !important;
-            padding: 8px 14px !important;
-        }}
-        
-        div[data-baseweb="popover"] li:hover,
-        div[data-baseweb="menu"] li:hover,
-        li[role="option"]:hover,
-        li[aria-selected="true"],
-        ul[role="listbox"] li:hover,
-        ul[role="listbox"] li[aria-selected="true"] {{
-            background-color: {t["popover_hover"]} !important;
-            background: {t["popover_hover"]} !important;
-            color: {t["popover_hover_text"]} !important;
-            -webkit-text-fill-color: {t["popover_hover_text"]} !important;
-        }}
-        
-        /* BOTONES STREAMLIT */
-        .stButton {{
-            position: relative;
-        }}
-        .stButton > button {{
-            background-color: {t["btn_bg"]} !important;
-            background: {t["btn_bg"]} !important;
-            color: {t["btn_text"]} !important;
-            -webkit-text-fill-color: {t["btn_text"]} !important;
-            border: 1.5px solid {t["border_subtle"]} !important;
-            border-radius: 6px !important;
-            font-weight: 700 !important;
-            box-shadow: {t["card_shadow"]} !important;
-            transition: all 0.2s ease !important;
-            cursor: pointer !important;
-            width: 100% !important;
-            height: 38px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 0 12px !important;
-        }}
-        
-        .stButton > button p, .stButton > button span, .stButton > button div {{
-            color: {t["btn_text"]} !important;
-            -webkit-text-fill-color: {t["btn_text"]} !important;
-            pointer-events: none !important;
-            font-weight: 700 !important;
-            line-height: 1 !important;
-        }}
-        
-        .stButton > button:hover {{
-            border-color: {t["accent"]} !important;
-            color: {t["accent"]} !important;
-            -webkit-text-fill-color: {t["accent"]} !important;
-            background-color: {t["popover_hover"]} !important;
-            background: {t["popover_hover"]} !important;
-        }}
-
-        .stButton > button:hover p, .stButton > button:hover span {{
-            color: {t["accent"]} !important;
-            -webkit-text-fill-color: {t["accent"]} !important;
-        }}
-        
-        .stDownloadButton > button {{
-            background-color: #10b981 !important;
-            background: #10b981 !important;
-            color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
-            border: none !important;
-            border-radius: 6px !important;
-            font-weight: 800 !important;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
-            cursor: pointer !important;
-        }}
-        
-        /* TABLA DE DATAFRAME */
-        [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {{
-            background-color: {t["bg_card"]} !important;
-            border: 1px solid {t["border_subtle"]} !important;
-            border-radius: 8px !important;
-        }}
-        
-        /* TARJETAS KPIS DEL DASHBOARD */
+        /* TARJETAS KPIS */
         .fin-kpi-container {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -342,7 +240,6 @@ st.markdown(f"""
             color: {t["text_muted"]};
         }}
         
-        /* CONTENEDORES DE GRÁFICOS */
         .dash-card {{
             background: {t["bg_card"]};
             border: 1px solid {t["border_subtle"]};
@@ -459,7 +356,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA ---
+# --- GENERADOR DEL PLANOGRAMA (CON DISTRIBUCIÓN EXPANDIDA space-between) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -532,7 +429,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 
                 if es_realograma:
                     link_foto = str(it.get("Links de fotos", ""))
-                    if link_foto in ['nan', '', 'None']:
+                    if link_foto in ['nan', '', 'None', 'SIN DATOS']:
                         link_foto = "https://via.placeholder.com/60x150.png/1e293b/94a3b8?text=Sin+Foto"
                     else:
                         link_foto = link_foto.replace("http://", "https://")
@@ -549,7 +446,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                       </div>
                     """
                     clase_wrapper = f"sku-item sku-group {clase_alerta}"
-                    estilo_wrapper = ""
+                    estilo_wrapper = f"flex: {caras};"
                 else:
                     bg_color, border_color, text_color, name_color, cat_leyenda = obtener_estado_y_color(estado, stock_val, dark=es_oscuro)
                     
@@ -941,7 +838,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 4px; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        .shelf-products {{ display: flex; flex-direction: row; gap: 6px; padding: 4px 6px; min-height: 95px; overflow-x: auto; padding-bottom: 4px; align-items: flex-end; justify-content: flex-start; }}
+        /* DISTRIBUCIÓN EQUITATIVA Y EXPANDIDA (space-between) */
+        .shelf-products {{ 
+          display: flex; 
+          flex-direction: row; 
+          gap: 6px; 
+          padding: 4px 6px; 
+          min-height: 95px; 
+          overflow-x: auto; 
+          padding-bottom: 4px; 
+          align-items: flex-end; 
+          justify-content: space-between; 
+          width: 100%;
+        }}
         .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); }}
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
         
@@ -1380,7 +1289,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchCat && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
@@ -1575,7 +1484,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- CARGA INTEGRADA DE FUENTES Y CRUCE DE FOTOS ---
+# --- CARGA INTEGRADA DE FUENTES Y CRUCE CON URL DE JERARQUÍA OFICIAL ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -1584,7 +1493,6 @@ def cargar_todas_las_fuentes():
         url_ventas = "https://docs.google.com/spreadsheets/d/1NdEQXgbsb5bXbhIs2keFin9Wk5mC4dK7N_Y3dbv6fcg/export?format=xlsx"
         url_barras = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
         url_jerarquia = "https://docs.google.com/spreadsheets/d/1JI4Ef0138lwI-fJsQmX5lz-fqXvemZQD/export?format=xlsx"
-        # URL del archivo de links de fotos (Links de fotos 03.09)
         url_fotos = "https://docs.google.com/spreadsheets/d/1y8P_GVLySBrbGkm-1nc0BiTwGCorhVtF/export?format=xlsx"
 
         def leer_tabla_por_ancla(url, palabra_ancla, sheet_target=0, skiprows_fallback=0):
@@ -1672,7 +1580,7 @@ def cargar_todas_las_fuentes():
             df_bar['G.A.'] = df_bar_raw[col_ga_orig].astype(str).apply(clean_sku) if col_ga_orig else 'SIN DATOS'
             df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 5. Links de Fotos (Links de fotos 03.09 -> _SKUReferenceCode / SKUReferenceCode <-> Links de fotos)
+        # 5. Links de Fotos (Links de fotos 03.09 -> SKUReferenceCode)
         df_fotos_raw = leer_tabla_por_ancla(url_fotos, "SKUReferenceCode", sheet_target=0, skiprows_fallback=0)
         df_fotos = pd.DataFrame()
         if not df_fotos_raw.empty:
@@ -1685,7 +1593,7 @@ def cargar_todas_las_fuentes():
                 df_fotos['Links de fotos'] = df_fotos_raw[col_link_foto].astype(str).str.strip()
                 df_fotos = df_fotos[df_fotos['Sku_Foto_Str'] != ""].drop_duplicates(subset=['Sku_Foto_Str'])
 
-        # 6. Nueva Jerarquía Comercial SAP (Hoja: 'NuevaJqGA')
+        # 6. Nueva Jerarquía Comercial SAP (Hoja: 'NuevaJqGA' -> Columna K: CodGA, D: Depto, F: Sección, H: Categoría)
         try:
             df_sap_raw = pd.read_excel(url_jerarquia, sheet_name='NuevaJqGA', skiprows=2)
         except Exception:
@@ -1723,7 +1631,6 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Cruce con Fotos (COD_REAL_Str <-> Sku_Foto_Str)
         if not df_fotos.empty:
             df_matriz = df_matriz.merge(df_fotos[['Sku_Foto_Str', 'Links de fotos']], left_on='COD_REAL_Str', right_on='Sku_Foto_Str', how='left')
             df_matriz.drop(columns=['Sku_Foto_Str'], inplace=True, errors='ignore')
@@ -2044,7 +1951,11 @@ if df_raw is not None and not df_raw.empty:
                 </div>
             """, unsafe_allow_html=True)
             
-            dims_mix = ["Departamento", "Sección", "Categoría", "Grupo de Artículo", "Marca"]
+            # Restringido únicamente a Categoría, Grupo de Artículo y Marca
+            dims_mix = ["Categoría", "Grupo de Artículo", "Marca"]
+            if st.session_state.dash_analizar not in dims_mix:
+                st.session_state.dash_analizar = "Categoría"
+
             c_chips = st.columns(len(dims_mix))
             for i, d_opt in enumerate(dims_mix):
                 with c_chips[i]:
