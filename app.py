@@ -83,8 +83,8 @@ theme_vars = {
         "popover_hover_text": "#2563eb",
         "btn_bg": "#ffffff",
         "btn_text": "#0f172a",
-        "tab_inactive_bg": "#f1f5f9",
-        "tab_inactive_text": "#0f172a",
+        "tab_inactive_bg": "#e2e8f0",
+        "tab_inactive_text": "#000000",
         "insight_green_bg": "#dcfce7",
         "insight_green_text": "#14532d",
         "insight_amber_bg": "#fef3c7",
@@ -119,7 +119,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* PESTAÑAS (TABS) - VISIBILIDAD GARANTIZADA AL 100% */
+        /* PESTAÑAS (TABS) - VISIBILIDAD GARANTIZADA */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
             background-color: {t["bg_card"]} !important;
@@ -189,108 +189,6 @@ st.markdown(f"""
             fill: {t["text_secondary"]} !important;
         }}
         
-        /* LISTA FLOTANTE POPOVER */
-        div[data-baseweb="popover"],
-        div[data-baseweb="popover"] > div,
-        div[data-baseweb="menu"],
-        div[data-baseweb="popover"] ul,
-        ul[role="listbox"],
-        div[data-baseweb="popover"] [class*="st-emotion-cache"] {{
-            background-color: {t["popover_bg"]} !important;
-            background: {t["popover_bg"]} !important;
-            border: 1px solid {t["popover_border"]} !important;
-            border-radius: 8px !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
-        }}
-        
-        div[data-baseweb="popover"] li,
-        div[data-baseweb="menu"] li,
-        li[role="option"],
-        ul[role="listbox"] li {{
-            background-color: {t["popover_bg"]} !important;
-            background: {t["popover_bg"]} !important;
-            color: {t["popover_text"]} !important;
-            -webkit-text-fill-color: {t["popover_text"]} !important;
-            font-weight: 600 !important;
-            font-size: 0.86rem !important;
-            padding: 8px 14px !important;
-        }}
-        
-        div[data-baseweb="popover"] li:hover,
-        div[data-baseweb="menu"] li:hover,
-        li[role="option"]:hover,
-        li[aria-selected="true"],
-        ul[role="listbox"] li:hover,
-        ul[role="listbox"] li[aria-selected="true"] {{
-            background-color: {t["popover_hover"]} !important;
-            background: {t["popover_hover"]} !important;
-            color: {t["popover_hover_text"]} !important;
-            -webkit-text-fill-color: {t["popover_hover_text"]} !important;
-        }}
-        
-        /* BOTONES STREAMLIT */
-        .stButton {{
-            position: relative;
-        }}
-        .stButton > button {{
-            background-color: {t["btn_bg"]} !important;
-            background: {t["btn_bg"]} !important;
-            color: {t["btn_text"]} !important;
-            -webkit-text-fill-color: {t["btn_text"]} !important;
-            border: 1.5px solid {t["border_subtle"]} !important;
-            border-radius: 6px !important;
-            font-weight: 700 !important;
-            box-shadow: {t["card_shadow"]} !important;
-            transition: all 0.2s ease !important;
-            cursor: pointer !important;
-            width: 100% !important;
-            height: 38px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 0 12px !important;
-        }}
-        
-        .stButton > button p, .stButton > button span, .stButton > button div {{
-            color: {t["btn_text"]} !important;
-            -webkit-text-fill-color: {t["btn_text"]} !important;
-            pointer-events: none !important;
-            font-weight: 700 !important;
-            line-height: 1 !important;
-        }}
-        
-        .stButton > button:hover {{
-            border-color: {t["accent"]} !important;
-            color: {t["accent"]} !important;
-            -webkit-text-fill-color: {t["accent"]} !important;
-            background-color: {t["popover_hover"]} !important;
-            background: {t["popover_hover"]} !important;
-        }}
-
-        .stButton > button:hover p, .stButton > button:hover span {{
-            color: {t["accent"]} !important;
-            -webkit-text-fill-color: {t["accent"]} !important;
-        }}
-        
-        .stDownloadButton > button {{
-            background-color: #10b981 !important;
-            background: #10b981 !important;
-            color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
-            border: none !important;
-            border-radius: 6px !important;
-            font-weight: 800 !important;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
-            cursor: pointer !important;
-        }}
-        
-        /* TABLA DE DATAFRAME */
-        [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {{
-            background-color: {t["bg_card"]} !important;
-            border: 1px solid {t["border_subtle"]} !important;
-            border-radius: 8px !important;
-        }}
-        
         /* TARJETAS KPIS DEL DASHBOARD */
         .fin-kpi-container {{
             display: grid;
@@ -342,7 +240,6 @@ st.markdown(f"""
             color: {t["text_muted"]};
         }}
         
-        /* CONTENEDORES DE GRÁFICOS */
         .dash-card {{
             background: {t["bg_card"]};
             border: 1px solid {t["border_subtle"]};
@@ -532,7 +429,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 
                 if es_realograma:
                     link_foto = str(it.get("Links de fotos", ""))
-                    if link_foto in ['nan', '', 'None']:
+                    if link_foto in ['nan', '', 'None', 'SIN DATOS']:
                         link_foto = "https://via.placeholder.com/60x150.png/1e293b/94a3b8?text=Sin+Foto"
                     else:
                         link_foto = link_foto.replace("http://", "https://")
@@ -549,7 +446,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                       </div>
                     """
                     clase_wrapper = f"sku-item sku-group {clase_alerta}"
-                    estilo_wrapper = ""
+                    estilo_wrapper = f"flex: {caras};"
                 else:
                     bg_color, border_color, text_color, name_color, cat_leyenda = obtener_estado_y_color(estado, stock_val, dark=es_oscuro)
                     
@@ -941,7 +838,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 4px; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        .shelf-products {{ display: flex; flex-direction: row; gap: 6px; padding: 4px 6px; min-height: 95px; overflow-x: auto; padding-bottom: 4px; align-items: flex-end; justify-content: flex-start; }}
+        /* DISTRIBUCIÓN EQUITATIVA Y EXPANDIDA EN LA REPISA */
+        .shelf-products {{ 
+          display: flex; 
+          flex-direction: row; 
+          gap: 6px; 
+          padding: 4px 6px; 
+          min-height: 95px; 
+          overflow-x: auto; 
+          padding-bottom: 4px; 
+          align-items: flex-end; 
+          justify-content: space-between; 
+          width: 100%;
+        }}
         .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); }}
         .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
         
@@ -1380,7 +1289,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchCat && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
@@ -1575,195 +1484,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- CARGA INTEGRADA DE FUENTES Y CRUCE DE FOTOS ---
-@st.cache_data(ttl=14400)
-def cargar_todas_las_fuentes():
-    try:
-        url_planos = "https://docs.google.com/spreadsheets/d/1pbGYgDB8UBZnm0aJZLGOhZwWYq0IlDO8Uqv2n1-MgxI/export?format=xlsx"
-        url_coberturas = "https://docs.google.com/spreadsheets/d/1deT1W2MA2kZzm-vJVSp6eL1IsLAKyaYLFCrZYxNU7-c/export?format=xlsx"
-        url_ventas = "https://docs.google.com/spreadsheets/d/1NdEQXgbsb5bXbhIs2keFin9Wk5mC4dK7N_Y3dbv6fcg/export?format=xlsx"
-        url_barras = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
-        url_jerarquia = "https://docs.google.com/spreadsheets/d/1JI4Ef0138lwI-fJsQmX5lz-fqXvemZQD/export?format=xlsx"
-        # URL del archivo de links de fotos (Links de fotos 03.09)
-        url_fotos = "https://docs.google.com/spreadsheets/d/1y8P_GVLySBrbGkm-1nc0BiTwGCorhVtF/export?format=xlsx"
-
-        def leer_tabla_por_ancla(url, palabra_ancla, sheet_target=0, skiprows_fallback=0):
-            try:
-                try:
-                    df_raw = pd.read_excel(url, sheet_name=sheet_target, header=None)
-                except Exception:
-                    df_raw = pd.read_excel(url, sheet_name=0, header=None)
-                
-                header_idx = skiprows_fallback
-                for idx, row in df_raw.head(15).iterrows():
-                    row_str = " ".join([str(v).strip().upper() for v in row.values if pd.notna(v)])
-                    if palabra_ancla.upper() in row_str:
-                        header_idx = idx
-                        break
-                try:
-                    df = pd.read_excel(url, sheet_name=sheet_target, skiprows=header_idx)
-                except Exception:
-                    df = pd.read_excel(url, sheet_name=0, skiprows=header_idx)
-                df.columns = [str(c).strip() for c in df.columns]
-                return df
-            except Exception:
-                df = pd.read_excel(url, sheet_name=0, skiprows=skiprows_fallback)
-                df.columns = [str(c).strip() for c in df.columns]
-                return df
-
-        # 1. Matriz de Planos (DATOST -> COD REAL)
-        df_matriz = leer_tabla_por_ancla(url_planos, "COD REAL", sheet_target=0, skiprows_fallback=3)
-        if "COD REAL" not in df_matriz.columns:
-            df_matriz = pd.read_excel(url_planos, sheet_name=0, skiprows=2)
-            df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
-
-        df_matriz['COD_REAL_Str'] = df_matriz['COD REAL'].astype(str).apply(clean_sku)
-
-        # 2. Coberturas y Stock (TCOBERT -> Material <-> Cob./días)
-        df_cob_raw = leer_tabla_por_ancla(url_coberturas, "Material", sheet_target=0, skiprows_fallback=3)
-        if "Material" not in df_cob_raw.columns:
-            df_cob_raw = pd.read_excel(url_coberturas, sheet_name=0, skiprows=3)
-            df_cob_raw.columns = [str(c).strip() for c in df_cob_raw.columns]
-
-        df_cob = pd.DataFrame()
-        if "Material" in df_cob_raw.columns:
-            df_cob['Material_Str'] = df_cob_raw['Material'].astype(str).apply(clean_sku)
-            cols_map = {str(c).strip().lower(): c for c in df_cob_raw.columns}
-            col_est = cols_map.get('estado material', cols_map.get('estado', None))
-            col_stk = cols_map.get('stock actual', cols_map.get('stock', None))
-            
-            col_cob = None
-            for k, original_name in cols_map.items():
-                if 'cob' in k and ('días' in k or 'dia' in k or 'día' in k):
-                    col_cob = original_name
-                    break
-
-            df_cob['Estado'] = df_cob_raw[col_est].astype(str).str.extract(r'([ABab])')[0].str.upper().fillna('A') if col_est else 'A'
-            df_cob['Stock'] = df_cob_raw[col_stk].apply(safe_float) if col_stk else -999.0
-            df_cob['Cobertura'] = df_cob_raw[col_cob].apply(safe_float) if col_cob else -999.0
-            df_cob = df_cob[df_cob['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
-
-        # 3. Ventas y Margen (factVentas)
-        df_vta_raw = leer_tabla_por_ancla(url_ventas, "Material", sheet_target=0, skiprows_fallback=2)
-        df_vta = pd.DataFrame()
-        col_mat_vta = 'Material' if 'Material' in df_vta_raw.columns else ('COD REAL' if 'COD REAL' in df_vta_raw.columns else None)
-        if col_mat_vta:
-            df_vta['Material_Str'] = df_vta_raw[col_mat_vta].astype(str).apply(clean_sku)
-            col_v = 'Monto Venta Neta' if 'Monto Venta Neta' in df_vta_raw.columns else 'Venta'
-            col_m = 'Monto Margen' if 'Monto Margen' in df_vta_raw.columns else 'Margen'
-            col_p = '% PART' if '% PART' in df_vta_raw.columns else '% Part'
-            
-            df_vta['Venta'] = df_vta_raw[col_v].apply(safe_float) if col_v in df_vta_raw.columns else -999.0
-            df_vta['Monto Margen'] = df_vta_raw[col_m].apply(safe_float) if col_m in df_vta_raw.columns else -999.0
-            df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p in df_vta_raw.columns else -999.0
-            df_vta = df_vta[df_vta['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
-
-        # 4. Código de Barras (dimCodbarras -> CBARRAS / Material -> Grupo de A como G.A.)
-        df_bar_raw = leer_tabla_por_ancla(url_barras, "Material", sheet_target=0, skiprows_fallback=2)
-        df_bar = pd.DataFrame()
-        col_mat_bar = 'Material' if 'Material' in df_bar_raw.columns else ('COD REAL' if 'COD REAL' in df_bar_raw.columns else None)
-        if col_mat_bar:
-            df_bar['Material_Str'] = df_bar_raw[col_mat_bar].astype(str).apply(clean_sku)
-            df_bar['EAN_Master'] = df_bar_raw['Código EAN/UPC'].astype(str).apply(clean_sku) if 'Código EAN/UPC' in df_bar_raw.columns else ""
-            
-            bar_map = {str(c).strip().lower(): c for c in df_bar_raw.columns}
-            col_ga_orig = bar_map.get('grupo de a', bar_map.get('grupo de artículo', None))
-            
-            df_bar['G.A.'] = df_bar_raw[col_ga_orig].astype(str).apply(clean_sku) if col_ga_orig else 'SIN DATOS'
-            df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
-
-        # 5. Links de Fotos (Links de fotos 03.09 -> _SKUReferenceCode / SKUReferenceCode <-> Links de fotos)
-        df_fotos_raw = leer_tabla_por_ancla(url_fotos, "SKUReferenceCode", sheet_target=0, skiprows_fallback=0)
-        df_fotos = pd.DataFrame()
-        if not df_fotos_raw.empty:
-            fotos_map = {str(c).strip().lower(): c for c in df_fotos_raw.columns}
-            col_sku_foto = fotos_map.get('_skureferencecode', fotos_map.get('skureferencecode', None))
-            col_link_foto = fotos_map.get('links de fotos', fotos_map.get('link', None))
-            
-            if col_sku_foto and col_link_foto:
-                df_fotos['Sku_Foto_Str'] = df_fotos_raw[col_sku_foto].astype(str).apply(clean_sku)
-                df_fotos['Links de fotos'] = df_fotos_raw[col_link_foto].astype(str).str.strip()
-                df_fotos = df_fotos[df_fotos['Sku_Foto_Str'] != ""].drop_duplicates(subset=['Sku_Foto_Str'])
-
-        # 6. Nueva Jerarquía Comercial SAP (Hoja: 'NuevaJqGA')
-        try:
-            df_sap_raw = pd.read_excel(url_jerarquia, sheet_name='NuevaJqGA', skiprows=2)
-        except Exception:
-            try:
-                df_sap_raw = pd.read_excel(url_jerarquia, sheet_name=0, skiprows=2)
-            except Exception:
-                df_sap_raw = pd.DataFrame()
-
-        df_sap = pd.DataFrame()
-        if not df_sap_raw.empty and len(df_sap_raw.columns) >= 11:
-            col_k_codga = df_sap_raw.columns[10]  # Columna K (CodGA)
-            col_d_depto = df_sap_raw.columns[3]   # Columna D (DEPARTAMENTO (2))
-            col_f_seccion = df_sap_raw.columns[5] # Columna F (SECCIÓN (3))
-            col_h_cat = df_sap_raw.columns[7]     # Columna H (CATEGORIA (4))
-            col_n_ga = df_sap_raw.columns[13] if len(df_sap_raw.columns) > 13 else df_sap_raw.columns[10]
-
-            df_sap['CodGA_Str'] = df_sap_raw[col_k_codga].astype(str).apply(clean_sku)
-            df_sap['Departamento'] = df_sap_raw[col_d_depto].fillna('SIN DATOS').astype(str).str.strip()
-            df_sap['Sección'] = df_sap_raw[col_f_seccion].fillna('SIN DATOS').astype(str).str.strip()
-            df_sap['Categoría'] = df_sap_raw[col_h_cat].fillna('SIN DATOS').astype(str).str.strip()
-            df_sap['Grupo de Artículo'] = df_sap_raw[col_n_ga].fillna('SIN DATOS').astype(str).str.strip()
-            
-            df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
-
-        # --- APLICACIÓN DE CRUCES SECUENCIALES ---
-        if not df_cob.empty:
-            df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
-            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
-
-        if not df_vta.empty:
-            df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
-            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
-
-        if not df_bar.empty:
-            df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
-            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
-
-        # Cruce con Fotos (COD_REAL_Str <-> Sku_Foto_Str)
-        if not df_fotos.empty:
-            df_matriz = df_matriz.merge(df_fotos[['Sku_Foto_Str', 'Links de fotos']], left_on='COD_REAL_Str', right_on='Sku_Foto_Str', how='left')
-            df_matriz.drop(columns=['Sku_Foto_Str'], inplace=True, errors='ignore')
-
-        if 'G.A.' in df_matriz.columns:
-            df_matriz['G.A._Str'] = df_matriz['G.A.'].astype(str).apply(clean_sku)
-        else:
-            df_matriz['G.A._Str'] = ""
-
-        if not df_sap.empty:
-            df_matriz = df_matriz.merge(
-                df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], 
-                left_on='G.A._Str', 
-                right_on='CodGA_Str', 
-                how='left',
-                suffixes=('', '_sap')
-            )
-            for col_target in ['Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']:
-                col_sap_name = f"{col_target}_sap"
-                if col_sap_name in df_matriz.columns:
-                    df_matriz[col_target] = df_matriz[col_sap_name].replace(['SIN DATOS', 'nan', 'None', '', 'NaN'], pd.NA).fillna(df_matriz[col_target])
-                    df_matriz.drop(columns=[col_sap_name], inplace=True, errors='ignore')
-
-            df_matriz.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
-
-        # Rellenar nulos
-        for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
-            df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
-
-        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS')]:
-            df_matriz[col] = df_matriz[col].fillna(val_def).astype(str).str.strip() if col in df_matriz.columns else val_def
-
-        if 'Bandeja' in df_matriz.columns and 'EAN' in df_matriz.columns:
-            df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
-
-        hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_matriz, hora_lectura, None
-    except Exception as e:
-        return None, None, str(e)
-
 # --- HEADER SAAS UNIFICADO CON CRÉDITO DE AUTORÍA ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
 
@@ -1809,6 +1529,7 @@ if error_nube:
 if df_raw is not None and not df_raw.empty:
     df_base = df_raw.copy()
     
+    # Exclusión de -999 para cálculos analíticos limpios
     df_base['Venta_Num'] = df_base['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     df_base['Part_Num'] = df_base['% Part'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
