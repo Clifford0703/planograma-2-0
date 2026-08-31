@@ -95,7 +95,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON MÁXIMO CONTRASTE
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -119,7 +119,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* PESTAÑAS (TABS) */
+        /* PESTAÑAS (TABS) - VISIBILIDAD GARANTIZADA AL 100% */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
             background-color: {t["bg_card"]} !important;
@@ -189,7 +189,109 @@ st.markdown(f"""
             fill: {t["text_secondary"]} !important;
         }}
         
-        /* TARJETAS KPIS */
+        /* LISTA FLOTANTE POPOVER */
+        div[data-baseweb="popover"],
+        div[data-baseweb="popover"] > div,
+        div[data-baseweb="menu"],
+        div[data-baseweb="popover"] ul,
+        ul[role="listbox"],
+        div[data-baseweb="popover"] [class*="st-emotion-cache"] {{
+            background-color: {t["popover_bg"]} !important;
+            background: {t["popover_bg"]} !important;
+            border: 1px solid {t["popover_border"]} !important;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+        }}
+        
+        div[data-baseweb="popover"] li,
+        div[data-baseweb="menu"] li,
+        li[role="option"],
+        ul[role="listbox"] li {{
+            background-color: {t["popover_bg"]} !important;
+            background: {t["popover_bg"]} !important;
+            color: {t["popover_text"]} !important;
+            -webkit-text-fill-color: {t["popover_text"]} !important;
+            font-weight: 600 !important;
+            font-size: 0.86rem !important;
+            padding: 8px 14px !important;
+        }}
+        
+        div[data-baseweb="popover"] li:hover,
+        div[data-baseweb="menu"] li:hover,
+        li[role="option"]:hover,
+        li[aria-selected="true"],
+        ul[role="listbox"] li:hover,
+        ul[role="listbox"] li[aria-selected="true"] {{
+            background-color: {t["popover_hover"]} !important;
+            background: {t["popover_hover"]} !important;
+            color: {t["popover_hover_text"]} !important;
+            -webkit-text-fill-color: {t["popover_hover_text"]} !important;
+        }}
+        
+        /* BOTONES STREAMLIT */
+        .stButton {{
+            position: relative;
+        }}
+        .stButton > button {{
+            background-color: {t["btn_bg"]} !important;
+            background: {t["btn_bg"]} !important;
+            color: {t["btn_text"]} !important;
+            -webkit-text-fill-color: {t["btn_text"]} !important;
+            border: 1.5px solid {t["border_subtle"]} !important;
+            border-radius: 6px !important;
+            font-weight: 700 !important;
+            box-shadow: {t["card_shadow"]} !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+            width: 100% !important;
+            height: 38px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 12px !important;
+        }}
+        
+        .stButton > button p, .stButton > button span, .stButton > button div {{
+            color: {t["btn_text"]} !important;
+            -webkit-text-fill-color: {t["btn_text"]} !important;
+            pointer-events: none !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
+        }}
+        
+        .stButton > button:hover {{
+            border-color: {t["accent"]} !important;
+            color: {t["accent"]} !important;
+            -webkit-text-fill-color: {t["accent"]} !important;
+            background-color: {t["popover_hover"]} !important;
+            background: {t["popover_hover"]} !important;
+        }}
+
+        .stButton > button:hover p, .stButton > button:hover span {{
+            color: {t["accent"]} !important;
+            -webkit-text-fill-color: {t["accent"]} !important;
+        }}
+        
+        .stDownloadButton > button {{
+            background-color: #10b981 !important;
+            background: #10b981 !important;
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            border: none !important;
+            border-radius: 6px !important;
+            font-weight: 800 !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+            cursor: pointer !important;
+        }}
+        
+        /* TABLA DE DATAFRAME */
+        [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {{
+            background-color: {t["bg_card"]} !important;
+            border: 1px solid {t["border_subtle"]} !important;
+            border-radius: 8px !important;
+        }}
+        
+        /* TARJETAS KPIS DEL DASHBOARD */
         .fin-kpi-container {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -240,6 +342,7 @@ st.markdown(f"""
             color: {t["text_muted"]};
         }}
         
+        /* CONTENEDORES DE GRÁFICOS */
         .dash-card {{
             background: {t["bg_card"]};
             border: 1px solid {t["border_subtle"]};
@@ -283,7 +386,7 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- FUNCIONES AUXILIARES ROBUSTAS ---
+# --- FUNCIONES AUXILIARES ---
 def safe_float(val, default=-999.0):
     if pd.isna(val) or str(val).strip().upper() in ["SIN DATOS", "NAN", "NONE", ""]: return default
     try:
@@ -356,7 +459,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA ---
+# --- GENERADOR DEL PLANOGRAMA (INTERFAZ ORIGINAL RESTAURADA) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -374,8 +477,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     )
 
     cuerpos = {}
-    todas_marcas = sorted([m for m in df["Marca"].dropna().unique() if m not in ['SIN DATOS', 'S/M', 'nan', '']]) if "Marca" in df.columns else []
-    todas_categorias = sorted([c for c in df["Categoría"].dropna().unique() if c not in ['SIN DATOS', 'S/C', 'nan', '']]) if "Categoría" in df.columns else []
+    todas_marcas = sorted(list(df["Marca"].dropna().unique())) if "Marca" in df.columns else []
+    todas_categorias = sorted(list(df["Categoría"].dropna().unique())) if "Categoría" in df.columns else []
     todos_niveles = sorted(list(df["Nivel_Ord"].dropna().unique()), reverse=True)
 
     for _, r in df.iterrows():
@@ -511,7 +614,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         """
 
     options_marcas = "".join([f'<option value="{m}">{m}</option>' for m in todas_marcas])
-    options_categorias = "".join([f'<option value="{c}">{c}</option>' for c in todas_categorias])
+    options_categorias = "".join([f'<option value="{c}">{c}</option>' for c in todas_categorias if c not in ['S/C', 'SIN DATOS', 'nan', '']])
     options_cuerpos = "".join([f'<option value="{k.replace("Cuerpo ", "")}">{k}</option>' for k in cuerpos.keys()])
     options_niveles = "".join([f'<option value="{int(lvl)}">Nivel {int(lvl)}</option>' for lvl in todos_niveles])
 
@@ -529,6 +632,420 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        * {{ box-sizing: border-box; }}
+        
+        body, html {{ 
+          font-family: 'Inter', sans-serif; 
+          background-color: {app_bg}; 
+          color: {text_primary}; 
+          margin: 0; 
+          padding: 0; 
+          height: 100vh; 
+          overflow: hidden; 
+        }}
+        
+        .main-container {{ 
+          padding: 4px 6px; 
+          height: 100vh; 
+          display: flex; 
+          flex-direction: column; 
+          box-sizing: border-box;
+          overflow: hidden; 
+        }}
+
+        ::-webkit-scrollbar {{ height: 6px; width: 6px; }}
+        ::-webkit-scrollbar-track {{ background: {card_bg}; border-radius: 4px; }}
+        ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
+
+        .saas-top-bar {{
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: {card_bg};
+          border: 1px solid {t["border_subtle"]};
+          border-radius: 8px;
+          padding: 8px 14px;
+          margin-bottom: 8px;
+          flex-shrink: 0;
+        }}
+        
+        .top-highlight-badge {{
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: {text_primary};
+        }}
+
+        .kpi-container {{ 
+          display: grid; 
+          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+          gap: 8px; 
+          margin-bottom: 8px; 
+          width: 100%;
+          flex-shrink: 0; 
+        }}
+        .kpi-card {{ 
+          background: {card_bg}; 
+          border: 1px solid {t["border_subtle"]}; 
+          border-radius: 8px; 
+          padding: 10px 8px; 
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center; 
+          box-shadow: {t["card_shadow"]}; 
+        }}
+        .kpi-title {{ 
+          font-size: 0.65rem; 
+          font-weight: 800; 
+          color: {text_secondary}; 
+          text-transform: uppercase; 
+          margin-bottom: 2px; 
+          letter-spacing: 0.5px;
+          text-align: center;
+          width: 100%;
+        }}
+        .kpi-val {{ 
+          font-size: 1.45rem; 
+          font-weight: 900; 
+          line-height: 1.1; 
+          color: {text_primary}; 
+          font-feature-settings: "tnum"; 
+          text-align: center;
+          width: 100%;
+        }}
+        
+        .filter-panel {{ 
+          background: {card_bg}; 
+          border: 1px solid {t["border_subtle"]}; 
+          border-radius: 8px; 
+          padding: 8px 12px; 
+          margin-bottom: 8px; 
+          display: flex; 
+          flex-wrap: wrap; 
+          gap: 8px; 
+          align-items: flex-end; 
+          flex-shrink: 0; 
+        }}
+        .filter-group {{ display: flex; flex-direction: column; gap: 3px; flex-grow: 1; }}
+        .filter-label {{ font-size: 0.68rem; font-weight: 800; color: {text_secondary}; text-transform: uppercase; letter-spacing: 0.4px; }}
+        .filter-select, .filter-input {{ 
+          background: {input_bg}; 
+          border: 1.5px solid {border_col}; 
+          color: {text_primary}; 
+          padding: 6px 10px; 
+          border-radius: 6px; 
+          font-size: 0.85rem; 
+          font-weight: 700; 
+          outline: none; 
+          width: 100%; 
+          min-width: 120px; 
+          box-shadow: {t["card_shadow"]}; 
+        }}
+        .btn-group {{ display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; align-items: center; }}
+        
+        .btn-saas {{ 
+          border: none; 
+          font-weight: 700; 
+          font-size: 0.75rem; 
+          padding: 7px 14px; 
+          border-radius: 6px; 
+          cursor: pointer; 
+          transition: all 0.2s ease; 
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }}
+        .btn-reset {{ background: #ef44441a; color: #ef4444; border: 1px solid #ef444433; }}
+        .btn-reset:hover {{ background: #ef4444; color: #fff; }}
+        .btn-print {{ background: #10b9811a; color: #10b981; border: 1px solid #10b98133; }}
+        .btn-print:hover {{ background: #10b981; color: #fff; }}
+        .btn-fullscreen {{ background: #3b82f61a; color: #3b82f6; border: 1px solid #3b82f633; }}
+        .btn-fullscreen:hover {{ background: #3b82f6; color: #fff; }}
+        
+        .legend-panel {{ 
+          background: {card_bg}; 
+          border: 1px solid {t["border_subtle"]}; 
+          border-radius: 8px; 
+          padding: 6px 12px; 
+          margin-bottom: 8px; 
+          display: flex; 
+          align-items: center; 
+          flex-wrap: wrap; 
+          gap: 8px; 
+          flex-shrink: 0; 
+        }}
+        .legend-title {{ font-size: 0.68rem; font-weight: 800; color: {text_secondary}; text-transform: uppercase; margin-right: 4px; }}
+        .legend-chips {{ display: flex; flex-wrap: wrap; gap: 6px; }}
+        .legend-chip {{ 
+          background: var(--bg); 
+          color: var(--tc); 
+          border: var(--bd, 1px solid transparent); 
+          font-weight: 700; 
+          font-size: 0.65rem; 
+          padding: 4px 10px; 
+          border-radius: 20px; 
+          cursor: pointer; 
+          transition: all 0.15s ease; 
+          opacity: 0.90; 
+          outline: none; 
+        }}
+        .legend-chip.active {{ opacity: 1; transform: scale(1.04); box-shadow: 0 0 0 2px #3b82f6 !important; }}
+        
+        .aisle-wrapper {{ 
+          display: flex; 
+          flex-direction: column; 
+          width: 100%; 
+          position: relative; 
+          flex: 1; 
+          min-height: 0; 
+          background: {card_bg}; 
+          border-radius: 10px; 
+          border: 1px solid {t["border_subtle"]}; 
+          padding: 0; 
+          overflow: hidden; 
+        }}
+
+        .fullscreen-legend-bar {{
+          display: none; 
+          position: sticky; 
+          top: 0; 
+          left: 0; 
+          right: 0; 
+          background: {card_bg}; 
+          border-bottom: 1px solid {t["border_subtle"]}; 
+          padding: 12px 20px; 
+          z-index: 10000; 
+          backdrop-filter: blur(8px); 
+          align-items: center; 
+          gap: 12px; 
+          overflow-x: auto; 
+          white-space: nowrap; 
+        }}
+        
+        .fs-cat-wrapper {{
+          display: flex; 
+          align-items: center; 
+          gap: 8px; 
+          margin-left: auto; 
+        }}
+        .fs-cat-select {{
+          background: {input_bg}; 
+          border: 1.5px solid {border_col}; 
+          color: {text_primary}; 
+          padding: 5px 10px; 
+          border-radius: 6px; 
+          font-size: 0.80rem; 
+          font-weight: 700; 
+          outline: none; 
+        }}
+        
+        .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
+          background: {app_bg} !important; 
+          width: 100vw !important; 
+          height: 100vh !important; 
+          padding: 0 !important; 
+          border: none !important; 
+        }}
+        .aisle-wrapper:fullscreen .fullscreen-legend-bar, 
+        .aisle-wrapper:-webkit-full-screen .fullscreen-legend-bar {{
+          display: flex !important; 
+        }}
+
+        .nav-btn {{ 
+          position: absolute; 
+          top: 50%; 
+          transform: translateY(-50%); 
+          background: {card_bg}; 
+          color: {text_primary}; 
+          border: 1px solid {t["border_subtle"]}; 
+          border-radius: 50%; 
+          width: 40px; 
+          height: 40px; 
+          font-size: 1.2rem; 
+          font-weight: 700; 
+          cursor: pointer; 
+          z-index: 100; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15); 
+          transition: all 0.2s; 
+        }}
+        .nav-btn:hover {{ background: {t["accent"]}; color: #ffffff; border-color: {t["accent"]}; transform: translateY(-50%) scale(1.08); }}
+        .nav-btn-prev {{ left: 10px; }}
+        .nav-btn-next {{ right: 10px; }}
+        .nav-btn:disabled {{ opacity: 0; pointer-events: none; }}
+        
+        .zoom-layer {{
+          display: flex; 
+          width: 100%; 
+          height: 100%; 
+          transform-origin: 50% 0; 
+          will-change: transform; 
+          justify-content: center; 
+          align-items: stretch; 
+          transition: transform 0.2s ease-out; 
+        }}
+
+        .aisle-container {{ 
+          display: flex; 
+          flex-direction: row; 
+          gap: 16px; 
+          background: {app_bg}; 
+          padding: 14px 45px; 
+          overflow-x: auto; 
+          overflow-y: auto; 
+          scroll-behavior: smooth; 
+          scroll-snap-type: x mandatory; 
+          width: 100%; 
+          height: 100%; 
+          box-sizing: border-box; 
+        }}
+        
+        .bay-column {{ 
+          flex: 0 0 100%; 
+          width: 100%; 
+          background: {card_bg}; 
+          border: 1px solid {t["border_subtle"]}; 
+          border-radius: 8px; 
+          display: flex; 
+          flex-direction: column; 
+          height: fit-content; 
+          scroll-snap-align: center; 
+          padding-bottom: 12px; 
+          box-sizing: border-box; 
+          box-shadow: {t["card_shadow"]}; 
+        }}
+        .bay-column.hidden {{ display: none !important; }}
+        
+        .bay-title {{ 
+          background: {card_bg}; 
+          padding: 10px 14px; 
+          border-bottom: 1px solid {t["border_subtle"]}; 
+          border-radius: 8px 8px 0 0; 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          flex-shrink: 0; 
+        }}
+        .bay-main-title {{ font-size: 0.82rem; font-weight: 800; color: {text_primary}; letter-spacing: 0.5px; }}
+        .bay-subcat {{ font-size: 0.70rem; font-weight: 600; color: #3b82f6; text-transform: uppercase; }}
+        
+        .bay-shelves {{ padding: 12px; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; }}
+        .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 4px; }}
+        .shelf-row.hidden {{ display: none !important; }}
+        
+        .shelf-products {{ display: flex; flex-direction: row; gap: 6px; padding: 4px 6px; min-height: 95px; overflow-x: auto; padding-bottom: 4px; align-items: flex-end; justify-content: flex-start; }}
+        .sku-item.dimmed {{ opacity: 0.15; filter: grayscale(1); }}
+        .sku-item.highlighted {{ transform: scale(1.02); z-index: 20; }}
+        
+        .shelf-base {{ height: 8px; background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%); border-radius: 2px; position: relative; z-index: 5; margin-top: -2px; }}
+        .shelf-name-tag {{ position: absolute; top: 6px; background: {card_bg}; border: 1px solid {t["border_subtle"]}; color: {text_primary}; font-size: 0.52rem; padding: 1px 6px; border-radius: 4px; font-weight: 800; }}
+        
+        .sku-group {{ display: flex; flex-direction: column; align-items: center; position: relative; cursor: pointer; transition: all 0.2s; z-index: 10; padding: 0 2px; flex-shrink: 0; }}
+        .sku-images-wrapper {{ display: flex; flex-direction: row; align-items: flex-end; gap: 1px; }}
+        .sku-images-wrapper img {{ height: 85px; width: auto; max-width: 55px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15)); transition: transform 0.2s; }}
+        .sku-group:hover .sku-images-wrapper img {{ transform: translateY(-3px); }}
+        
+        .sku-fleje {{ background: {card_bg}; color: {text_primary}; border: 1px solid {t["border_subtle"]}; font-size: 0.48rem; display: flex; flex-direction: column; align-items: center; line-height: 1; margin-top: 2px; z-index: 15; box-shadow: 0 1px 3px rgba(0,0,0,0.1); width: max-content; padding: 1px 4px; border-radius: 2px; }}
+        .fleje-ean {{ font-weight: 600; font-family: monospace; }}
+        .fleje-caras {{ font-weight: 800; color: #3b82f6; }}
+        
+        .alerta-bloqueado .sku-images-wrapper img {{ filter: grayscale(100%) opacity(0.4); }}
+        .alerta-sinstock .sku-images-wrapper img {{ filter: drop-shadow(0 0 8px #ef4444); }}
+        .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
+        .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
+        
+        /* BLOQUES DE PRODUCTOS */
+        .sku-card {{ 
+          border-radius: 6px; 
+          padding: 6px; 
+          display: flex; 
+          flex-direction: column; 
+          justify-content: space-between; 
+          min-width: 95px; 
+          position: relative; 
+          transition: transform 0.15s ease, box-shadow 0.15s ease; 
+          cursor: pointer; 
+          align-items: stretch; 
+          flex-shrink: 0; 
+          box-shadow: 0 1px 3px rgba(0,0,0,0.15); 
+        }}
+        .sku-card:hover {{
+          transform: translateY(-2px); 
+          box-shadow: 0 4px 10px rgba(0,0,0,0.25); 
+        }}
+        .sku-card.is-top {{ outline: 2.5px solid #f59e0b !important; outline-offset: -1px; }}
+        .sku-header-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }}
+        .sku-pos {{ font-size: 0.60rem; font-weight: 900; }}
+        .sku-caras-tag {{ font-size: 0.55rem; font-weight: 800; padding: 1px 4px; border-radius: 4px; }}
+        
+        .sku-details {{ display: flex; flex-direction: column; gap: 2px; text-align: left; overflow: hidden; margin-bottom: 6px; }}
+        .sku-brand-text {{ font-size: 0.62rem; font-weight: 900; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.3px; }}
+        .sku-name-text {{ font-size: 0.66rem; font-weight: 700; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }}
+        
+        .sku-bottom-bar {{ display: flex; justify-content: space-between; align-items: center; gap: 4px; padding-top: 3px; }}
+        .sku-stock-pill {{ font-size: 0.58rem; }}
+        .sku-cap-val {{ font-size: 0.60rem; font-weight: 800; }}
+        
+        .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
+        .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
+        
+        /* MODAL OVERLAY */
+        .modal-overlay {{ 
+          position: fixed !important; 
+          inset: 0 !important; 
+          width: 100vw !important; 
+          height: 100vh !important; 
+          background: rgba(0,0,0,0.65) !important; 
+          z-index: 9999999 !important; 
+          opacity: 0; 
+          pointer-events: none; 
+          transition: opacity 0.2s ease; 
+          display: flex !important; 
+          align-items: center !important; 
+          justify-content: center !important; 
+          padding: 16px !important; 
+          backdrop-filter: blur(6px); 
+        }}
+        .modal-overlay.active {{ opacity: 1 !important; pointer-events: auto !important; }}
+        .modal-content {{ 
+          background: {card_bg} !important; 
+          color: {text_primary} !important; 
+          padding: 24px !important; 
+          border-radius: 12px !important; 
+          width: 90% !important; 
+          max-width: 440px !important; 
+          max-height: 85vh !important; 
+          overflow-y: auto !important; 
+          border: 1px solid {t["border_subtle"]} !important; 
+          box-shadow: 0 20px 40px rgba(0,0,0,0.3) !important; 
+          position: relative !important; 
+        }}
+        .modal-close {{ position: absolute; top: 12px; right: 16px; font-size: 1.5rem; cursor: pointer; color: {text_secondary}; font-weight: 700; }}
+        .modal-close:hover {{ color: {text_primary}; }}
+        .m-row {{ border-bottom: 1px solid {t["border_subtle"]}; padding: 8px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
+        .m-label {{ font-weight: 600; color: {text_secondary}; }}
+        .m-val {{ font-weight: 700; text-align: right; max-width: 65%; font-feature-settings: "tnum"; }}
+
+        @media (max-width: 768px) {{
+            .nav-btn {{ display: none !important; }}
+            .aisle-container {{ padding: 8px 4px !important; touch-action: pan-x pan-y !important; }}
+            .kpi-container {{ display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }}
+            .kpi-card {{ min-width: unset !important; }}
+            .kpi-card:last-child {{ grid-column: 1 / -1 !important; }}
+            .bay-column {{ flex: 0 0 100% !important; width: 100% !important; max-width: 100% !important; scroll-snap-align: center !important; }}
+            .shelf-products {{ min-height: 70px !important; }}
+            .sku-card {{ min-width: 75px !important; }}
+            .sku-images-wrapper img {{ height: 70px !important; max-width: 40px !important; }}
+        }}
+      </style>
     </head>
     <body>
       <div class="main-container" id="mainContainer">
@@ -544,7 +1061,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept"></span></div>
             <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec"></span></div>
             <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
-            <div class="m-row"><span class="m-label">Grupo de Artículo:</span><span class="m-val" id="m-ga"></span></div>
+            <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga"></span></div>
             <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
             <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
             <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
@@ -600,6 +1117,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           </div>
         </div>
 
+        <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           <div class="fullscreen-legend-bar">
             <span style="font-size: 0.80rem; font-weight: 800; color: #3b82f6;">📍 LEYENDA:</span>
@@ -611,6 +1129,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥30</button>
               <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP</button>
             </div>
+            
             <div class="fs-cat-wrapper">
               <span style="font-size: 0.75rem; font-weight: 700; color: {text_secondary};">Categoría:</span>
               <select id="fsCatSelect" class="fs-cat-select">
@@ -618,6 +1137,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 {options_categorias}
               </select>
             </div>
+            
             <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 4px 10px;">✕ Salir</button>
           </div>
 
@@ -629,6 +1149,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           </div>
           <button class="nav-btn nav-btn-next" id="btnNext" title="Cuerpo Siguiente">❯</button>
         </div>
+
       </div>
 
       <script>
@@ -1054,7 +1575,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- CARGA INTEGRADA DE FUENTES Y CRUCE MULTI-HOJA SAP ---
+# --- CARGA INTEGRADA DE FUENTES Y CRUCES DE JERARQUÍA SAP ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -1066,7 +1587,6 @@ def cargar_todas_las_fuentes():
 
         def leer_tabla_por_ancla(url, palabra_ancla, sheet_target=0, skiprows_fallback=0):
             try:
-                # Si sheet_target es nombre y no existe, intenta con la primera hoja
                 try:
                     df_raw = pd.read_excel(url, sheet_name=sheet_target, header=None)
                 except Exception:
@@ -1176,34 +1696,28 @@ def cargar_todas_las_fuentes():
             df_sap['Grupo_Art_SAP'] = df_sap_raw[col_ga_sap].fillna('SIN DATOS').astype(str).str.strip() if col_ga_sap else 'SIN DATOS'
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- APLICACIÓN DE CRUCES ESTRICTOS ---
-        # Cruce 1: Coberturas
+        # --- APLICACIÓN DE CRUCES ESTRICTOS EN TEXTO ---
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Cruce 2: Ventas
         if not df_vta.empty:
             df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Cruce 3: Código de Barras
         if not df_bar.empty:
             df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.', 'Dept_Fallback', 'Sec_Fallback', 'Cat_Fallback']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Formatear G.A. estrictamente a texto plano
         if 'G.A.' in df_matriz.columns:
             df_matriz['G.A._Str'] = df_matriz['G.A.'].astype(str).apply(clean_sku)
         else:
             df_matriz['G.A._Str'] = ""
 
-        # Cruce 4: Jerarquía SAP usando G.A._Str contra CodGA_Str
         if not df_sap.empty:
             df_matriz = df_matriz.merge(df_sap[['CodGA_Str', 'Departamento_SAP', 'Sección_SAP', 'Categoría_SAP', 'Grupo_Art_SAP']], left_on='G.A._Str', right_on='CodGA_Str', how='left')
             df_matriz.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
 
-        # Consolidar Jerarquía final (Prioridad: SAP 6.0 -> Respaldo: CBARRAS)
         def consolidar_columna(df, col_sap, col_fall, col_dest):
             if col_sap in df.columns and col_fall in df.columns:
                 df[col_dest] = df[col_sap].replace(['SIN DATOS', 'nan', 'None', '', 'NaN'], pd.NA).fillna(df[col_fall])
@@ -1226,7 +1740,6 @@ def cargar_todas_las_fuentes():
 
         df_matriz.drop(columns=['Departamento_SAP', 'Sección_SAP', 'Categoría_SAP', 'Grupo_Art_SAP', 'Dept_Fallback', 'Sec_Fallback', 'Cat_Fallback'], inplace=True, errors='ignore')
 
-        # Rellenar nulos
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
             df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
@@ -1286,7 +1799,6 @@ if error_nube:
 if df_raw is not None and not df_raw.empty:
     df_base = df_raw.copy()
     
-    # Exclusión de -999 para cálculos analíticos limpios
     df_base['Venta_Num'] = df_base['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     df_base['Part_Num'] = df_base['% Part'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
@@ -1334,7 +1846,6 @@ if df_raw is not None and not df_raw.empty:
 
         st.markdown(f"<div style='font-size: 0.85rem; font-weight: 800; color: {t['text_secondary']}; margin-bottom: 8px; text-transform: uppercase;'>🎯 Filtros Operativos del Dashboard Analítico</div>", unsafe_allow_html=True)
         
-        # Filtros con captura garantizada
         col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns(5)
         
         with col_f1:
