@@ -291,7 +291,7 @@ st.markdown(f"""
             border-radius: 8px !important;
         }}
         
-        /* TARJETAS KPIS DEL DASHBOARD */
+        /* TARJETAS KPIS */
         .fin-kpi-container {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -648,7 +648,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         ::-webkit-scrollbar-track {{ background: {card_bg}; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
 
-        /* BARRA SUPERIOR */
         .saas-top-bar {{
           display: flex;
           align-items: center;
@@ -670,7 +669,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           color: {text_primary};
         }}
 
-        /* KPIS CENTRADOS EN MONITORES ANCHOS */
         .kpi-container {{ 
           display: grid; 
           grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
@@ -711,7 +709,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           width: 100%;
         }}
         
-        /* FILTROS */
         .filter-panel {{ 
           background: {card_bg}; 
           border: 1px solid {t["border_subtle"]}; 
@@ -760,7 +757,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .btn-fullscreen {{ background: #3b82f61a; color: #3b82f6; border: 1px solid #3b82f633; }}
         .btn-fullscreen:hover {{ background: #3b82f6; color: #fff; }}
         
-        /* LEYENDA */
         .legend-panel {{ 
           background: {card_bg}; 
           border: 1px solid {t["border_subtle"]}; 
@@ -790,7 +786,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
         .legend-chip.active {{ opacity: 1; transform: scale(1.04); box-shadow: 0 0 0 2px #3b82f6 !important; }}
         
-        /* CONTENEDOR DEL PLANOGRAMA */
         .aisle-wrapper {{ 
           display: flex; 
           flex-direction: column; 
@@ -956,7 +951,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
         
-        /* BLOQUES DE PRODUCTOS */
         .sku-card {{ 
           border-radius: 6px; 
           padding: 6px; 
@@ -991,7 +985,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
-        /* MODAL OVERLAY */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
@@ -1075,7 +1068,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           </div>
         </div>
 
-        <!-- TARJETAS KPIS CON CENTRADO EN MONITORES ANCHOS -->
+        <!-- TARJETAS KPIS -->
         <div class="kpi-container">
           <div class="kpi-card" style="border-bottom: 3px solid #3b82f6;"><span class="kpi-title">Total SKUs</span><span class="kpi-val" id="t-total">0</span></div>
           <div class="kpi-card" style="border-bottom: 3px solid #ef4444;"><span class="kpi-title">Bloqueados</span><span class="kpi-val" id="t-bloq" style="color: #ef4444;">0</span></div>
@@ -1569,51 +1562,99 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- LÓGICA DE CARGA HÍBRIDA ---
+# --- CARGA INTEGRADA DE LAS 4 FUENTES EXTERNAS EN TIEMPO REAL ---
 @st.cache_data(ttl=14400)
-def cargar_datos_nube(url_matriz, url_jerarquia, url_fotos):
+def cargar_todas_las_fuentes():
     try:
-        try:
-            df_matriz = pd.read_excel(url_matriz, sheet_name="MATRIZ", skiprows=5, usecols="C:AB")
-        except Exception:
-            df_matriz = pd.read_excel(url_matriz, skiprows=5, usecols="C:AB")
-            
-        try:
-            df_aux = pd.read_excel(url_matriz, sheet_name="DATA_AUX", skiprows=5)
-        except Exception:
-            df_aux = pd.DataFrame()
+        url_planos = "https://docs.google.com/spreadsheets/d/1pbGYgDB8UBZnm0aJZLGOhZwWYq0IlDO8Uqv2n1-MgxI/export?format=xlsx"
+        url_coberturas = "https://docs.google.com/spreadsheets/d/1deT1W2MA2kZzm-vJVSp6eL1IsLAKyaYLFCrZYxNU7-c/export?format=xlsx"
+        url_ventas = "https://docs.google.com/spreadsheets/d/1NdEQXgbsb5bXbhIs2keFin9Wk5mC4dK7N_Y3dbv6fcg/export?format=xlsx"
+        url_barras = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
 
+        # 1. Matriz de Planos (skiprows=3 según la estructura visualizada)
+        df_matriz = pd.read_excel(url_planos, sheet_name=0, skiprows=3)
         df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
-        if "Bandeja" in df_matriz.columns and "EAN" in df_matriz.columns:
+        
+        # 2. Coberturas y Stock
+        df_cob_raw = pd.read_excel(url_coberturas, sheet_name=0, skiprows=1)
+        df_cob_raw.columns = [str(c).strip() for c in df_cob_raw.columns]
+        df_cob = pd.DataFrame()
+        df_cob['Material_Str'] = df_cob_raw['Material'].apply(clean_sku)
+        df_cob['Estado'] = df_cob_raw['Estado Material'].astype(str).str.extract(r'([ABab])')[0].str.upper().fillna('A')
+        df_cob['Stock'] = df_cob_raw['Stock Actual'].apply(safe_float)
+        df_cob['Cobertura'] = df_cob_raw['Cob/día'].apply(safe_float)
+        df_cob = df_cob.drop_duplicates(subset=['Material_Str'])
+
+        # 3. Ventas y Margen
+        df_vta_raw = pd.read_excel(url_ventas, sheet_name=0, skiprows=2)
+        df_vta_raw.columns = [str(c).strip() for c in df_vta_raw.columns]
+        df_vta = pd.DataFrame()
+        df_vta['Material_Str'] = df_vta_raw['Material'].apply(clean_sku)
+        df_vta = df_vta[df_vta['Material_Str'] != ""]
+        col_v = 'Monto Venta Neta' if 'Monto Venta Neta' in df_vta_raw.columns else 'Venta'
+        col_m = 'Monto Margen' if 'Monto Margen' in df_vta_raw.columns else 'Margen'
+        col_p = '% PART' if '% PART' in df_vta_raw.columns else '% Part'
+        df_vta['Venta'] = df_vta_raw[col_v].apply(safe_float)
+        df_vta['Monto Margen'] = df_vta_raw[col_m].apply(safe_float)
+        df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float)
+        df_vta = df_vta.drop_duplicates(subset=['Material_Str'])
+
+        # 4. Código de Barras / Jerarquía (dimCodBarras)
+        df_bar_raw = pd.read_excel(url_barras, sheet_name=0, skiprows=2)
+        df_bar_raw.columns = [str(c).strip() for c in df_bar_raw.columns]
+        df_bar = pd.DataFrame()
+        df_bar['Material_Str'] = df_bar_raw['Material'].apply(clean_sku)
+        df_bar['EAN_Master'] = df_bar_raw['Código EAN/UPC'].apply(clean_sku)
+        df_bar['Departamento'] = df_bar_raw['Departamen'].fillna('S/D') if 'Departamen' in df_bar_raw.columns else 'S/D'
+        df_bar['Sección'] = df_bar_raw['Denomin. D'].fillna('S/S') if 'Denomin. D' in df_bar_raw.columns else 'S/S'
+        df_bar['Categoría'] = df_bar_raw['Denomin. Á'].fillna('S/C') if 'Denomin. Á' in df_bar_raw.columns else 'S/C'
+        df_bar['Grupo de artículo'] = df_bar_raw['Grupo de A'].fillna('S/G') if 'Grupo de A' in df_bar_raw.columns else 'S/G'
+        df_bar = df_bar.drop_duplicates(subset=['Material_Str'])
+
+        # --- CONSOLIDACIÓN MAESTRA EN MEMORIA (LEFT JOINS) ---
+        # Asegurar llave normalizada en la matriz principal
+        if 'COD REAL' in df_matriz.columns:
+            df_matriz['COD_REAL_Str'] = df_matriz['COD REAL'].apply(clean_sku)
+        elif 'SKU' in df_matriz.columns:
+            df_matriz['COD_REAL_Str'] = df_matriz['SKU'].apply(clean_sku)
+            df_matriz['COD REAL'] = df_matriz['SKU']
+        else:
+            # Fallback a primera columna
+            first_col = df_matriz.columns[0]
+            df_matriz['COD_REAL_Str'] = df_matriz[first_col].apply(clean_sku)
+            df_matriz['COD REAL'] = df_matriz[first_col]
+
+        # Merge Coberturas (Stock, Estado, Cobertura)
+        df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
+        df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+
+        # Merge Ventas (Venta, Monto Margen, % Part)
+        df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
+        df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+
+        # Merge Código de Barras / Jerarquía
+        df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'Departamento', 'Sección', 'Categoría', 'Grupo de artículo']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
+        df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+
+        # Rellenar nulos estándar
+        df_matriz['Stock'] = df_matriz.get('Stock', 0.0).fillna(0.0)
+        df_matriz['Cobertura'] = df_matriz.get('Cobertura', 0.0).fillna(0.0)
+        df_matriz['Venta'] = df_matriz.get('Venta', 0.0).fillna(0.0)
+        df_matriz['Monto Margen'] = df_matriz.get('Monto Margen', 0.0).fillna(0.0)
+        df_matriz['% Part'] = df_matriz.get('% Part', 0.0).fillna(0.0)
+        df_matriz['Estado'] = df_matriz.get('Estado', 'A').fillna('A')
+        df_matriz['Departamento'] = df_matriz.get('Departamento', 'S/D').fillna('S/D')
+        df_matriz['Sección'] = df_matriz.get('Sección', 'S/S').fillna('S/S')
+        df_matriz['Categoría'] = df_matriz.get('Categoría', 'S/C').fillna('S/C')
+        df_matriz['Grupo de artículo'] = df_matriz.get('Grupo de artículo', 'S/G').fillna('S/G')
+
+        if 'Bandeja' in df_matriz.columns and 'EAN' in df_matriz.columns:
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
-            
-        try:
-            df_jer = pd.read_excel(url_jerarquia, skiprows=2)
-            if 'CodGA' not in df_jer.columns:
-                 df_jer = pd.read_excel(url_jerarquia)
-        except Exception:
-            df_jer = pd.DataFrame()
-            
-        try:
-            df_fotos = pd.read_excel(url_fotos)
-        except Exception:
-            df_fotos = pd.DataFrame()
-            
+
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_matriz, df_aux, df_jer, df_fotos, hora_lectura, None
+        return df_matriz, hora_lectura, None
     except Exception as e:
-        return None, None, None, None, None, str(e)
-
-URL_NUBE = "https://drive.google.com/uc?export=download&id=1QFqktucaF983WXcjupQI-jpeEZzWxtX_"
-URL_JERARQUIA = "https://drive.google.com/uc?export=download&id=1JI4Ef0138lwI-fJsQmX5lz-fqXvemZQD"
-URL_FOTOS = "https://drive.google.com/uc?export=download&id=1y8P_GVLySBrbGkm-1nc0BiTwGCorhVtF"
-
-df_raw = None
-df_aux_raw = None
-df_jer_raw = None
-df_fotos_raw = None
-info_hora = None
-error_nube = None
+        return None, None, str(e)
 
 # --- HEADER SAAS UNIFICADO CON CRÉDITO DE AUTORÍA ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
@@ -1643,8 +1684,8 @@ with col_head3:
     with col_time:
         header_time_placeholder = st.empty()
 
-with st.spinner("Sincronizando base de datos central..."):
-    df_nube, df_aux_nube, df_jer_nube, df_fotos_nube, info_hora, error_nube = cargar_datos_nube(URL_NUBE, URL_JERARQUIA, URL_FOTOS)
+with st.spinner("Sincronizando fuentes externas en la nube..."):
+    df_nube, info_hora, error_nube = cargar_todas_las_fuentes()
 
 header_time_placeholder.markdown(f"""
     <div style="text-align: right; line-height: 1.3;">
@@ -1653,112 +1694,13 @@ header_time_placeholder.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-if df_nube is not None:
-    df_raw = df_nube
-    df_aux_raw = df_aux_nube
-    df_jer_raw = df_jer_nube
-    df_fotos_raw = df_fotos_nube
-else:
-    st.warning("⚠️ No se pudo conectar a la Nube. Puedes subir el archivo MATRIZ manualmente.")
-    archivo_manual = st.file_uploader("📥 Subir archivo Excel del Planograma (.xlsx, .xlsb)", type=["xlsx", "xls", "xlsb"])
-    if archivo_manual:
-        motor = "pyxlsb" if archivo_manual.name.endswith(".xlsb") else None
-        try:
-            try:
-                df_raw = pd.read_excel(archivo_manual, sheet_name="MATRIZ", skiprows=5, usecols="C:AB", engine=motor)
-            except Exception:
-                df_raw = pd.read_excel(archivo_manual, skiprows=5, usecols="C:AB", engine=motor)
-                
-            try:
-                df_aux_raw = pd.read_excel(archivo_manual, sheet_name="DATA_AUX", skiprows=5, engine=motor)
-            except Exception:
-                df_aux_raw = pd.DataFrame()
-                
-            df_jer_raw = pd.DataFrame()
-            df_fotos_raw = pd.DataFrame()
-            
-            df_raw.columns = [str(c).strip() for c in df_raw.columns]
-            if "Bandeja" in df_raw.columns and "EAN" in df_raw.columns:
-                df_raw = df_raw.dropna(subset=["Bandeja", "EAN"], how="all")
-        except Exception as e:
-            st.error(f"Error al leer el archivo manual: {e}")
+df_raw = df_nube
+if error_nube:
+    st.warning(f"⚠️ Aviso de conexión a la nube: {error_nube}")
 
-if df_raw is not None:
+if df_raw is not None and not df_raw.empty:
     df_base = df_raw.copy()
-    df_base['COD_REAL_Str'] = df_base['COD REAL'].apply(clean_sku)
     
-    if df_aux_raw is not None and not df_aux_raw.empty:
-        df_aux_raw.columns = [str(c).strip() for c in df_aux_raw.columns]
-        
-        if 'Monto Margen' in df_aux_raw.columns:
-            cols_material = [c for c in df_aux_raw.columns if 'Material' in c]
-            if cols_material:
-                col_mat_ventas = cols_material[0]
-                df_margen = df_aux_raw[[col_mat_ventas, 'Monto Margen']].copy()
-                df_margen['Mat_Ventas_Str'] = df_margen[col_mat_ventas].apply(clean_sku)
-                df_margen = df_margen[df_margen['Mat_Ventas_Str'] != ""]
-                df_margen = df_margen.drop_duplicates(subset=['Mat_Ventas_Str'])
-                df_base = df_base.merge(df_margen[['Mat_Ventas_Str', 'Monto Margen']], left_on='COD_REAL_Str', right_on='Mat_Ventas_Str', how='left')
-                df_base.drop(columns=['Mat_Ventas_Str'], inplace=True, errors='ignore')
-        
-        if 'Grupo de A' in df_aux_raw.columns:
-            cols_material = [c for c in df_aux_raw.columns if 'Material' in c]
-            if cols_material:
-                col_mat_barras = cols_material[-1] 
-                df_barras = df_aux_raw[[col_mat_barras, 'Grupo de A']].copy()
-                df_barras['Mat_Barras_Str'] = df_barras[col_mat_barras].apply(clean_sku)
-                df_barras['Grupo_A_Str'] = df_barras['Grupo de A'].apply(clean_sku)
-                df_barras = df_barras.drop_duplicates(subset=['Mat_Barras_Str'])
-                df_base = df_base.merge(df_barras[['Mat_Barras_Str', 'Grupo_A_Str']], left_on='COD_REAL_Str', right_on='Mat_Barras_Str', how='left')
-                df_base.drop(columns=['Mat_Barras_Str'], inplace=True, errors='ignore')
-        else:
-            df_base['Grupo_A_Str'] = ""
-    else:
-        df_base['Grupo_A_Str'] = ""
-        
-    df_base['Monto Margen'] = df_base.get('Monto Margen', 0.0).fillna(0.0)
-
-    columnas_jerarquia = ['Departamento', 'Sección', 'Categoría', 'Grupo de artículo']
-    if df_jer_raw is not None and not df_jer_raw.empty:
-        df_jer_raw.columns = [str(c).strip() for c in df_jer_raw.columns]
-        if 'CodGA' in df_jer_raw.columns:
-            df_jer_raw['CodGA_Str'] = df_jer_raw['CodGA'].apply(clean_sku)
-            rename_dict = {
-                'DEPARTAMENTO (2)': 'Departamento',
-                'SECCIÓN (3)': 'Sección',
-                'CATEGORIA (4)': 'Categoría',
-                'GRUPO ARTICULO (6)': 'Grupo de artículo'
-            }
-            cols_to_keep = ['CodGA_Str']
-            for old_name, new_name in rename_dict.items():
-                if old_name in df_jer_raw.columns:
-                    df_jer_raw.rename(columns={old_name: new_name}, inplace=True)
-                    cols_to_keep.append(new_name)
-                    
-            df_jer_unique = df_jer_raw[cols_to_keep].drop_duplicates(subset=['CodGA_Str'])
-            df_base = df_base.merge(df_jer_unique, left_on='Grupo_A_Str', right_on='CodGA_Str', how='left')
-            
-            for col in columnas_jerarquia:
-                if col not in df_base.columns: df_base[col] = 'S/D'
-                else: df_base[col] = df_base[col].fillna('S/D')
-        else:
-            for col in columnas_jerarquia: df_base[col] = 'S/D'
-    else:
-        for col in columnas_jerarquia: df_base[col] = 'S/D'
-        
-    if df_fotos_raw is not None and not df_fotos_raw.empty:
-        df_fotos_raw.columns = [str(c).strip() for c in df_fotos_raw.columns]
-        if '_SKUReferenceCode' in df_fotos_raw.columns and 'Links de fotos' in df_fotos_raw.columns:
-            df_fotos_raw['_SKUReferenceCode'] = df_fotos_raw['_SKUReferenceCode'].apply(clean_sku)
-            df_fotos_unique = df_fotos_raw[['_SKUReferenceCode', 'Links de fotos']].drop_duplicates(subset=['_SKUReferenceCode'])
-            df_base = df_base.merge(df_fotos_unique, left_on='COD_REAL_Str', right_on='_SKUReferenceCode', how='left')
-        else:
-            df_base['Links de fotos'] = ""
-    else:
-        df_base['Links de fotos'] = ""
-        
-    df_base.drop(columns=['COD_REAL_Str', 'Grupo_A_Str', 'CodGA_Str', '_SKUReferenceCode'], inplace=True, errors='ignore')
-
     df_base['Venta_Num'] = df_base['Venta'].apply(safe_float)
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(safe_float)
     df_base['Part_Num'] = df_base['% Part'].apply(safe_float)
@@ -1792,7 +1734,7 @@ if df_raw is not None:
         components.html(html_pasillo, height=840, scrolling=False)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO Y REESTRUCTURADO) ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO E INDEPENDIENTE) ---
     # =========================================================================
     with tab2:
         if "dash_orden" not in st.session_state:
@@ -1880,7 +1822,6 @@ if df_raw is not None:
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
-            # Gráfico de Rendimiento con Botones de Ordenamiento Directos
             h_c1, h_c2 = st.columns([6.5, 3.5])
             with h_c1:
                 st.markdown(f"""
@@ -1987,7 +1928,6 @@ if df_raw is not None:
             st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
             
         with col_graf_der:
-            # Selector de dimensión Mix de Venta
             st.markdown(f"""
                 <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px; margin-bottom: 6px;">
                     🍩 Mix de Venta <span style="font-size: 0.68rem; color: {t['text_secondary']}; font-weight: 700;">({st.session_state.dash_analizar.upper()})</span>
@@ -2035,7 +1975,7 @@ if df_raw is not None:
             st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
             st.markdown("</div>", unsafe_allow_html=True)
 
-        # --- NIVEL 3: FAIR SHARE ANALYSIS (SIEMPRE POR CATEGORÍA) ---
+        # --- NIVEL 3: FAIR SHARE ANALYSIS (FIJO A NIVEL CATEGORÍA) ---
         st.markdown(f"""
             <div class="dash-card">
                 <div class="dash-card-header">
@@ -2044,7 +1984,6 @@ if df_raw is not None:
                 </div>
         """, unsafe_allow_html=True)
         
-        # Métrica de espacio seleccionable directamente
         metrica_espacio = st.radio(
             "📏 MÉTRICA DE ESPACIO A COMPARAR:",
             ["Caras (Facings)", "Total Unidades en Bandeja"],
@@ -2054,7 +1993,6 @@ if df_raw is not None:
 
         col_espacio_elegida = 'Caras_Num' if metrica_espacio == "Caras (Facings)" else 'Unid_Bandeja_Num'
         
-        # Cálculo estricto y directo por Categoría
         df_fs = df_dash_base.groupby('Categoría').agg(
             Espacio_Total=(col_espacio_elegida, 'sum'),
             Ventas_Total=('Venta_Num', 'sum'),
@@ -2078,7 +2016,6 @@ if df_raw is not None:
             
             fig_fs = go.Figure()
             
-            # Barra % Espacio
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'],
                 y=df_fs['Pct_Espacio'],
@@ -2092,7 +2029,6 @@ if df_raw is not None:
                 customdata=df_fs['Espacio_Total']
             ))
             
-            # Barra % Ventas
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'],
                 y=df_fs['Pct_Ventas'],
@@ -2106,7 +2042,6 @@ if df_raw is not None:
                 customdata=df_fs['Ventas_Total']
             ))
 
-            # Barra % Margen
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'],
                 y=df_fs['Pct_Margen'],
@@ -2116,7 +2051,7 @@ if df_raw is not None:
                 insidetextanchor='middle',
                 textfont=dict(color='#ffffff', size=10, family='Inter', weight='bold'),
                 marker=dict(color='#d97706', line=dict(color='#b45309', width=1)),
-                hovertemplate="<b>%{x}</b><br>% Margen: %{y:.1%}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
+                hovertemplate="<b>%{x}</b><br>% Margen: %{text}<br>Margen S/: %{customdata:,.2f}<extra></extra>",
                 customdata=df_fs['Margen_Total']
             ))
             
@@ -2135,7 +2070,6 @@ if df_raw is not None:
             fig_fs.update_yaxes(fixedrange=True)
             st.plotly_chart(fig_fs, use_container_width=True, config={'displayModeBar': False})
             
-            # DIAGNÓSTICOS SEMÁNTICOS EVALUANDO APORTE DE MARGEN
             subdimensionados = df_fs[(df_fs['Brecha_Share'] > 0.03) | (df_fs['Brecha_Margen'] > 0.03)]
             sobredimensionados = df_fs[(df_fs['Brecha_Share'] < -0.03) & (df_fs['Brecha_Margen'] < -0.03)]
             
