@@ -1592,7 +1592,16 @@ def cargar_todas_las_fuentes():
         df_matriz = pd.read_excel(url_planos, sheet_name=0, skiprows=3)
         df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
         
-        # 2. Coberturas y Stock (factCoberturas) - Llave: Material (en formato texto)
+        col_mat_matriz = encontrar_columna(df_matriz, ['COD REAL', 'Material', 'SKU', 'Codigo'])
+        if col_mat_matriz:
+            df_matriz['COD_REAL_Str'] = df_matriz[col_mat_matriz].astype(str).apply(clean_sku)
+            df_matriz['COD REAL'] = df_matriz[col_mat_matriz]
+        else:
+            first_col = df_matriz.columns[0]
+            df_matriz['COD_REAL_Str'] = df_matriz[first_col].astype(str).apply(clean_sku)
+            df_matriz['COD REAL'] = df_matriz[first_col]
+
+        # 2. Coberturas y Stock (factCoberturas) - Llave formateada estrictamente a texto
         df_cob_raw = pd.read_excel(url_coberturas, sheet_name=0, skiprows=1)
         df_cob_raw.columns = [str(c).strip() for c in df_cob_raw.columns]
         col_mat_cob = encontrar_columna(df_cob_raw, ['Material', 'COD REAL', 'SKU', 'Codigo'])
@@ -1608,7 +1617,7 @@ def cargar_todas_las_fuentes():
             df_cob['Cobertura'] = df_cob_raw[col_cob_cob].apply(safe_float) if col_cob_cob else 0.0
             df_cob = df_cob.drop_duplicates(subset=['Material_Str'])
 
-        # 3. Ventas y Margen (factVentas) - Llave: Material (en formato texto)
+        # 3. Ventas y Margen (factVentas) - Llave formateada estrictamente a texto
         df_vta_raw = pd.read_excel(url_ventas, sheet_name=0, skiprows=2)
         df_vta_raw.columns = [str(c).strip() for c in df_vta_raw.columns]
         col_mat_vta = encontrar_columna(df_vta_raw, ['Material', 'COD REAL', 'SKU', 'Codigo'])
@@ -1625,7 +1634,7 @@ def cargar_todas_las_fuentes():
             df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p else 0.0
             df_vta = df_vta.drop_duplicates(subset=['Material_Str'])
 
-        # 4. Código de Barras / Jerarquía (dimCodBarras) - Llave: Material (en formato texto)
+        # 4. Código de Barras / Jerarquía (dimCodBarras) - Llave formateada estrictamente a texto
         df_bar_raw = pd.read_excel(url_barras, sheet_name=0, skiprows=2)
         df_bar_raw.columns = [str(c).strip() for c in df_bar_raw.columns]
         col_mat_bar = encontrar_columna(df_bar_raw, ['Material', 'COD REAL', 'SKU', 'Codigo'])
@@ -1647,15 +1656,6 @@ def cargar_todas_las_fuentes():
             df_bar = df_bar.drop_duplicates(subset=['Material_Str'])
 
         # --- CONSOLIDACIÓN MAESTRA EN MEMORIA (KEYS ESTRICTAMENTE EN TEXTO) ---
-        col_mat_matriz = encontrar_columna(df_matriz, ['COD REAL', 'Material', 'SKU', 'Codigo'])
-        if col_mat_matriz:
-            df_matriz['COD_REAL_Str'] = df_matriz[col_mat_matriz].astype(str).apply(clean_sku)
-            df_matriz['COD REAL'] = df_matriz[col_mat_matriz]
-        else:
-            first_col = df_matriz.columns[0]
-            df_matriz['COD_REAL_Str'] = df_matriz[first_col].astype(str).apply(clean_sku)
-            df_matriz['COD REAL'] = df_matriz[first_col]
-
         # Merge Coberturas
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
