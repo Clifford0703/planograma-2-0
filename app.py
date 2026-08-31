@@ -1061,7 +1061,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept"></span></div>
             <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec"></span></div>
             <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
-            <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga"></span></div>
+            <div class="m-row"><span class="m-label">Grupo de Artículo:</span><span class="m-val" id="m-ga"></span></div>
             <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
             <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
             <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
@@ -1575,7 +1575,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- CARGA INTEGRADA DE FUENTES Y CRUCES DE JERARQUÍA ---
+# --- CARGA INTEGRADA DE FUENTES Y CRUCES DE JERARQUÍA SAP ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -1583,7 +1583,6 @@ def cargar_todas_las_fuentes():
         url_coberturas = "https://docs.google.com/spreadsheets/d/1deT1W2MA2kZzm-vJVSp6eL1IsLAKyaYLFCrZYxNU7-c/export?format=xlsx"
         url_ventas = "https://docs.google.com/spreadsheets/d/1NdEQXgbsb5bXbhIs2keFin9Wk5mC4dK7N_Y3dbv6fcg/export?format=xlsx"
         url_barras = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
-        # URL de la Jerarquía SAP (reemplaza con tu enlace real si difiere)
         url_jerarquia = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
 
         def leer_tabla_por_ancla(url, palabra_ancla, skiprows_fallback=0):
@@ -1658,7 +1657,6 @@ def cargar_todas_las_fuentes():
             df_bar['Material_Str'] = df_bar_raw[col_mat_bar].astype(str).apply(clean_sku)
             df_bar['EAN_Master'] = df_bar_raw['Código EAN/UPC'].astype(str).apply(clean_sku) if 'Código EAN/UPC' in df_bar_raw.columns else ""
             
-            # Extracción exacta de 'Grupo de A' para renombrarlo como 'G.A.' en DATOST
             col_grupo_a = None
             for c in df_bar_raw.columns:
                 if 'grupo' in str(c).lower() and 'a' in str(c).lower():
@@ -1700,18 +1698,18 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Asegurar que G.A. y COD_GA_Str se traten estrictamente como texto antes del siguiente cruce
+        # Limpieza estricta de G.A. a texto plano para el cruce SAP
         if 'G.A.' in df_matriz.columns:
             df_matriz['G.A._Str'] = df_matriz['G.A.'].astype(str).apply(clean_sku)
         else:
             df_matriz['G.A._Str'] = ""
 
-        # Cruce 4: Jerarquía SAP usando la columna G.A. contra CodGA de V28_Nueva Jerarquia Comercial
+        # Cruce 4: Jerarquía SAP usando G.A. contra CodGA
         if not df_sap.empty:
             df_matriz = df_matriz.merge(df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], left_on='G.A._Str', right_on='CodGA_Str', how='left')
             df_matriz.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
 
-        # Rellenar nulos de campos numéricos y de texto
+        # Rellenar nulos de campos numéricos y de texto con valores por defecto
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
             df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
@@ -1771,7 +1769,6 @@ if error_nube:
 if df_raw is not None and not df_raw.empty:
     df_base = df_raw.copy()
     
-    # Exclusión de -999 para cálculos analíticos limpios (tratados como 0 o ignorados en sumas)
     df_base['Venta_Num'] = df_base['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     df_base['Part_Num'] = df_base['% Part'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
