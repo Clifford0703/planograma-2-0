@@ -291,7 +291,7 @@ st.markdown(f"""
             border-radius: 8px !important;
         }}
         
-        /* TARJETAS KPIS */
+        /* TARJETAS KPIS DEL DASHBOARD */
         .fin-kpi-container {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -951,6 +951,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
         
+        /* BLOQUES DE PRODUCTOS */
         .sku-card {{ 
           border-radius: 6px; 
           padding: 6px; 
@@ -985,6 +986,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
+        /* MODAL OVERLAY */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
@@ -1571,11 +1573,11 @@ def cargar_todas_las_fuentes():
         url_ventas = "https://docs.google.com/spreadsheets/d/1NdEQXgbsb5bXbhIs2keFin9Wk5mC4dK7N_Y3dbv6fcg/export?format=xlsx"
         url_barras = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
 
-        # 1. Matriz de Planos (skiprows=3 según la estructura visualizada)
+        # 1. Matriz de Planos (skiprows=3)
         df_matriz = pd.read_excel(url_planos, sheet_name=0, skiprows=3)
         df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
         
-        # 2. Coberturas y Stock
+        # 2. Coberturas y Stock (skiprows=1, llave: Material)
         df_cob_raw = pd.read_excel(url_coberturas, sheet_name=0, skiprows=1)
         df_cob_raw.columns = [str(c).strip() for c in df_cob_raw.columns]
         df_cob = pd.DataFrame()
@@ -1585,7 +1587,7 @@ def cargar_todas_las_fuentes():
         df_cob['Cobertura'] = df_cob_raw['Cob/día'].apply(safe_float)
         df_cob = df_cob.drop_duplicates(subset=['Material_Str'])
 
-        # 3. Ventas y Margen
+        # 3. Ventas y Margen (skiprows=2, llave: Material)
         df_vta_raw = pd.read_excel(url_ventas, sheet_name=0, skiprows=2)
         df_vta_raw.columns = [str(c).strip() for c in df_vta_raw.columns]
         df_vta = pd.DataFrame()
@@ -1599,12 +1601,12 @@ def cargar_todas_las_fuentes():
         df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float)
         df_vta = df_vta.drop_duplicates(subset=['Material_Str'])
 
-        # 4. Código de Barras / Jerarquía (dimCodBarras)
+        # 4. Código de Barras / Jerarquía (skiprows=2, llave: Material)
         df_bar_raw = pd.read_excel(url_barras, sheet_name=0, skiprows=2)
         df_bar_raw.columns = [str(c).strip() for c in df_bar_raw.columns]
         df_bar = pd.DataFrame()
         df_bar['Material_Str'] = df_bar_raw['Material'].apply(clean_sku)
-        df_bar['EAN_Master'] = df_bar_raw['Código EAN/UPC'].apply(clean_sku)
+        df_bar['EAN_Master'] = df_bar_raw['Código EAN/UPC'].apply(clean_sku) if 'Código EAN/UPC' in df_bar_raw.columns else ""
         df_bar['Departamento'] = df_bar_raw['Departamen'].fillna('S/D') if 'Departamen' in df_bar_raw.columns else 'S/D'
         df_bar['Sección'] = df_bar_raw['Denomin. D'].fillna('S/S') if 'Denomin. D' in df_bar_raw.columns else 'S/S'
         df_bar['Categoría'] = df_bar_raw['Denomin. Á'].fillna('S/C') if 'Denomin. Á' in df_bar_raw.columns else 'S/C'
@@ -1612,14 +1614,12 @@ def cargar_todas_las_fuentes():
         df_bar = df_bar.drop_duplicates(subset=['Material_Str'])
 
         # --- CONSOLIDACIÓN MAESTRA EN MEMORIA (LEFT JOINS) ---
-        # Asegurar llave normalizada en la matriz principal
         if 'COD REAL' in df_matriz.columns:
             df_matriz['COD_REAL_Str'] = df_matriz['COD REAL'].apply(clean_sku)
         elif 'SKU' in df_matriz.columns:
             df_matriz['COD_REAL_Str'] = df_matriz['SKU'].apply(clean_sku)
             df_matriz['COD REAL'] = df_matriz['SKU']
         else:
-            # Fallback a primera columna
             first_col = df_matriz.columns[0]
             df_matriz['COD_REAL_Str'] = df_matriz[first_col].apply(clean_sku)
             df_matriz['COD REAL'] = df_matriz[first_col]
