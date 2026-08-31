@@ -1332,7 +1332,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              if (matchSearch && matchBrand && matchCat && matchBay && matchLevel) {{
                  if (!visibleSkus.has(cod)) {{
                      visibleSkus.set(cod, venta);
-                     totalVentasFiltered += venta;
+                     if (venta > 0) totalVentasFiltered += venta;
                  }}
              }}
           }});
@@ -1627,12 +1627,12 @@ def cargar_todas_las_fuentes():
             # Búsqueda exacta y tolerante de 'Cob./días' o 'Cob./día'
             col_cob = None
             for k, original_name in cols_map.items():
-                if 'cob' in k and ('dia' in k or 'días' in k or 'día' in k):
+                if 'cob' in k and ('días' in k or 'dia' in k or 'día' in k):
                     col_cob = original_name
                     break
 
             df_cob['Estado'] = df_cob_raw[col_est].astype(str).str.extract(r'([ABab])')[0].str.upper().fillna('A') if col_est else 'A'
-            df_cob['Stock'] = df_cob_raw[col_stk].apply(safe_float) if col_stk else 0.0
+            df_cob['Stock'] = df_cob_raw[col_stk].apply(safe_float) if col_stk else -999.0
             df_cob['Cobertura'] = df_cob_raw[col_cob].apply(safe_float) if col_cob else -999.0
             
             df_cob = df_cob[df_cob['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
@@ -1647,9 +1647,9 @@ def cargar_todas_las_fuentes():
             col_m = 'Monto Margen' if 'Monto Margen' in df_vta_raw.columns else 'Margen'
             col_p = '% PART' if '% PART' in df_vta_raw.columns else '% Part'
             
-            df_vta['Venta'] = df_vta_raw[col_v].apply(safe_float) if col_v in df_vta_raw.columns else 0.0
-            df_vta['Monto Margen'] = df_vta_raw[col_m].apply(safe_float) if col_m in df_vta_raw.columns else 0.0
-            df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p in df_vta_raw.columns else 0.0
+            df_vta['Venta'] = df_vta_raw[col_v].apply(safe_float) if col_v in df_vta_raw.columns else -999.0
+            df_vta['Monto Margen'] = df_vta_raw[col_m].apply(safe_float) if col_m in df_vta_raw.columns else -999.0
+            df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p in df_vta_raw.columns else -999.0
             df_vta = df_vta[df_vta['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
         # 4. Código de Barras / Jerarquía (dimCodBarras)
@@ -1738,20 +1738,26 @@ if error_nube:
 if df_raw is not None and not df_raw.empty:
     df_base = df_raw.copy()
     
-    df_base['Venta_Num'] = df_base['Venta'].apply(lambda x: safe_float(x, 0.0) if safe_float(x, -999.0) != -999.0 else 0.0)
-    df_base['Margen_Num'] = df_base['Monto Margen'].apply(lambda x: safe_float(x, 0.0) if safe_float(x, -999.0) != -999.0 else 0.0)
-    df_base['Part_Num'] = df_base['% Part'].apply(lambda x: safe_float(x, 0.0) if safe_float(x, -999.0) != -999.0 else 0.0)
-    df_base['Stock_Num'] = df_base['Stock'].apply(lambda x: safe_float(x, 0.0) if safe_float(x, -999.0) != -999.0 else 0.0)
-    df_base['Cob_Num'] = df_base['Cobertura'].apply(lambda x: safe_float(x, 0.0) if safe_float(x, -999.0) != -999.0 else 0.0)
+    # Exclusión de -999 para cálculos analíticos limpios (tratados como 0 o ignorados en sumas)
+    df_base['Venta_Num'] = df_base['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
+    df_base['Margen_Num'] = df_base['Monto Margen'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
+    df_base['Part_Num'] = df_base['% Part'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
+    df_base['Stock_Num'] = df_base['Stock'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
+    df_base['Cob_Num'] = df_base['Cobertura'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     df_base['Caras_Num'] = df_base['Caras'].apply(lambda x: safe_float(x, default=1.0))
     
     col_unid_bandeja = 'Total Unid en Bandeja' if 'Total Unid en Bandeja' in df_base.columns else ('Total_Unidades' if 'Total_Unidades' in df_base.columns else 'Stock')
-    df_base['Unid_Bandeja_Num'] = df_base[col_unid_bandeja].apply(safe_float)
+    df_base['Unid_Bandeja_Num'] = df_base[col_unid_bandeja].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     
     df_unicos = df_base.drop_duplicates(subset=['COD REAL']).copy()
     df_unicos = df_unicos[df_unicos['COD REAL'].notna()]
     
-    tab1, tab2 = st.tabs(["🛒 Vista Interactiva del Pasillo", "📊 Dashboard Analítico Financiero"])
+    # Definición de las 3 pestañas principales incluyendo Errores y Desajustes
+    tab1, tab2, tab3 = st.tabs([
+        "🛒 Vista Interactiva del Pasillo", 
+        "📊 Dashboard Analítico Financiero", 
+        "⚠️ Errores y Desajustes de Cruce"
+    ])
     
     with tab1:
         col_view1, col_view2 = st.columns([1.5, 2])
@@ -1781,7 +1787,6 @@ if df_raw is not None and not df_raw.empty:
 
         st.markdown(f"<div style='font-size: 0.85rem; font-weight: 800; color: {t['text_secondary']}; margin-bottom: 8px; text-transform: uppercase;'>🎯 Filtros Operativos del Dashboard Analítico</div>", unsafe_allow_html=True)
         
-        # Orden exacto: Departamento -> Sección -> Categoría -> Grupo de artículo -> Marca
         col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns(5)
         
         with col_f1:
@@ -1800,7 +1805,6 @@ if df_raw is not None and not df_raw.empty:
             marcas_disp = sorted([m for m in df_unicos['Marca'].dropna().unique() if m not in ['SIN DATOS', 'S/M', 'nan', '']])
             filtro_marca = st.selectbox("🏷️ Marca", ["Todas"] + marcas_disp, key="dash_marca_sel")
 
-        # Aislamiento total de los filtros en la pestaña 2 (no afectan a Pestaña 1)
         df_dash_base = df_base.copy()
         df_dash_unicos = df_unicos.copy()
 
@@ -2182,11 +2186,11 @@ if df_raw is not None and not df_raw.empty:
             if filtro_reporte == "Bloqueados (Estado B)":
                 df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
             elif filtro_reporte == "Sin Stock (Quiebre: Stock = 0)":
-                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
+                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock'] <= 0)]
             elif filtro_reporte == "Stock Bajo (Alerta: Stock 1 a 5)":
-                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
+                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock'] > 0) & (df_rep['Stock'] <= 5)]
             elif filtro_reporte == "Cobertura Alta (Sobreabastecido: ≥ 30 días)":
-                df_rep = df_rep[df_rep['Cob_Num'] >= 30]
+                df_rep = df_rep[df_rep['Cobertura'] >= 30]
                 
             col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
             cols_to_show = [
@@ -2210,4 +2214,44 @@ if df_raw is not None and not df_raw.empty:
             st.markdown("</div>", unsafe_allow_html=True)
             
         st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # =========================================================================
+    # --- PESTAÑA 3: ERRORES Y DESAJUSTES DE CRUCE ---
+    # =========================================================================
+    with tab3:
+        st.markdown(f"""
+            <div class="dash-card">
+                <div class="dash-card-header">
+                    <span class="dash-card-title">⚠️ Auditoría de Errores y Filas sin Coincidencia en DATOST</span>
+                    <span style="font-size: 0.70rem; font-weight: 800; color: {t['text_secondary']};">CONTROL DE INTEGRIDAD</span>
+                </div>
+        """, unsafe_allow_html=True)
+
+        # Identificar registros con errores o desajustes de cruce (donde los valores sean -999 o 'SIN DATOS')
+        df_errores = df_base[
+            (df_base['Stock'] == -999.0) | 
+            (df_base['Cobertura'] == -999.0) | 
+            (df_base['Venta'] == -999.0) | 
+            (df_base['Monto Margen'] == -999.0) | 
+            (df_base['Estado'] == 'SIN DATOS') | 
+            (df_base['Departamento'] == 'SIN DATOS')
+        ].copy()
+
+        total_filas_errores = len(df_errores)
+
+        st.metric(
+            label="Total de Filas / SKUs con Errores o Sin Coincidencia", 
+            value=total_filas_errores,
+            delta=f"{total_filas_errores / len(df_base) * 100:.1f}% del total" if len(df_base) > 0 else "0%"
+        )
+
+        st.markdown(f"<div style='font-size: 0.82rem; color: {t['text_muted']}; margin: 10px 0;'>A continuación se muestran los registros de la tabla <b>DATOST</b> que no hallaron correspondencia exacta en las tablas auxiliares (Coberturas, Ventas o Jerarquía):</div>", unsafe_allow_html=True)
+
+        if total_filas_errores > 0:
+            cols_error_show = [c for c in ['COD REAL', 'EAN', 'Descripción', 'Bandeja', 'Marca', 'Stock', 'Cobertura', 'Venta', 'Estado', 'Departamento'] if c in df_errores.columns]
+            st.dataframe(df_errores[cols_error_show], use_container_width=True, hide_index=True)
+        else:
+            st.success("🎉 ¡Excelente noticia! No se detectaron errores ni filas sin coincidencia en los cruces de datos.")
+
         st.markdown("</div>", unsafe_allow_html=True)
