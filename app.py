@@ -48,8 +48,10 @@ theme_vars = {
         "popover_hover_text": "#60a5fa",
         "btn_bg": "#111c30",
         "btn_text": "#ffffff",
-        "tab_inactive_bg": "#0f172a",
+        "tab_container_bg": "#0f172a",
+        "tab_inactive_bg": "#111c30",
         "tab_inactive_text": "#94a3b8",
+        "tab_inactive_border": "#1e293b",
         "insight_green_bg": "rgba(16, 185, 129, 0.12)",
         "insight_green_text": "#6ee7b7",
         "insight_amber_bg": "rgba(245, 158, 11, 0.12)",
@@ -83,8 +85,10 @@ theme_vars = {
         "popover_hover_text": "#2563eb",
         "btn_bg": "#ffffff",
         "btn_text": "#0f172a",
-        "tab_inactive_bg": "#f1f5f9",
+        "tab_container_bg": "#f1f5f9",
+        "tab_inactive_bg": "#e2e8f0",
         "tab_inactive_text": "#0f172a",
+        "tab_inactive_border": "#cbd5e1",
         "insight_green_bg": "#dcfce7",
         "insight_green_text": "#14532d",
         "insight_amber_bg": "#fef3c7",
@@ -119,10 +123,10 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* PESTAÑAS (TABS) - VISIBILIDAD GARANTIZADA AL 100% */
+        /* PESTAÑAS (TABS) - VISIBILIDAD REFORZADA 100% */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
-            background-color: {t["bg_card"]} !important;
+            background-color: {t["tab_container_bg"]} !important;
             padding: 6px !important;
             border-radius: 8px !important;
             border: 1.5px solid {t["border_subtle"]} !important;
@@ -130,15 +134,23 @@ st.markdown(f"""
         }}
         
         .stTabs [data-baseweb="tab"] {{
-            height: 38px !important;
+            height: 40px !important;
             padding: 0 20px !important;
             border-radius: 6px !important;
             font-weight: 800 !important;
-            font-size: 0.86rem !important;
+            font-size: 0.88rem !important;
             background-color: {t["tab_inactive_bg"]} !important;
             color: {t["tab_inactive_text"]} !important;
-            border: 1px solid {t["border_subtle"]} !important;
+            -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
+            border: 1.5px solid {t["tab_inactive_border"]} !important;
             opacity: 1 !important;
+            transition: all 0.2s ease !important;
+        }}
+        
+        .stTabs [data-baseweb="tab"]:hover {{
+            border-color: {t["accent"]} !important;
+            color: {t["accent"]} !important;
+            -webkit-text-fill-color: {t["accent"]} !important;
         }}
         
         .stTabs [data-baseweb="tab"] p,
@@ -155,7 +167,9 @@ st.markdown(f"""
             background-color: {t["accent"]} !important;
             background: {t["accent"]} !important;
             color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
             border-color: {t["accent"]} !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
         }}
         
         .stTabs [aria-selected="true"] p,
@@ -459,7 +473,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA ---
+# --- GENERADOR DEL PLANOGRAMA (CON DISTRIBUCIÓN EXPANDIDA space-between) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
