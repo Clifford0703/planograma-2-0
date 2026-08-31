@@ -402,9 +402,12 @@ def format_pct(val):
 
 def clean_sku(val):
     if pd.isna(val): return ""
-    s = str(val).strip()
-    if s.endswith('.0'): s = s[:-2]
-    return s
+    s = str(val).replace('\xa0', ' ').strip()
+    if s.endswith('.0'): 
+        s = s[:-2]
+    if s.isdigit():
+        s = str(int(s))
+    return s.strip()
 
 def obtener_estado_y_color(estado, stock_val, dark=True):
     estado = str(estado).strip().upper()
@@ -1572,7 +1575,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- CARGA INTEGRADA DE LAS 4 FUENTES EXTERNAS EN TIEMPO REAL ---
+# --- CARGA INTEGRADA DE FUENTES CON DETECCIÓN AUTOMÁTICA DE ENCABEZADOS ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -1581,33 +1584,47 @@ def cargar_todas_las_fuentes():
         url_ventas = "https://docs.google.com/spreadsheets/d/1NdEQXgbsb5bXbhIs2keFin9Wk5mC4dK7N_Y3dbv6fcg/export?format=xlsx"
         url_barras = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
 
+        def leer_excel_flexible(url, palabras_clave_header):
+            df_raw = pd.read_excel(url, sheet_name=0, header=None)
+            header_idx = 0
+            for idx, row in df_raw.head(10).iterrows():
+                row_str = " ".join([str(v).strip().lower() for v in row.values if pd.notna(v)])
+                if any(k.lower() in row_str for k in palabras_clave_header):
+                    header_idx = idx
+                    break
+            df_clean = pd.read_excel(url, sheet_name=0, skiprows=header_idx)
+            df_clean.columns = [str(c).strip() for c in df_clean.columns]
+            return df_clean
+
         def encontrar_columna(df, posibles_nombres):
             cols_normalizadas = {str(c).strip().lower(): c for c in df.columns}
             for p in posibles_nombres:
                 if p.lower() in cols_normalizadas:
                     return cols_normalizadas[p.lower()]
+            for col_norm, col_real in cols_normalizadas.items():
+                for p in posibles_nombres:
+                    if p.lower() in col_norm:
+                        return col_real
             return None
 
-        # 1. Matriz de Planos (PLANOS)
-        df_matriz = pd.read_excel(url_planos, sheet_name=0, skiprows=3)
-        df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
+        # 1. Matriz de Planos
+        df_matriz = leer_excel_flexible(url_planos, ['bandeja', 'ean', 'cod real', 'material'])
+        col_mat_matriz = encontrar_columna(df_matriz, ['COD REAL', 'Material', 'SKU', 'Codigo', 'Cod. Real'])
         
-        col_mat_matriz = encontrar_columna(df_matriz, ['COD REAL', 'Material', 'SKU', 'Codigo'])
         if col_mat_matriz:
             df_matriz['COD_REAL_Str'] = df_matriz[col_mat_matriz].astype(str).apply(clean_sku)
-            df_matriz['COD REAL'] = df_matriz[col_mat_matriz]
+            df_matriz['COD REAL'] = df_matriz['COD_REAL_Str']
         else:
             first_col = df_matriz.columns[0]
             df_matriz['COD_REAL_Str'] = df_matriz[first_col].astype(str).apply(clean_sku)
-            df_matriz['COD REAL'] = df_matriz[first_col]
+            df_matriz['COD REAL'] = df_matriz['COD_REAL_Str']
 
-        # 2. Coberturas y Stock (factCoberturas) - Llave formateada estrictamente a texto
-        df_cob_raw = pd.read_excel(url_coberturas, sheet_name=0, skiprows=1)
-        df_cob_raw.columns = [str(c).strip() for c in df_cob_raw.columns]
-        col_mat_cob = encontrar_columna(df_cob_raw, ['Material', 'COD REAL', 'SKU', 'Codigo'])
-        col_est_cob = encontrar_columna(df_cob_raw, ['Estado Material', 'Estado'])
-        col_stk_cob = encontrar_columna(df_cob_raw, ['Stock Actual', 'Stock'])
-        col_cob_cob = encontrar_columna(df_cob_raw, ['Cob/día', 'Cobertura'])
+        # 2. Coberturas y Stock (factCoberturas)
+        df_cob_raw = leer_excel_flexible(url_coberturas, ['material', 'stock', 'cobertura', 'estado'])
+        col_mat_cob = encontrar_columna(df_cob_raw, ['Material', 'COD REAL', 'SKU', 'Codigo', 'Material_Str'])
+        col_est_cob = encontrar_columna(df_cob_raw, ['Estado Material', 'Estado', 'Status'])
+        col_stk_cob = encontrar_columna(df_cob_raw, ['Stock Actual', 'Stock', 'Libre Utilización', 'Unidades'])
+        col_cob_cob = encontrar_columna(df_cob_raw, ['Cob/día', 'Cobertura', 'Cob / dia', 'Dias Cobertura'])
 
         df_cob = pd.DataFrame()
         if col_mat_cob:
@@ -1615,74 +1632,62 @@ def cargar_todas_las_fuentes():
             df_cob['Estado'] = df_cob_raw[col_est_cob].astype(str).str.extract(r'([ABab])')[0].str.upper().fillna('A') if col_est_cob else 'A'
             df_cob['Stock'] = df_cob_raw[col_stk_cob].apply(safe_float) if col_stk_cob else 0.0
             df_cob['Cobertura'] = df_cob_raw[col_cob_cob].apply(safe_float) if col_cob_cob else 0.0
-            df_cob = df_cob.drop_duplicates(subset=['Material_Str'])
+            df_cob = df_cob[df_cob['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 3. Ventas y Margen (factVentas) - Llave formateada estrictamente a texto
-        df_vta_raw = pd.read_excel(url_ventas, sheet_name=0, skiprows=2)
-        df_vta_raw.columns = [str(c).strip() for c in df_vta_raw.columns]
+        # 3. Ventas y Margen (factVentas)
+        df_vta_raw = leer_excel_flexible(url_ventas, ['material', 'venta', 'margen', '% part'])
         col_mat_vta = encontrar_columna(df_vta_raw, ['Material', 'COD REAL', 'SKU', 'Codigo'])
-        col_v = encontrar_columna(df_vta_raw, ['Monto Venta Neta', 'Venta'])
-        col_m = encontrar_columna(df_vta_raw, ['Monto Margen', 'Margen'])
-        col_p = encontrar_columna(df_vta_raw, ['% PART', '% Part'])
+        col_v = encontrar_columna(df_vta_raw, ['Monto Venta Neta', 'Venta', 'Venta Neta'])
+        col_m = encontrar_columna(df_vta_raw, ['Monto Margen', 'Margen', 'Margen Bruto'])
+        col_p = encontrar_columna(df_vta_raw, ['% PART', '% Part', 'Part %'])
 
         df_vta = pd.DataFrame()
         if col_mat_vta:
             df_vta['Material_Str'] = df_vta_raw[col_mat_vta].astype(str).apply(clean_sku)
-            df_vta = df_vta[df_vta['Material_Str'] != ""]
             df_vta['Venta'] = df_vta_raw[col_v].apply(safe_float) if col_v else 0.0
             df_vta['Monto Margen'] = df_vta_raw[col_m].apply(safe_float) if col_m else 0.0
             df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p else 0.0
-            df_vta = df_vta.drop_duplicates(subset=['Material_Str'])
+            df_vta = df_vta[df_vta['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 4. Código de Barras / Jerarquía (dimCodBarras) - Llave formateada estrictamente a texto
-        df_bar_raw = pd.read_excel(url_barras, sheet_name=0, skiprows=2)
-        df_bar_raw.columns = [str(c).strip() for c in df_bar_raw.columns]
+        # 4. Código de Barras / Jerarquía (dimCodBarras)
+        df_bar_raw = leer_excel_flexible(url_barras, ['material', 'ean', 'departamento', 'seccion'])
         col_mat_bar = encontrar_columna(df_bar_raw, ['Material', 'COD REAL', 'SKU', 'Codigo'])
         
         df_bar = pd.DataFrame()
         if col_mat_bar:
             df_bar['Material_Str'] = df_bar_raw[col_mat_bar].astype(str).apply(clean_sku)
-            col_ean = encontrar_columna(df_bar_raw, ['Código EAN/UPC', 'EAN'])
-            col_dept = encontrar_columna(df_bar_raw, ['Departamen', 'Departamento'])
+            col_ean = encontrar_columna(df_bar_raw, ['Código EAN/UPC', 'EAN', 'UPC'])
+            col_dept = encontrar_columna(df_bar_raw, ['Departamen', 'Departamento', 'Depto'])
             col_sec = encontrar_columna(df_bar_raw, ['Denomin. D', 'Seccion', 'Sección'])
             col_cat = encontrar_columna(df_bar_raw, ['Denomin. Á', 'Categoria', 'Categoría'])
-            col_ga = encontrar_columna(df_bar_raw, ['Grupo de A', 'Grupo de articulo'])
+            col_ga = encontrar_columna(df_bar_raw, ['Grupo de A', 'Grupo de articulo', 'Grupo Artículo'])
 
             df_bar['EAN_Master'] = df_bar_raw[col_ean].astype(str).apply(clean_sku) if col_ean else ""
             df_bar['Departamento'] = df_bar_raw[col_dept].fillna('SIN DATOS') if col_dept else 'SIN DATOS'
             df_bar['Sección'] = df_bar_raw[col_sec].fillna('SIN DATOS') if col_sec else 'SIN DATOS'
             df_bar['Categoría'] = df_bar_raw[col_cat].fillna('SIN DATOS') if col_cat else 'SIN DATOS'
             df_bar['Grupo de artículo'] = df_bar_raw[col_ga].fillna('SIN DATOS') if col_ga else 'SIN DATOS'
-            df_bar = df_bar.drop_duplicates(subset=['Material_Str'])
+            df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # --- CONSOLIDACIÓN MAESTRA EN MEMORIA (KEYS ESTRICTAMENTE EN TEXTO) ---
-        # Merge Coberturas
+        # --- CRUCE MAESTRO CON LEFT JOIN ---
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Merge Ventas
         if not df_vta.empty:
             df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Merge Código de Barras / Jerarquía
         if not df_bar.empty:
             df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'Departamento', 'Sección', 'Categoría', 'Grupo de artículo']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        # Valores por defecto diferenciados (SIN DATOS o -999.0 si no hace match)
+        # Asignación de valores por defecto
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
-            if col in df_matriz.columns:
-                df_matriz[col] = df_matriz[col].fillna(val_def)
-            else:
-                df_matriz[col] = val_def
+            df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
         for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de artículo', 'SIN DATOS')]:
-            if col in df_matriz.columns:
-                df_matriz[col] = df_matriz[col].fillna(val_def)
-            else:
-                df_matriz[col] = val_def
+            df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
         if 'Bandeja' in df_matriz.columns and 'EAN' in df_matriz.columns:
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
