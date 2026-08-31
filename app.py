@@ -523,7 +523,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 dept_val = str(it.get("Departamento", "SIN DATOS")).replace('"', '&quot;')
                 sec_val = str(it.get("Sección", "SIN DATOS")).replace('"', '&quot;')
                 catjer_val = str(it.get("Categoría", "SIN DATOS")).replace('"', '&quot;')
-                ga_val = str(it.get("Grupo de artículo", "SIN DATOS")).replace('"', '&quot;')
+                ga_val = str(it.get("Grupo de Artículo", "SIN DATOS")).replace('"', '&quot;')
                 
                 part_fmt = format_pct(part_val)
                 stock_fmt = f"{stock_val:.2f}" if stock_val != -999.0 else "SIN DATOS"
@@ -1575,7 +1575,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- CARGA INTEGRADA DE FUENTES CON UBICACIÓN EXACTA DE TABS Y TABLAS ---
+# --- CARGA INTEGRADA DE FUENTES Y CRUCES DE JERARQUÍA ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -1583,6 +1583,8 @@ def cargar_todas_las_fuentes():
         url_coberturas = "https://docs.google.com/spreadsheets/d/1deT1W2MA2kZzm-vJVSp6eL1IsLAKyaYLFCrZYxNU7-c/export?format=xlsx"
         url_ventas = "https://docs.google.com/spreadsheets/d/1NdEQXgbsb5bXbhIs2keFin9Wk5mC4dK7N_Y3dbv6fcg/export?format=xlsx"
         url_barras = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
+        # URL de la Jerarquía SAP (reemplaza con tu enlace real si difiere)
+        url_jerarquia = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
 
         def leer_tabla_por_ancla(url, palabra_ancla, skiprows_fallback=0):
             try:
@@ -1618,13 +1620,10 @@ def cargar_todas_las_fuentes():
         df_cob = pd.DataFrame()
         if "Material" in df_cob_raw.columns:
             df_cob['Material_Str'] = df_cob_raw['Material'].astype(str).apply(clean_sku)
-            
             cols_map = {str(c).strip().lower(): c for c in df_cob_raw.columns}
-            
             col_est = cols_map.get('estado material', cols_map.get('estado', None))
             col_stk = cols_map.get('stock actual', cols_map.get('stock', None))
             
-            # Búsqueda exacta y tolerante de 'Cob./días' o 'Cob./día'
             col_cob = None
             for k, original_name in cols_map.items():
                 if 'cob' in k and ('días' in k or 'dia' in k or 'día' in k):
@@ -1634,7 +1633,6 @@ def cargar_todas_las_fuentes():
             df_cob['Estado'] = df_cob_raw[col_est].astype(str).str.extract(r'([ABab])')[0].str.upper().fillna('A') if col_est else 'A'
             df_cob['Stock'] = df_cob_raw[col_stk].apply(safe_float) if col_stk else -999.0
             df_cob['Cobertura'] = df_cob_raw[col_cob].apply(safe_float) if col_cob else -999.0
-            
             df_cob = df_cob[df_cob['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
         # 3. Ventas y Margen (factVentas)
@@ -1652,37 +1650,72 @@ def cargar_todas_las_fuentes():
             df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p in df_vta_raw.columns else -999.0
             df_vta = df_vta[df_vta['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 4. Código de Barras / Jerarquía (dimCodBarras)
+        # 4. Código de Barras / Jerarquía Base (dimCodbarras -> CBARRAS / Material -> Grupo de A as G.A.)
         df_bar_raw = leer_tabla_por_ancla(url_barras, "Material", 2)
         df_bar = pd.DataFrame()
         col_mat_bar = 'Material' if 'Material' in df_bar_raw.columns else ('COD REAL' if 'COD REAL' in df_bar_raw.columns else None)
         if col_mat_bar:
             df_bar['Material_Str'] = df_bar_raw[col_mat_bar].astype(str).apply(clean_sku)
             df_bar['EAN_Master'] = df_bar_raw['Código EAN/UPC'].astype(str).apply(clean_sku) if 'Código EAN/UPC' in df_bar_raw.columns else ""
-            df_bar['Departamento'] = df_bar_raw['Departamento'].fillna('SIN DATOS') if 'Departamento' in df_bar_raw.columns else 'SIN DATOS'
-            df_bar['Sección'] = df_bar_raw['Sección'].fillna('SIN DATOS') if 'Sección' in df_bar_raw.columns else 'SIN DATOS'
-            df_bar['Categoría'] = df_bar_raw['Categoría'].fillna('SIN DATOS') if 'Categoría' in df_bar_raw.columns else 'SIN DATOS'
-            df_bar['Grupo de artículo'] = df_bar_raw['Grupo de artículo'].fillna('SIN DATOS') if 'Grupo de artículo' in df_bar_raw.columns else 'SIN DATOS'
+            
+            # Extracción exacta de 'Grupo de A' para renombrarlo como 'G.A.' en DATOST
+            col_grupo_a = None
+            for c in df_bar_raw.columns:
+                if 'grupo' in str(c).lower() and 'a' in str(c).lower():
+                    col_grupo_a = c
+                    break
+            df_bar['G.A.'] = df_bar_raw[col_grupo_a].astype(str).apply(clean_sku) if col_grupo_a else 'SIN DATOS'
             df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # --- CRUCE MAESTRO ESTRICTO (DATOST.COD REAL <-> TCOBERT.Material) ---
+        # 5. Nueva Jerarquía Comercial SAP (V28_Nueva Jerarquia Comercial Peru SAP -> CodGA)
+        df_sap_raw = leer_tabla_por_ancla(url_jerarquia, "CodGA", 1)
+        df_sap = pd.DataFrame()
+        col_codga_sap = None
+        for c in df_sap_raw.columns:
+            if 'codga' in str(c).lower():
+                col_codga_sap = c
+                break
+        
+        if col_codga_sap:
+            df_sap['CodGA_Str'] = df_sap_raw[col_codga_sap].astype(str).apply(clean_sku)
+            df_sap['Departamento'] = df_sap_raw['DEPARTAMENTO (2)'].fillna('SIN DATOS') if 'DEPARTAMENTO (2)' in df_sap_raw.columns else 'SIN DATOS'
+            df_sap['Sección'] = df_sap_raw['SECCIÓN (3)'].fillna('SIN DATOS') if 'SECCIÓN (3)' in df_sap_raw.columns else 'SIN DATOS'
+            df_sap['Categoría'] = df_sap_raw['CATEGORIA (4)'].fillna('SIN DATOS') if 'CATEGORIA (4)' in df_sap_raw.columns else 'SIN DATOS'
+            df_sap['Grupo de Artículo'] = df_sap_raw['DESC.ABREV GRUPO ARTICULO'].fillna('SIN DATOS') if 'DESC.ABREV GRUPO ARTICULO' in df_sap_raw.columns else 'SIN DATOS'
+            df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
+
+        # --- CRUCES MAESTROS ESTRICTOS ---
+        # Cruce 1: Coberturas
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
+        # Cruce 2: Ventas
         if not df_vta.empty:
             df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
+        # Cruce 3: Código de Barras (para traer G.A.)
         if not df_bar.empty:
-            df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'Departamento', 'Sección', 'Categoría', 'Grupo de artículo']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
+            df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+
+        # Asegurar que G.A. y COD_GA_Str se traten estrictamente como texto antes del siguiente cruce
+        if 'G.A.' in df_matriz.columns:
+            df_matriz['G.A._Str'] = df_matriz['G.A.'].astype(str).apply(clean_sku)
+        else:
+            df_matriz['G.A._Str'] = ""
+
+        # Cruce 4: Jerarquía SAP usando la columna G.A. contra CodGA de V28_Nueva Jerarquia Comercial
+        if not df_sap.empty:
+            df_matriz = df_matriz.merge(df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], left_on='G.A._Str', right_on='CodGA_Str', how='left')
+            df_matriz.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
 
         # Rellenar nulos de campos numéricos y de texto
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
             df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
-        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de artículo', 'SIN DATOS')]:
+        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS')]:
             df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
         if 'Bandeja' in df_matriz.columns and 'EAN' in df_matriz.columns:
@@ -1752,7 +1785,6 @@ if df_raw is not None and not df_raw.empty:
     df_unicos = df_base.drop_duplicates(subset=['COD REAL']).copy()
     df_unicos = df_unicos[df_unicos['COD REAL'].notna()]
     
-    # Definición de las 3 pestañas principales incluyendo Errores y Desajustes
     tab1, tab2, tab3 = st.tabs([
         "🛒 Vista Interactiva del Pasillo", 
         "📊 Dashboard Analítico Financiero", 
@@ -1799,7 +1831,7 @@ if df_raw is not None and not df_raw.empty:
             cats_disp = sorted([c for c in df_unicos['Categoría'].dropna().unique() if c not in ['SIN DATOS', 'S/C', 'nan', '']])
             filtro_categoria = st.selectbox("📁 Categoría", ["Todas"] + cats_disp, key="dash_cat_sel")
         with col_f4:
-            gas_disp = sorted([g for g in df_unicos['Grupo de artículo'].dropna().unique() if g not in ['SIN DATOS', 'S/G', 'nan', '']])
+            gas_disp = sorted([g for g in df_unicos['Grupo de Artículo'].dropna().unique() if g not in ['SIN DATOS', 'S/G', 'nan', '']])
             filtro_ga = st.selectbox("📦 Grupo de Artículo", ["Todos"] + gas_disp, key="dash_ga_sel")
         with col_f5:
             marcas_disp = sorted([m for m in df_unicos['Marca'].dropna().unique() if m not in ['SIN DATOS', 'S/M', 'nan', '']])
@@ -1818,8 +1850,8 @@ if df_raw is not None and not df_raw.empty:
             df_dash_base = df_dash_base[df_dash_base['Categoría'] == filtro_categoria]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Categoría'] == filtro_categoria]
         if filtro_ga != "Todos":
-            df_dash_base = df_dash_base[df_dash_base['Grupo de artículo'] == filtro_ga]
-            df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de artículo'] == filtro_ga]
+            df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
+            df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
         if filtro_marca != "Todas":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
@@ -1975,7 +2007,7 @@ if df_raw is not None and not df_raw.empty:
                 </div>
             """, unsafe_allow_html=True)
             
-            dims_mix = ["Departamento", "Sección", "Categoría", "Grupo de artículo", "Marca"]
+            dims_mix = ["Departamento", "Sección", "Categoría", "Grupo de Artículo", "Marca"]
             c_chips = st.columns(len(dims_mix))
             for i, d_opt in enumerate(dims_mix):
                 with c_chips[i]:
@@ -2195,7 +2227,7 @@ if df_raw is not None and not df_raw.empty:
             col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
             cols_to_show = [
                 'COD REAL', 'EAN', col_desc, 'Ubicación(es)', 
-                'Departamento', 'Sección', 'Categoría', 'Grupo de artículo', 
+                'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo', 
                 'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen'
             ]
             cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
@@ -2228,7 +2260,6 @@ if df_raw is not None and not df_raw.empty:
                 </div>
         """, unsafe_allow_html=True)
 
-        # Identificar registros con errores o desajustes de cruce (donde los valores sean -999 o 'SIN DATOS')
         df_errores = df_base[
             (df_base['Stock'] == -999.0) | 
             (df_base['Cobertura'] == -999.0) | 
@@ -2246,10 +2277,10 @@ if df_raw is not None and not df_raw.empty:
             delta=f"{total_filas_errores / len(df_base) * 100:.1f}% del total" if len(df_base) > 0 else "0%"
         )
 
-        st.markdown(f"<div style='font-size: 0.82rem; color: {t['text_muted']}; margin: 10px 0;'>A continuación se muestran los registros de la tabla <b>DATOST</b> que no hallaron correspondencia exacta en las tablas auxiliares (Coberturas, Ventas o Jerarquía):</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size: 0.82rem; color: {t['text_muted']}; margin: 10px 0;'>A continuación se muestran los registros de la tabla <b>DATOST</b> que no hallaron correspondencia exacta en las tablas auxiliares (Coberturas, Ventas o Jerarquía SAP):</div>", unsafe_allow_html=True)
 
         if total_filas_errores > 0:
-            cols_error_show = [c for c in ['COD REAL', 'EAN', 'Descripción', 'Bandeja', 'Marca', 'Stock', 'Cobertura', 'Venta', 'Estado', 'Departamento'] if c in df_errores.columns]
+            cols_error_show = [c for c in ['COD REAL', 'EAN', 'Descripción', 'Bandeja', 'Marca', 'Stock', 'Cobertura', 'Venta', 'Estado', 'Departamento', 'G.A.'] if c in df_errores.columns]
             st.dataframe(df_errores[cols_error_show], use_container_width=True, hide_index=True)
         else:
             st.success("🎉 ¡Excelente noticia! No se detectaron errores ni filas sin coincidencia en los cruces de datos.")
