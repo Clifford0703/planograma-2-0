@@ -1380,7 +1380,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchCat && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
@@ -1667,7 +1667,6 @@ def cargar_todas_las_fuentes():
             bar_map = {str(c).strip().lower(): c for c in df_bar_raw.columns}
             col_ga_orig = bar_map.get('grupo de a', bar_map.get('grupo de artículo', None))
             
-            # Formatear estrictamente G.A. a texto plano
             df_bar['G.A.'] = df_bar_raw[col_ga_orig].astype(str).apply(clean_sku) if col_ga_orig else 'SIN DATOS'
             df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
@@ -1686,7 +1685,7 @@ def cargar_todas_las_fuentes():
             col_d_depto = df_sap_raw.columns[3]   # Columna D (DEPARTAMENTO (2))
             col_f_seccion = df_sap_raw.columns[5] # Columna F (SECCIÓN (3))
             col_h_cat = df_sap_raw.columns[7]     # Columna H (CATEGORIA (4))
-            col_n_ga = df_sap_raw.columns[13] if len(df_sap_raw.columns) > 13 else df_sap_raw.columns[10] # Columna N
+            col_n_ga = df_sap_raw.columns[13] if len(df_sap_raw.columns) > 13 else df_sap_raw.columns[10]
 
             df_sap['CodGA_Str'] = df_sap_raw[col_k_codga].astype(str).apply(clean_sku)
             df_sap['Departamento'] = df_sap_raw[col_d_depto].fillna('SIN DATOS').astype(str).str.strip()
@@ -1721,8 +1720,16 @@ def cargar_todas_las_fuentes():
                 df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], 
                 left_on='G.A._Str', 
                 right_on='CodGA_Str', 
-                how='left'
+                how='left',
+                suffixes=('', '_sap')
             )
+            # Reemplazar con los valores de SAP si están disponibles
+            for col_target in ['Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']:
+                col_sap_name = f"{col_target}_sap"
+                if col_sap_name in df_matriz.columns:
+                    df_matriz[col_target] = df_matriz[col_sap_name].replace(['SIN DATOS', 'nan', 'None', '', 'NaN'], pd.NA).fillna(df_matriz[col_target])
+                    df_matriz.drop(columns=[col_sap_name], inplace=True, errors='ignore')
+
             df_matriz.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
 
         # Rellenar nulos
@@ -1871,6 +1878,7 @@ if df_raw is not None and not df_raw.empty:
 
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
+        # Cálculo de métricas financieras exclusivas sobre SKUs únicos (evitando duplicidad por pasillo físico)
         ventas_globales = df_dash_unicos['Venta_Num'].sum()
         margen_global = df_dash_unicos['Margen_Num'].sum()
         margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
@@ -2061,7 +2069,7 @@ if df_raw is not None and not df_raw.empty:
             st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
             st.markdown("</div>", unsafe_allow_html=True)
 
-        # --- NIVEL 3: FAIR SHARE ANALYSIS ---
+        # --- NIVEL 3: FAIR SHARE ANALYSIS (CORREGIDO PARA EVITAR DUPLICIDAD DE VENTAS) ---
         st.markdown(f"""
             <div class="dash-card">
                 <div class="dash-card-header">
@@ -2079,12 +2087,19 @@ if df_raw is not None and not df_raw.empty:
 
         col_espacio_elegida = 'Caras_Num' if metrica_espacio == "Caras (Facings)" else 'Unid_Bandeja_Num'
         
-        df_fs = df_dash_base.groupby('Categoría').agg(
-            Espacio_Total=(col_espacio_elegida, 'sum'),
+        # 1. Agrupar espacio físico por categoría sumando todas sus posiciones/caras en los pasillos
+        df_espacio_cat = df_dash_base.groupby('Categoría').agg(
+            Espacio_Total=(col_espacio_elegida, 'sum')
+        ).reset_index()
+
+        # 2. Agrupar ventas y margen basándose estrictamente en SKUs únicos por categoría para evitar duplicidad
+        df_unicos_cat = df_dash_base.drop_duplicates(subset=['COD REAL', 'Categoría']).copy()
+        df_fin_cat = df_unicos_cat.groupby('Categoría').agg(
             Ventas_Total=('Venta_Num', 'sum'),
             Margen_Total=('Margen_Num', 'sum')
         ).reset_index()
-        
+
+        df_fs = pd.merge(df_espacio_cat, df_fin_cat, on='Categoría', how='outer').fillna(0)
         df_fs = df_fs[~df_fs['Categoría'].isin(['SIN DATOS', 'S/D', 'S/C', 'S/S', 'S/G', 'nan', ''])].copy()
         
         total_espacio_sum = df_fs['Espacio_Total'].sum()
