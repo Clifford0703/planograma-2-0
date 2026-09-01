@@ -154,7 +154,6 @@ st.markdown(f"""
             color: {t["tab_inactive_text"]} !important;
             -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
             font-weight: 800 !important;
-            opacity: 1 !important;
         }}
         
         .stTabs [aria-selected="true"],
@@ -210,45 +209,6 @@ st.markdown(f"""
 
         [data-testid="stSelectbox"] svg {{
             fill: {t["text_secondary"]} !important;
-        }}
-        
-        /* LISTA FLOTANTE POPOVER */
-        div[data-baseweb="popover"],
-        div[data-baseweb="popover"] > div,
-        div[data-baseweb="menu"],
-        div[data-baseweb="popover"] ul,
-        ul[role="listbox"],
-        div[data-baseweb="popover"] [class*="st-emotion-cache"] {{
-            background-color: {t["popover_bg"]} !important;
-            background: {t["popover_bg"]} !important;
-            border: 1px solid {t["popover_border"]} !important;
-            border-radius: 8px !important;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
-        }}
-        
-        div[data-baseweb="popover"] li,
-        div[data-baseweb="menu"] li,
-        li[role="option"],
-        ul[role="listbox"] li {{
-            background-color: {t["popover_bg"]} !important;
-            background: {t["popover_bg"]} !important;
-            color: {t["popover_text"]} !important;
-            -webkit-text-fill-color: {t["popover_text"]} !important;
-            font-weight: 600 !important;
-            font-size: 0.86rem !important;
-            padding: 8px 14px !important;
-        }}
-        
-        div[data-baseweb="popover"] li:hover,
-        div[data-baseweb="menu"] li:hover,
-        li[role="option"]:hover,
-        li[aria-selected="true"],
-        ul[role="listbox"] li:hover,
-        ul[role="listbox"] li[aria-selected="true"] {{
-            background-color: {t["popover_hover"]} !important;
-            background: {t["popover_hover"]} !important;
-            color: {t["popover_hover_text"]} !important;
-            -webkit-text-fill-color: {t["popover_hover_text"]} !important;
         }}
         
         /* BOTONES STREAMLIT */
@@ -833,7 +793,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden; 
         }}
 
-        /* AJUSTE DE HOLGURA Y ALTURA EN PANTALLA COMPLETA */
+        /* NUEVO DISEÑO RESPONSIVE Y DESPLEGABLE DE LEYENDA EN PANTALLA COMPLETA */
         .fullscreen-legend-bar {{
           display: none; 
           position: sticky; 
@@ -842,33 +802,64 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           right: 0; 
           background: {card_bg}; 
           border-bottom: 1px solid {t["border_subtle"]}; 
-          padding: 14px 20px; 
-          min-height: 58px;
+          padding: 10px 16px; 
+          min-height: 52px;
           z-index: 10000; 
-          backdrop-filter: blur(8px); 
-          align-items: center; 
-          gap: 14px; 
-          overflow-x: auto; 
-          white-space: nowrap; 
+          backdrop-filter: blur(10px); 
+          flex-direction: column;
+          gap: 8px; 
           box-sizing: border-box;
+        }}
+
+        .fs-header-row {{
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+        }}
+
+        .fs-toggle-btn {{
+          background: {t['accent']}1a;
+          color: {t['accent']};
+          border: 1px solid {t['accent']}44;
+          font-weight: 800;
+          font-size: 0.76rem;
+          padding: 6px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }}
+
+        .fs-collapsible-content {{
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          padding-top: 4px;
+        }}
+        .fs-collapsible-content.collapsed {{
+          display: none !important;
         }}
         
         .fs-cat-wrapper {{
           display: flex; 
           align-items: center; 
-          gap: 10px; 
+          gap: 8px; 
           margin-left: auto; 
         }}
         .fs-cat-select {{
           background: {input_bg}; 
           border: 1.5px solid {border_col}; 
           color: {text_primary}; 
-          padding: 6px 12px; 
+          padding: 5px 10px; 
           border-radius: 6px; 
-          font-size: 0.85rem; 
+          font-size: 0.80rem; 
           font-weight: 700; 
           outline: none; 
-          min-height: 36px;
+          min-height: 32px;
         }}
         
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
@@ -912,10 +903,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           display: flex; 
           width: 100%; 
           height: 100%; 
-          transform-origin: 50% 0; 
+          transform-origin: 0 0; 
           will-change: transform; 
-          justify-content: center; 
-          align-items: stretch; 
+          justify-content: flex-start; 
+          align-items: flex-start; 
           transition: transform 0.2s ease-out; 
         }}
 
@@ -928,22 +919,22 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow-x: auto; 
           overflow-y: auto; 
           scroll-behavior: smooth; 
-          scroll-snap-type: x mandatory; 
           width: 100%; 
           height: 100%; 
           box-sizing: border-box; 
+          align-items: flex-start;
         }}
         
+        /* FLUJO CONTINUO DE CUERPOS */
         .bay-column {{ 
-          flex: 0 0 100%; 
-          width: 100%; 
+          flex: 0 0 340px; 
+          width: 340px; 
           background: {card_bg}; 
           border: 1px solid {t["border_subtle"]}; 
           border-radius: 8px; 
           display: flex; 
           flex-direction: column; 
           height: fit-content; 
-          scroll-snap-align: center; 
           padding-bottom: 12px; 
           box-sizing: border-box; 
           box-shadow: {t["card_shadow"]}; 
@@ -999,6 +990,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
         
+        /* BLOQUES DE PRODUCTOS */
         .sku-card {{ 
           border-radius: 6px; 
           padding: 6px; 
@@ -1088,14 +1080,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               height: 75vh !important; 
               min-height: 520px !important; 
               flex: none !important; 
-              margin-bottom: 15px !important;
+              margin-bottom: 15px !important; 
             }}
             .nav-btn {{ display: none !important; }}
-            .aisle-container {{ padding: 8px 4px !important; touch-action: pan-x pan-y !important; }}
+            .aisle-container {{ padding: 8px 6px !important; touch-action: pan-x pan-y !important; gap: 10px !important; }}
             .kpi-container {{ display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }}
             .kpi-card {{ min-width: unset !important; }}
             .kpi-card:last-child {{ grid-column: 1 / -1 !important; }}
-            .bay-column {{ flex: 0 0 100% !important; width: 100% !important; max-width: 100% !important; scroll-snap-align: center !important; }}
+            .bay-column {{ flex: 0 0 300px !important; width: 300px !important; }}
             .shelf-products {{ min-height: 70px !important; }}
             .sku-card {{ min-width: 75px !important; }}
             .sku-images-wrapper img {{ height: 70px !important; max-width: 40px !important; }}
@@ -1174,26 +1166,30 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             </div>
           </div>
 
-          <div class="fullscreen-legend-bar">
-            <span style="font-size: 0.82rem; font-weight: 800; color: #3b82f6;">📍 LEYENDA:</span>
-            <div class="legend-chips">
-              <button class="legend-chip" data-filter="Bloqueado" style="--bg: {'#451a1a' if es_oscuro else '#fee2e2'}; --tc: {'#fca5a5' if es_oscuro else '#991b1b'};">Bloqueado</button>
-              <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'};">Sin Stock</button>
-              <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'};">Stock 1-5</button>
-              <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'};">Stock >5</button>
-              <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥30</button>
-              <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP</button>
+          <div class="fullscreen-legend-bar" id="fsLegendBar">
+            <div class="fs-header-row">
+              <button id="fsToggleBtn" class="fs-toggle-btn">📍 Leyenda y Filtros ▾</button>
+              <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 5px 12px; font-weight: 800;">✕ Salir Pantalla Completa</button>
             </div>
             
-            <div class="fs-cat-wrapper">
-              <span style="font-size: 0.80rem; font-weight: 800; color: {text_secondary};">Categoría:</span>
-              <select id="fsCatSelect" class="fs-cat-select">
-                <option value="ALL">Todas las Categorías</option>
-                {options_categorias}
-              </select>
+            <div class="fs-collapsible-content" id="fsCollapsible">
+              <div class="legend-chips">
+                <button class="legend-chip" data-filter="Bloqueado" style="--bg: {'#451a1a' if es_oscuro else '#fee2e2'}; --tc: {'#fca5a5' if es_oscuro else '#991b1b'};">Bloqueado</button>
+                <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'};">Sin Stock</button>
+                <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'};">Stock 1-5</button>
+                <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'};">Stock >5</button>
+                <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥30</button>
+                <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP</button>
+              </div>
+              
+              <div class="fs-cat-wrapper">
+                <span style="font-size: 0.78rem; font-weight: 800; color: {text_secondary};">Categoría:</span>
+                <select id="fsCatSelect" class="fs-cat-select">
+                  <option value="ALL">Todas las Categorías</option>
+                  {options_categorias}
+                </select>
+              </div>
             </div>
-            
-            <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 6px 14px; font-weight: 800;">✕ Salir</button>
           </div>
 
           <button class="nav-btn nav-btn-prev" id="btnPrev" title="Cuerpo Anterior">❮</button>
@@ -1215,8 +1211,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         const btnNext = document.getElementById('btnNext');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
         const exitFsBtn = document.getElementById('exitFsBtn');
+        const fsToggleBtn = document.getElementById('fsToggleBtn');
+        const fsCollapsible = document.getElementById('fsCollapsible');
         
-        let scale = 1, minScale = 0.5, maxScale = 3.5;
+        let scale = 1, minScale = 0.35, maxScale = 3.5;
         let posX = 0, posY = 0;
         let startX = 0, startY = 0;
         let initialDist = 0;
@@ -1249,6 +1247,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             }}
           }}
         }}
+
+        // TOGGLE PARA DESPLEGAR/OCULTAR LEYENDA EN PANTALLA COMPLETA
+        fsToggleBtn.addEventListener('click', () => {{
+          const isCollapsed = fsCollapsible.classList.toggle('collapsed');
+          fsToggleBtn.textContent = isCollapsed ? '📍 Leyenda y Filtros ▸' : '📍 Leyenda y Filtros ▾';
+        }});
 
         aisleWrapper.addEventListener('touchstart', (e) => {{
           if (e.touches.length === 1) {{
@@ -1437,7 +1441,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
              if(matchSearch && matchBrand && matchCat && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
-             if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
+             if(matchSearch && matchBrand && matchCat && matchLevel) availableLevels.add(level);
 
              if(passesStandard) {{
                  setTot.add(cod);
