@@ -123,7 +123,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* PESTAÑAS (TABS) - VISIBILIDAD FORZADA */
+        /* PESTAÑAS (TABS) */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
             background-color: {t["tab_container_bg"]} !important;
@@ -833,6 +833,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden; 
         }}
 
+        /* AJUSTE DE HOLGURA Y ALTURA EN PANTALLA COMPLETA */
         .fullscreen-legend-bar {{
           display: none; 
           position: sticky; 
@@ -841,30 +842,33 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           right: 0; 
           background: {card_bg}; 
           border-bottom: 1px solid {t["border_subtle"]}; 
-          padding: 12px 20px; 
+          padding: 14px 20px; 
+          min-height: 58px;
           z-index: 10000; 
           backdrop-filter: blur(8px); 
           align-items: center; 
-          gap: 12px; 
+          gap: 14px; 
           overflow-x: auto; 
           white-space: nowrap; 
+          box-sizing: border-box;
         }}
         
         .fs-cat-wrapper {{
           display: flex; 
           align-items: center; 
-          gap: 8px; 
+          gap: 10px; 
           margin-left: auto; 
         }}
         .fs-cat-select {{
           background: {input_bg}; 
           border: 1.5px solid {border_col}; 
           color: {text_primary}; 
-          padding: 5px 10px; 
+          padding: 6px 12px; 
           border-radius: 6px; 
-          font-size: 0.80rem; 
+          font-size: 0.85rem; 
           font-weight: 700; 
           outline: none; 
+          min-height: 36px;
         }}
         
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
@@ -963,7 +967,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 4px; }}
         .shelf-row.hidden {{ display: none !important; }}
         
-        /* DISTRIBUCIÓN EQUITATIVA Y EXPANDIDA (space-between) */
         .shelf-products {{ 
           display: flex; 
           flex-direction: row; 
@@ -996,7 +999,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
         
-        /* BLOQUES DE PRODUCTOS */
         .sku-card {{ 
           border-radius: 6px; 
           padding: 6px; 
@@ -1069,7 +1071,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .m-label {{ font-weight: 600; color: {text_secondary}; }}
         .m-val {{ font-weight: 700; text-align: right; max-width: 65%; font-feature-settings: "tnum"; }}
 
-        /* --- RESPONSIVIDAD PARA CELULAR (DESPLAZAMIENTO FLUIDO COMPLETO) --- */
+        /* RESPONSIVIDAD PARA MÓVILES */
         @media (max-width: 768px) {{
             body, html {{ 
               height: auto !important; 
@@ -1173,7 +1175,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           </div>
 
           <div class="fullscreen-legend-bar">
-            <span style="font-size: 0.80rem; font-weight: 800; color: #3b82f6;">📍 LEYENDA:</span>
+            <span style="font-size: 0.82rem; font-weight: 800; color: #3b82f6;">📍 LEYENDA:</span>
             <div class="legend-chips">
               <button class="legend-chip" data-filter="Bloqueado" style="--bg: {'#451a1a' if es_oscuro else '#fee2e2'}; --tc: {'#fca5a5' if es_oscuro else '#991b1b'};">Bloqueado</button>
               <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'};">Sin Stock</button>
@@ -1184,14 +1186,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             </div>
             
             <div class="fs-cat-wrapper">
-              <span style="font-size: 0.75rem; font-weight: 700; color: {text_secondary};">Categoría:</span>
+              <span style="font-size: 0.80rem; font-weight: 800; color: {text_secondary};">Categoría:</span>
               <select id="fsCatSelect" class="fs-cat-select">
                 <option value="ALL">Todas las Categorías</option>
                 {options_categorias}
               </select>
             </div>
             
-            <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 4px 10px;">✕ Salir</button>
+            <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 6px 14px; font-weight: 800;">✕ Salir</button>
           </div>
 
           <button class="nav-btn nav-btn-prev" id="btnPrev" title="Cuerpo Anterior">❮</button>
@@ -1435,7 +1437,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
              if(matchSearch && matchBrand && matchCat && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
-             if(matchSearch && matchBrand && matchCat && matchLevel) availableLevels.add(level);
+             if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
              if(passesStandard) {{
                  setTot.add(cod);
@@ -1619,15 +1621,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             }}
         }});
 
+        // INICIALIZACIÓN: Todos los filtros arrancan en "Todos" sin forzar Cuerpo 1
         setTimeout(() => {{
+          brandSelect.value = 'ALL';
+          catSelect.value = 'ALL';
+          fsCatSelect.value = 'ALL';
+          baySelect.value = 'ALL';
+          levelSelect.value = 'ALL';
           applyFilters();
-          if (window.innerWidth <= 768) {{
-            if (baySelect.value === 'ALL') {{
-              const firstVisible = document.querySelector('.bay-column:not(.hidden)');
-              if (firstVisible) baySelect.value = firstVisible.getAttribute('data-module');
-            }}
-            applyFilters();
-          }}
         }}, 100);
       </script>
     </body>
@@ -1768,7 +1769,7 @@ def cargar_todas_las_fuentes():
             
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- APLICACIÓN DE CRUCES SECUENCIALES ORIGINALES ---
+        # --- APLICACIÓN DE CRUCES SECUENCIALES ---
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
