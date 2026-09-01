@@ -616,7 +616,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           box-sizing: border-box; 
         }}
 
-        ::-webkit-scrollbar {{ height: 6px; width: 6px; }}
+        ::-webkit-scrollbar {{ height: 8px; width: 8px; }}
         ::-webkit-scrollbar-track {{ background: {card_bg}; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
 
@@ -866,7 +866,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           min-height: 36px;
         }}
         
-        /* PANTALLA COMPLETA CON SCROLL VERTICAL HABILITADO */
+        /* PANTALLA COMPLETA CON SCROLL VERTICAL HABILITADO Y VISIBLE */
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
           background: {app_bg} !important; 
           width: 100vw !important; 
@@ -886,16 +886,17 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           flex: 1 1 auto !important;
           min-height: 0 !important;
           height: 100% !important;
-          overflow: hidden !important;
+          overflow-y: auto !important;
+          overflow-x: auto !important;
+          display: flex !important;
         }}
         .aisle-wrapper:fullscreen .aisle-container,
         .aisle-wrapper:-webkit-full-screen .aisle-container {{
-          flex: 1 1 auto !important;
-          height: 100% !important;
-          max-height: 100% !important;
-          overflow-y: auto !important;
-          overflow-x: auto !important;
-          padding-bottom: 80px !important;
+          height: auto !important;
+          min-height: 100% !important;
+          overflow-y: visible !important;
+          overflow-x: visible !important;
+          padding-bottom: 100px !important;
         }}
 
         .nav-btn {{ 
@@ -1201,8 +1202,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'}; --bd: 1px solid {'#7c2d12' if es_oscuro else '#fdba74'};">Sin Stock</button>
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
-            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥ 30</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
