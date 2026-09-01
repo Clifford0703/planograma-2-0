@@ -48,8 +48,10 @@ theme_vars = {
         "popover_hover_text": "#60a5fa",
         "btn_bg": "#111c30",
         "btn_text": "#ffffff",
-        "tab_inactive_bg": "#0f172a",
-        "tab_inactive_text": "#94a3b8",
+        "tab_container_bg": "#0f172a",
+        "tab_inactive_bg": "#111c30",
+        "tab_inactive_text": "#cbd5e1",
+        "tab_inactive_border": "#1e293b",
         "insight_green_bg": "rgba(16, 185, 129, 0.12)",
         "insight_green_text": "#6ee7b7",
         "insight_amber_bg": "rgba(245, 158, 11, 0.12)",
@@ -83,8 +85,10 @@ theme_vars = {
         "popover_hover_text": "#2563eb",
         "btn_bg": "#ffffff",
         "btn_text": "#0f172a",
-        "tab_inactive_bg": "#f1f5f9",
+        "tab_container_bg": "#f1f5f9",
+        "tab_inactive_bg": "#e2e8f0",
         "tab_inactive_text": "#0f172a",
+        "tab_inactive_border": "#cbd5e1",
         "insight_green_bg": "#dcfce7",
         "insight_green_text": "#14532d",
         "insight_amber_bg": "#fef3c7",
@@ -119,10 +123,10 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* PESTAÑAS (TABS) - VISIBILIDAD GARANTIZADA AL 100% */
+        /* PESTAÑAS (TABS) */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
-            background-color: {t["bg_card"]} !important;
+            background-color: {t["tab_container_bg"]} !important;
             padding: 6px !important;
             border-radius: 8px !important;
             border: 1.5px solid {t["border_subtle"]} !important;
@@ -130,41 +134,59 @@ st.markdown(f"""
         }}
         
         .stTabs [data-baseweb="tab"] {{
-            height: 38px !important;
+            height: 40px !important;
             padding: 0 20px !important;
             border-radius: 6px !important;
             font-weight: 800 !important;
-            font-size: 0.86rem !important;
+            font-size: 0.88rem !important;
             background-color: {t["tab_inactive_bg"]} !important;
-            color: {t["tab_inactive_text"]} !important;
-            border: 1px solid {t["border_subtle"]} !important;
+            border: 1.5px solid {t["tab_inactive_border"]} !important;
             opacity: 1 !important;
+            transition: all 0.2s ease !important;
         }}
         
+        .stTabs [data-baseweb="tab"],
+        .stTabs [data-baseweb="tab"] *,
         .stTabs [data-baseweb="tab"] p,
         .stTabs [data-baseweb="tab"] span,
         .stTabs [data-baseweb="tab"] div,
-        .stTabs [data-baseweb="tab"] * {{
+        .stTabs [data-baseweb="tab"] [data-testid="stMarkdownContainer"] p {{
             color: {t["tab_inactive_text"]} !important;
             -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
             font-weight: 800 !important;
-            opacity: 1 !important;
         }}
         
-        .stTabs [aria-selected="true"] {{
+        .stTabs [aria-selected="true"],
+        .stTabs [data-baseweb="tab"][aria-selected="true"] {{
             background-color: {t["accent"]} !important;
             background: {t["accent"]} !important;
-            color: #ffffff !important;
             border-color: {t["accent"]} !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
         }}
         
+        .stTabs [aria-selected="true"] *,
         .stTabs [aria-selected="true"] p,
         .stTabs [aria-selected="true"] span,
         .stTabs [aria-selected="true"] div,
-        .stTabs [aria-selected="true"] * {{
+        .stTabs [aria-selected="true"] [data-testid="stMarkdownContainer"] p {{
             color: #ffffff !important;
             -webkit-text-fill-color: #ffffff !important;
             font-weight: 900 !important;
+        }}
+        
+        /* OPCIONES DE RADIO */
+        [data-testid="stRadio"],
+        [data-testid="stRadio"] *,
+        [data-testid="stRadio"] label,
+        [data-testid="stRadio"] p,
+        [data-testid="stRadio"] span,
+        [data-testid="stRadio"] div,
+        [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p,
+        label[data-baseweb="radio"] * {{
+            color: {t["text_primary"]} !important;
+            -webkit-text-fill-color: {t["text_primary"]} !important;
+            font-weight: 700 !important;
+            opacity: 1 !important;
         }}
         
         /* SELECTBOXES */
@@ -189,7 +211,49 @@ st.markdown(f"""
             fill: {t["text_secondary"]} !important;
         }}
         
-        /* TARJETAS KPIS DEL DASHBOARD */
+        /* BOTONES STREAMLIT */
+        .stButton {{
+            position: relative;
+        }}
+        .stButton > button {{
+            background-color: {t["btn_bg"]} !important;
+            background: {t["btn_bg"]} !important;
+            color: {t["btn_text"]} !important;
+            -webkit-text-fill-color: {t["btn_text"]} !important;
+            border: 1.5px solid {t["border_subtle"]} !important;
+            border-radius: 6px !important;
+            font-weight: 700 !important;
+            box-shadow: {t["card_shadow"]} !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+            width: 100% !important;
+            height: 38px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 12px !important;
+        }}
+        
+        .stButton > button:hover {{
+            border-color: {t["accent"]} !important;
+            color: {t["accent"]} !important;
+            -webkit-text-fill-color: {t["accent"]} !important;
+            background-color: {t["popover_hover"]} !important;
+        }}
+
+        .stDownloadButton > button {{
+            background-color: #10b981 !important;
+            background: #10b981 !important;
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            border: none !important;
+            border-radius: 6px !important;
+            font-weight: 800 !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+            cursor: pointer !important;
+        }}
+        
+        /* TARJETAS KPIS */
         .fin-kpi-container {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -267,12 +331,6 @@ st.markdown(f"""
             gap: 6px;
         }}
         
-        .stSelectbox label, .stRadio label {{
-            color: {t["text_primary"]} !important;
-            font-weight: 800 !important;
-            font-size: 0.80rem !important;
-        }}
-
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -1230,7 +1288,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         btnViewToggle.addEventListener('click', () => alternarModoVista(false));
         fsToggleViewBtn.addEventListener('click', () => alternarModoVista());
 
-        // CLIC EN EL ENCABEZADO DEL CUERPO PARA EXPANDIRLO Y CENTRARLO PERFECTAMENTE (BLOCK: CENTER)
+        // CLIC EN EL TÍTULO DEL CUERPO PARA EXPANDIRLO Y CENTRARLO PERFECTAMENTE (BLOCK: CENTER)
         document.querySelectorAll('.bay-title').forEach(titleElem => {{
           titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
@@ -1902,7 +1960,7 @@ if df_raw is not None and not df_raw.empty:
             st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para expandirlo o usa el botón superior para alternar vistas.</i></div>", unsafe_allow_html=True)
             
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma, es_oscuro=es_oscuro)
-        components.html(html_pasillo, height=960, scrolling=True)
+        components.html(html_pasillo, height=840, scrolling=False)
             
     # =========================================================================
     # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO E INDEPENDIENTE) ---
