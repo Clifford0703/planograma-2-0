@@ -48,10 +48,8 @@ theme_vars = {
         "popover_hover_text": "#60a5fa",
         "btn_bg": "#111c30",
         "btn_text": "#ffffff",
-        "tab_container_bg": "#0f172a",
-        "tab_inactive_bg": "#111c30",
-        "tab_inactive_text": "#cbd5e1",
-        "tab_inactive_border": "#1e293b",
+        "tab_inactive_bg": "#0f172a",
+        "tab_inactive_text": "#94a3b8",
         "insight_green_bg": "rgba(16, 185, 129, 0.12)",
         "insight_green_text": "#6ee7b7",
         "insight_amber_bg": "rgba(245, 158, 11, 0.12)",
@@ -85,10 +83,8 @@ theme_vars = {
         "popover_hover_text": "#2563eb",
         "btn_bg": "#ffffff",
         "btn_text": "#0f172a",
-        "tab_container_bg": "#f1f5f9",
-        "tab_inactive_bg": "#e2e8f0",
+        "tab_inactive_bg": "#f1f5f9",
         "tab_inactive_text": "#0f172a",
-        "tab_inactive_border": "#cbd5e1",
         "insight_green_bg": "#dcfce7",
         "insight_green_text": "#14532d",
         "insight_amber_bg": "#fef3c7",
@@ -99,7 +95,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON ANCHO FORZADO AL 100% Y ELIMINACIÓN DE BORDES LATERALES
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -123,10 +119,10 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* PESTAÑAS (TABS) */
+        /* PESTAÑAS (TABS) - VISIBILIDAD GARANTIZADA AL 100% */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
-            background-color: {t["tab_container_bg"]} !important;
+            background-color: {t["bg_card"]} !important;
             padding: 6px !important;
             border-radius: 8px !important;
             border: 1.5px solid {t["border_subtle"]} !important;
@@ -134,59 +130,41 @@ st.markdown(f"""
         }}
         
         .stTabs [data-baseweb="tab"] {{
-            height: 40px !important;
+            height: 38px !important;
             padding: 0 20px !important;
             border-radius: 6px !important;
             font-weight: 800 !important;
-            font-size: 0.88rem !important;
+            font-size: 0.86rem !important;
             background-color: {t["tab_inactive_bg"]} !important;
-            border: 1.5px solid {t["tab_inactive_border"]} !important;
+            color: {t["tab_inactive_text"]} !important;
+            border: 1px solid {t["border_subtle"]} !important;
             opacity: 1 !important;
-            transition: all 0.2s ease !important;
         }}
         
-        .stTabs [data-baseweb="tab"],
-        .stTabs [data-baseweb="tab"] *,
         .stTabs [data-baseweb="tab"] p,
         .stTabs [data-baseweb="tab"] span,
         .stTabs [data-baseweb="tab"] div,
-        .stTabs [data-baseweb="tab"] [data-testid="stMarkdownContainer"] p {{
+        .stTabs [data-baseweb="tab"] * {{
             color: {t["tab_inactive_text"]} !important;
             -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
             font-weight: 800 !important;
+            opacity: 1 !important;
         }}
         
-        .stTabs [aria-selected="true"],
-        .stTabs [data-baseweb="tab"][aria-selected="true"] {{
+        .stTabs [aria-selected="true"] {{
             background-color: {t["accent"]} !important;
             background: {t["accent"]} !important;
+            color: #ffffff !important;
             border-color: {t["accent"]} !important;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
         }}
         
-        .stTabs [aria-selected="true"] *,
         .stTabs [aria-selected="true"] p,
         .stTabs [aria-selected="true"] span,
         .stTabs [aria-selected="true"] div,
-        .stTabs [aria-selected="true"] [data-testid="stMarkdownContainer"] p {{
+        .stTabs [aria-selected="true"] * {{
             color: #ffffff !important;
             -webkit-text-fill-color: #ffffff !important;
             font-weight: 900 !important;
-        }}
-        
-        /* OPCIONES DE RADIO */
-        [data-testid="stRadio"],
-        [data-testid="stRadio"] *,
-        [data-testid="stRadio"] label,
-        [data-testid="stRadio"] p,
-        [data-testid="stRadio"] span,
-        [data-testid="stRadio"] div,
-        [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p,
-        label[data-baseweb="radio"] * {{
-            color: {t["text_primary"]} !important;
-            -webkit-text-fill-color: {t["text_primary"]} !important;
-            font-weight: 700 !important;
-            opacity: 1 !important;
         }}
         
         /* SELECTBOXES */
@@ -211,49 +189,7 @@ st.markdown(f"""
             fill: {t["text_secondary"]} !important;
         }}
         
-        /* BOTONES STREAMLIT */
-        .stButton {{
-            position: relative;
-        }}
-        .stButton > button {{
-            background-color: {t["btn_bg"]} !important;
-            background: {t["btn_bg"]} !important;
-            color: {t["btn_text"]} !important;
-            -webkit-text-fill-color: {t["btn_text"]} !important;
-            border: 1.5px solid {t["border_subtle"]} !important;
-            border-radius: 6px !important;
-            font-weight: 700 !important;
-            box-shadow: {t["card_shadow"]} !important;
-            transition: all 0.2s ease !important;
-            cursor: pointer !important;
-            width: 100% !important;
-            height: 38px !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            padding: 0 12px !important;
-        }}
-        
-        .stButton > button:hover {{
-            border-color: {t["accent"]} !important;
-            color: {t["accent"]} !important;
-            -webkit-text-fill-color: {t["accent"]} !important;
-            background-color: {t["popover_hover"]} !important;
-        }}
-
-        .stDownloadButton > button {{
-            background-color: #10b981 !important;
-            background: #10b981 !important;
-            color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
-            border: none !important;
-            border-radius: 6px !important;
-            font-weight: 800 !important;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
-            cursor: pointer !important;
-        }}
-        
-        /* TARJETAS KPIS */
+        /* TARJETAS KPIS DEL DASHBOARD */
         .fin-kpi-container {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -331,6 +267,12 @@ st.markdown(f"""
             gap: 6px;
         }}
         
+        .stSelectbox label, .stRadio label {{
+            color: {t["text_primary"]} !important;
+            font-weight: 800 !important;
+            font-size: 0.80rem !important;
+        }}
+
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -766,7 +708,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden; 
         }}
 
-        /* BOTÓN FLOTANTE MODO VISTA */
+        /* BOTÓN FLOTANTE MODO VISTA (1 CUERPO VS MÚLTIPLE) */
         .btn-view-toggle-float {{
           position: absolute;
           top: 10px;
@@ -926,7 +868,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           align-items: flex-start;
         }}
 
-        /* MODO MÚLTIPLES CUERPOS (MÁXIMO 4 POR PANTALLA EN ESCRITORIO) */
+        /* MODO MÚLTIPLES CUERPOS (MÁXIMO 4 POR PANTALLA EN ESCRITORIO O DISTRIBUCIÓN EXPANDIDA) */
         .aisle-container.mode-multi .bay-column {{
           flex: 1 1 calc((100% - 48px) / 4) !important; 
           min-width: 280px !important; 
@@ -934,7 +876,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           scroll-snap-align: start;
         }}
 
-        /* MODO 1 CUERPO EXPANDIDO */
+        /* MODO 1 CUERPO EXPANDIDO (CADA CUERPO OCUPA EL 100% Y SE PUEDE DESLIZAR POR TODOS) */
         .aisle-container.mode-single {{
           scroll-snap-type: x mandatory !important;
         }}
@@ -1173,7 +1115,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           
-          <!-- BOTÓN FLOTANTE PARA ALTERNAR ENTRE 1 CUERPO Y VISTA MÚLTIPLE -->
+          <!-- BOTÓN FLOTANTE MODO VISTA -->
           <button id="btnViewToggle" class="btn-view-toggle-float">🔲 Modo 1 Cuerpo</button>
 
           <div id="productModal" class="modal-overlay">
@@ -1288,7 +1230,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         btnViewToggle.addEventListener('click', () => alternarModoVista(false));
         fsToggleViewBtn.addEventListener('click', () => alternarModoVista());
 
-        // CLIC EN EL ENCABEZADO DEL CUERPO PARA EXPANDIRLO Y CENTRARLO PERFECTAMENTE
+        // CLIC EN EL ENCABEZADO DEL CUERPO PARA EXPANDIRLO Y CENTRARLO PERFECTAMENTE (BLOCK: CENTER)
         document.querySelectorAll('.bay-title').forEach(titleElem => {{
           titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
@@ -1501,7 +1443,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchCat && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
@@ -1877,9 +1819,9 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_matriz, df_vta, hora_lectura, None
+        return df_matriz, hora_lectura, None
     except Exception as e:
-        return None, None, None, str(e)
+        return None, None, str(e)
 
 # --- HEADER SAAS UNIFICADO CON CRÉDITO DE AUTORÍA ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
@@ -1910,7 +1852,7 @@ with col_head3:
         header_time_placeholder = st.empty()
 
 with st.spinner("Sincronizando fuentes externas en la nube..."):
-    df_nube, df_vta_global, info_hora, error_nube = cargar_todas_las_fuentes()
+    df_nube, info_hora, error_nube = cargar_todas_las_fuentes()
 
 header_time_placeholder.markdown(f"""
     <div style="text-align: right; line-height: 1.3;">
@@ -2006,33 +1948,24 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todos":
+        if filtro_marca != "Todas":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
-        ventas_plano = df_dash_unicos['Venta_Num'].sum()
+        ventas_globales = df_dash_unicos['Venta_Num'].sum()
         margen_global = df_dash_unicos['Margen_Num'].sum()
-        margen_pct_global = (margen_global / ventas_plano) if ventas_plano > 0 else 0
-        skus_plano = len(df_dash_unicos)
-
-        if df_vta_global is not None and not df_vta_global.empty:
-            total_venta_maestra = df_vta_global['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
-            total_skus_maestros = len(df_vta_global['Material_Str'].drop_duplicates())
-        else:
-            total_venta_maestra = ventas_plano
-            total_skus_maestros = skus_plano
-
-        pct_venta_representada = (ventas_plano / total_venta_maestra * 100) if total_venta_maestra > 0 else 100.0
-        pct_skus_representados = (skus_plano / total_skus_maestros * 100) if total_skus_maestros > 0 else 100.0
+        margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
+        total_skus_activos = len(df_dash_unicos)
+        promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
         
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #3b82f6;">
-                    <div class="fin-kpi-title"><span>Ventas Planograma</span><span>💳</span></div>
-                    <div class="fin-kpi-val">S/ {ventas_plano:,.2f}</div>
-                    <div class="fin-kpi-subtitle"><b>{pct_venta_representada:.1f}%</b> de la venta total (S/ {total_venta_maestra:,.2f})</div>
+                    <div class="fin-kpi-title"><span>Ventas Brutas Filtradas</span><span>💳</span></div>
+                    <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
+                    <div class="fin-kpi-subtitle">Ticket Promedio/SKU: S/ {promedio_venta_sku:,.2f}</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #10b981;">
                     <div class="fin-kpi-title"><span>Margen Total Bruto</span><span>📈</span></div>
@@ -2042,12 +1975,12 @@ if df_raw is not None and not df_raw.empty:
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #8b5cf6;">
                     <div class="fin-kpi-title"><span>Margen Global (%)</span><span>📊</span></div>
                     <div class="fin-kpi-val" style="color: {t['accent_purple']};">{margen_pct_global*100:.1f}%</div>
-                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta Planograma</div>
+                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #fbbf24;">
-                    <div class="fin-kpi-title"><span>SKUs en Planograma</span><span>📦</span></div>
-                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{skus_plano}</div>
-                    <div class="fin-kpi-subtitle"><b>{pct_skus_representados:.1f}%</b> del surtido total ({total_skus_maestros} SKUs)</div>
+                    <div class="fin-kpi-title"><span>Surtido Activo</span><span>📦</span></div>
+                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{total_skus_activos}</div>
+                    <div class="fin-kpi-subtitle">SKUs Únicos Filtrados</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
