@@ -2011,7 +2011,7 @@ if df_raw is not None and not df_raw.empty:
         
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
-        # --- NIVEL 2: GRÁFICOS OPERATIVOS (JERARQUÍA ESTRICTA PASILLO -> LATERAL -> CUERPO) ---
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS (JERARQUÍA ESTRICTA CON RANGO DE 7 COLUMNAS Y SLIDER) ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
@@ -2052,7 +2052,7 @@ if df_raw is not None and not df_raw.empty:
             df_sku_cuerpo = df_dash_base.drop_duplicates(subset=['COD REAL', 'Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num']).copy()
             
             cat_por_bloque = df_sku_cuerpo.groupby(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num'])['Categoría'].agg(
-                lambda x: max(set([str(i) for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]) > 0 else ""
+                lambda x: max(set([str(i) for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]) > 0 else "Sin Categoría"
             ).to_dict()
             
             ventas_cuerpo = df_sku_cuerpo.groupby(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num']).agg(
@@ -2061,15 +2061,14 @@ if df_raw is not None and not df_raw.empty:
                 SKUs_Total=('COD REAL', 'count')
             ).reset_index()
             
-            def crear_etiqueta_jerarquica(row):
+            def crear_etiqueta_simple(row):
                 p = row['Pasillo_Key']
                 l = row['Lateral_Key']
                 c = int(row['Cuerpo_Num'])
-                cat = cat_por_bloque.get((p, l, row['Cuerpo_Num']), "")
-                if cat and len(cat) > 10: cat = cat[:8] + ".."
-                return f"P{p} [{l}] • C{c}<br><sub>{cat}</sub>" if cat else f"P{p} [{l}] • C{c}"
+                return f"P{p} [{l}] • C{c}"
 
-            ventas_cuerpo['Cuerpo_Label'] = ventas_cuerpo.apply(crear_etiqueta_jerarquica, axis=1)
+            ventas_cuerpo['Cuerpo_Label_Simple'] = ventas_cuerpo.apply(crear_etiqueta_simple, axis=1)
+            ventas_cuerpo['Categoria_Full'] = ventas_cuerpo.apply(lambda row: cat_por_bloque.get((row['Pasillo_Key'], row['Lateral_Key'], row['Cuerpo_Num']), "General"), axis=1)
             ventas_cuerpo['Margen_Pct'] = ventas_cuerpo.apply(
                 lambda row: row['Margen_Total'] / row['Venta_Total'] if row['Venta_Total'] > 0 else 0, 
                 axis=1
@@ -2082,24 +2081,26 @@ if df_raw is not None and not df_raw.empty:
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             
+            # Barras de Ventas con Tooltip ancho que evita recortes (como "Café y Complementos")
             fig.add_trace(
                 go.Bar(
-                    x=ventas_cuerpo['Cuerpo_Label'], 
+                    x=ventas_cuerpo['Cuerpo_Label_Simple'], 
                     y=ventas_cuerpo['Venta_Total'],
                     name="Ventas Totales (S/)",
                     text=ventas_cuerpo['Venta_Total'].apply(lambda x: f"S/ {x/1000:,.1f}K" if x >= 1000 else f"S/ {x:,.0f}"),
                     textposition='inside',
                     insidetextanchor='middle',
+                    textangle=0,
                     textfont=dict(color='#ffffff', size=9, family='Inter', weight='bold'),
                     marker=dict(color='#2563eb', line=dict(color='#1d4ed8', width=1.5)),
-                    hovertemplate="<b>Pasillo %{customdata[0]} [%{customdata[1]}] - Cuerpo %{customdata[2]}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata[3]}<extra></extra>",
-                    customdata=ventas_cuerpo[['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num', 'SKUs_Total']]
+                    hovertemplate="<b>Pasillo %{customdata[0]} [%{customdata[1]}] - Cuerpo %{customdata[2]}</b><br>Categoría: <b>%{customdata[4]}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata[3]}<extra></extra>",
+                    customdata=ventas_cuerpo[['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num', 'SKUs_Total', 'Categoria_Full']]
                 ), secondary_y=False
             )
 
             fig.add_trace(
                 go.Scatter(
-                    x=ventas_cuerpo['Cuerpo_Label'], 
+                    x=ventas_cuerpo['Cuerpo_Label_Simple'], 
                     y=ventas_cuerpo['Margen_Pct'],
                     name="Margen %",
                     mode="lines+markers+text",
@@ -2116,14 +2117,27 @@ if df_raw is not None and not df_raw.empty:
                 paper_bgcolor='rgba(0,0,0,0)', 
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
+                hoverlabel=dict(bgcolor=t["bg_surface"], font_size=12, font_family="Inter"), # Tooltip ancho y claro que no corta texto
                 legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
-                margin=dict(t=15, b=10, l=10, r=10),
-                xaxis=dict(showgrid=False, color=t["plotly_text"], tickfont=dict(size=9, weight='bold', color=t["plotly_text"])),
+                margin=dict(t=30, b=50, l=10, r=10),
+                xaxis=dict(
+                    showgrid=False, 
+                    color=t["plotly_text"], 
+                    tickfont=dict(size=10, weight='bold', color=t["plotly_text"]),
+                    tickangle=0,
+                    range=[-0.5, 6.5],  # Muestra exactamente las primeras 7 columnas por defecto
+                    autorange=False,
+                    rangeslider=dict(
+                        visible=True, 
+                        thickness=0.04,  # Barra desplazadora delgada inferior
+                        bgcolor=t["bg_surface"]
+                    )
+                ),
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["plotly_text"], zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color=t["accent_green"], zeroline=False)
             )
             
-            fig.update_xaxes(fixedrange=True)
+            fig.update_xaxes(fixedrange=False)
             fig.update_yaxes(fixedrange=True)
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
             st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
