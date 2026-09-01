@@ -195,6 +195,45 @@ st.markdown(f"""
         [data-testid="stSelectbox"] svg {{
             fill: {t["text_secondary"]} !important;
         }}
+
+        /* BOTONES STREAMLIT */
+        .stButton > button {{
+            background-color: {t["btn_bg"]} !important;
+            background: {t["btn_bg"]} !important;
+            color: {t["btn_text"]} !important;
+            -webkit-text-fill-color: {t["btn_text"]} !important;
+            border: 1.5px solid {t["border_subtle"]} !important;
+            border-radius: 6px !important;
+            font-weight: 700 !important;
+            box-shadow: {t["card_shadow"]} !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+            width: 100% !important;
+            height: 38px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 12px !important;
+        }}
+        
+        .stButton > button:hover {{
+            border-color: {t["accent"]} !important;
+            color: {t["accent"]} !important;
+            -webkit-text-fill-color: {t["accent"]} !important;
+            background-color: {t["popover_hover"]} !important;
+        }}
+
+        .stDownloadButton > button {{
+            background-color: #10b981 !important;
+            background: #10b981 !important;
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            border: none !important;
+            border-radius: 6px !important;
+            font-weight: 800 !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+            cursor: pointer !important;
+        }}
         
         /* TARJETAS KPIS */
         .fin-kpi-container {{
@@ -254,25 +293,6 @@ st.markdown(f"""
             padding: 14px 16px;
             margin-bottom: 12px;
             box-shadow: {t["card_shadow"]};
-        }}
-
-        /* CONTENEDOR CON BARRA DE DESPLAZAMIENTO NATIVA TRADICIONAL */
-        .chart-scroll-wrapper {{
-            width: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
-            padding-bottom: 8px;
-        }}
-        .chart-scroll-wrapper::-webkit-scrollbar {{
-            height: 8px;
-        }}
-        .chart-scroll-wrapper::-webkit-scrollbar-track {{
-            background: {t["bg_app"]};
-            border-radius: 4px;
-        }}
-        .chart-scroll-wrapper::-webkit-scrollbar-thumb {{
-            background: {t["accent"]};
-            border-radius: 4px;
         }}
 
         .insight-box {{
@@ -358,7 +378,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (CON IMAGEN INTEGRADA EN EL MODAL) ---
+# --- GENERADOR DEL PLANOGRAMA ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -727,8 +747,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           width: 100%; 
           position: relative; 
           flex: 1; 
-          height: auto;
-          min-height: fit-content;
+          height: auto; 
+          min-height: fit-content; 
           background: {card_bg}; 
           border-radius: 10px; 
           border: 1px solid {t["border_subtle"]}; 
@@ -1132,8 +1152,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'}; --bd: 1px solid {'#7c2d12' if es_oscuro else '#fdba74'};">Sin Stock</button>
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
-            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
@@ -2016,7 +2036,7 @@ if df_raw is not None and not df_raw.empty:
         
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
-        # --- NIVEL 2: GRÁFICO CON BARRA DE DESPLAZAMIENTO NATIVA TRADICIONAL ---
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS (MÁXIMO 8 COLUMNAS Y SLIDER CON SCROLL) ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
@@ -2056,7 +2076,6 @@ if df_raw is not None and not df_raw.empty:
             
             df_sku_cuerpo = df_dash_base.drop_duplicates(subset=['COD REAL', 'Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num']).copy()
             
-            # Categoría completa para el tooltip
             cat_por_bloque = df_sku_cuerpo.groupby(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num'])['Categoría'].agg(
                 lambda x: max(set([str(i) for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]) > 0 else "General"
             ).to_dict()
@@ -2067,7 +2086,7 @@ if df_raw is not None and not df_raw.empty:
                 SKUs_Total=('COD REAL', 'count')
             ).reset_index()
 
-            # Prevenir ValueError cuando ventas_cuerpo esté vacío
+            # Prevenir ValueError y conflictos de indexación
             if not ventas_cuerpo.empty:
                 ventas_cuerpo['Cuerpo_Label_Simple'] = [
                     f"P{row['Pasillo_Key']} [{row['Lateral_Key']}] • C{int(row['Cuerpo_Num'])}" 
@@ -2105,7 +2124,7 @@ if df_raw is not None and not df_raw.empty:
                     textposition='inside',
                     insidetextanchor='middle',
                     textangle=0,
-                    textfont=dict(color='#ffffff', size=9, family='Inter', weight='bold'),
+                    textfont=dict(color='#ffffff', size=10, family='Inter', weight='bold'),
                     marker=dict(color='#2563eb', line=dict(color='#1d4ed8', width=1.5)),
                     hovertemplate="<b>Pasillo %{customdata[0]} [%{customdata[1]}] - Cuerpo %{customdata[2]}</b><br>Categoría: <b>%{customdata[4]}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata[3]}<extra></extra>",
                     customdata=ventas_cuerpo[['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num', 'SKUs_Total', 'Categoria_Full']] if not ventas_cuerpo.empty else []
@@ -2127,36 +2146,39 @@ if df_raw is not None and not df_raw.empty:
                 ), secondary_y=True
             )
 
-            # Cálculo de ancho dinámico para scroll nativo tradicional (7 columnas por vista estándar)
-            num_cols = len(ventas_cuerpo)
-            ancho_grafico = max(680, int(num_cols * 105))
+            total_cols = len(ventas_cuerpo)
+            mostrar_slider = total_cols > 8
+            rango_x = [-0.5, 7.5] if mostrar_slider else None
 
             fig.update_layout(
-                width=ancho_grafico,
                 paper_bgcolor='rgba(0,0,0,0)', 
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
                 hoverlabel=dict(bgcolor=t["bg_surface"], font_size=12, font_family="Inter"),
                 legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
-                margin=dict(t=30, b=30, l=10, r=10),
+                margin=dict(t=30, b=65 if mostrar_slider else 35, l=10, r=10),
                 xaxis=dict(
                     showgrid=False, 
                     color=t["plotly_text"], 
                     tickfont=dict(size=10, weight='bold', color=t["plotly_text"]),
-                    tickangle=0
+                    tickangle=0,
+                    range=rango_x,
+                    autorange=False if mostrar_slider else True,
+                    rangeslider=dict(
+                        visible=mostrar_slider,
+                        thickness=0.045,
+                        bgcolor=t["bg_surface"],
+                        yaxis=dict(rangemode="match")
+                    ) if mostrar_slider else dict(visible=False)
                 ),
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["plotly_text"], zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color=t["accent_green"], zeroline=False)
             )
             
-            fig.update_xaxes(fixedrange=True)
+            fig.update_xaxes(fixedrange=False)
             fig.update_yaxes(fixedrange=True)
 
-            # Envoltorio con barra de desplazamiento horizontal nativa tradicional
-            st.markdown('<div class="chart-scroll-wrapper">', unsafe_allow_html=True)
-            st.plotly_chart(fig, use_container_width=(num_cols <= 7), config={'displayModeBar': False, 'scrollZoom': False})
-            st.markdown('</div>', unsafe_allow_html=True)
-
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
             st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
             
         with col_graf_der:
