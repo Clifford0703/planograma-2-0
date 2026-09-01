@@ -186,7 +186,6 @@ st.markdown(f"""
             color: {t["text_primary"]} !important;
             -webkit-text-fill-color: {t["text_primary"]} !important;
             font-weight: 700 !important;
-            opacity: 1 !important;
         }}
         
         /* SELECTBOXES */
@@ -558,7 +557,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
         html_cuerpos += f"""
         <div class="bay-column" data-module="{cuerpo_num}">
-          <div class="bay-title" title="Haz clic para enfocar a todo lo ancho">
+          <div class="bay-title" title="Haz clic para expandir este cuerpo">
             <span class="bay-main-title">{cuerpo_nombre.upper()} 🔍</span>
             {subtitulo_cat}
           </div>
@@ -766,14 +765,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden; 
         }}
 
-        /* BOTÓN FLOTANTE PARA SALIR DEL MODO ENFOQUE DE CUERPO INDIVIDUAL */
-        .btn-return-all {{
-          display: none;
+        /* BOTÓN FLOTANTE MODO VISTA (1 CUERPO VS MÚLTIPLE) */
+        .btn-view-toggle-float {{
           position: absolute;
           top: 10px;
           left: 14px;
           z-index: 500;
-          background: #3b82f6;
+          background: {t['accent']};
           color: #ffffff;
           border: none;
           border-radius: 6px;
@@ -782,9 +780,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           font-size: 0.76rem;
           box-shadow: 0 4px 12px rgba(0,0,0,0.3);
           cursor: pointer;
+          transition: transform 0.2s ease;
+        }}
+        .btn-view-toggle-float:hover {{
+          transform: scale(1.04);
         }}
 
-        /* PANEL DESPLEGABLE DE LEYENDA EN FULLSCREEN */
+        /* PANEL DESPLEGABLE EN FULLSCREEN */
         .fullscreen-legend-bar {{
           display: none; 
           position: sticky; 
@@ -794,7 +796,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           background: {card_bg}; 
           border-bottom: 1px solid {t["border_subtle"]}; 
           padding: 10px 16px; 
-          min-height: 50px;
+          min-height: 52px;
           z-index: 10000; 
           backdrop-filter: blur(10px); 
           flex-direction: column;
@@ -807,6 +809,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           align-items: center;
           justify-content: space-between;
           width: 100%;
+        }}
+
+        .fs-controls-group {{
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }}
 
         .fs-toggle-btn {{
@@ -916,11 +924,27 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           align-items: flex-start;
         }}
 
-        /* MÁXIMO 4 CUERPOS EN ESCRITORIO O DISTRIBUCIÓN EXPANDIDA */
+        /* MODO MÚLTIPLES CUERPOS (MÁXIMO 4 POR PANTALLA EN ESCRITORIO O DISTRIBUCIÓN EXPANDIDA) */
+        .aisle-container.mode-multi .bay-column {{
+          flex: 1 1 calc((100% - 48px) / 4) !important; 
+          min-width: 280px !important; 
+          max-width: calc((100% - 48px) / 4) !important;
+          scroll-snap-align: start;
+        }}
+
+        /* MODO 1 CUERPO EXPANDIDO (CADA CUERPO OCUPA EL 100% Y SE PUEDE DESLIZAR POR TODOS) */
+        .aisle-container.mode-single {{
+          scroll-snap-type: x mandatory !important;
+        }}
+        .aisle-container.mode-single .bay-column {{
+          flex: 0 0 100% !important;
+          width: 100% !important;
+          min-width: 100% !important;
+          max-width: 100% !important;
+          scroll-snap-align: center !important;
+        }}
+
         .bay-column {{ 
-          flex: 1 1 calc((100% - 48px) / 4); 
-          min-width: 280px; 
-          max-width: calc((100% - 48px) / 4);
           background: {card_bg}; 
           border: 1px solid {t["border_subtle"]}; 
           border-radius: 8px; 
@@ -930,14 +954,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           padding-bottom: 12px; 
           box-sizing: border-box; 
           box-shadow: {t["card_shadow"]}; 
-          transition: max-width 0.2s ease, flex 0.2s ease;
-        }}
-
-        /* CUANDO HAY MENOS DE 4 CUERPOS VISIBLES O MODO INDIVIDUAL */
-        .bay-column.expanded-single {{
-          flex: 0 0 100% !important;
-          width: 100% !important;
-          max-width: 100% !important;
+          transition: all 0.25s ease;
         }}
         .bay-column.hidden {{ display: none !important; }}
         
@@ -1092,7 +1109,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             .kpi-container {{ display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }}
             .kpi-card {{ min-width: unset !important; }}
             .kpi-card:last-child {{ grid-column: 1 / -1 !important; }}
-            .bay-column {{ flex: 0 0 88vw !important; width: 88vw !important; max-width: 88vw !important; }}
+            .aisle-container.mode-multi .bay-column {{ flex: 0 0 88vw !important; width: 88vw !important; max-width: 88vw !important; }}
             .shelf-products {{ min-height: 70px !important; }}
             .sku-card {{ min-width: 75px !important; }}
             .sku-images-wrapper img {{ height: 70px !important; max-width: 40px !important; }}
@@ -1153,8 +1170,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           
-          <!-- BOTÓN PARA REGRESAR A VISTA DE VARIOS CUERPOS -->
-          <button id="btnReturnAll" class="btn-return-all">← Ver Todos los Cuerpos</button>
+          <!-- BOTÓN FLOTANTE PARA ALTERNAR ENTRE 1 CUERPO Y VISTA MÚLTIPLE -->
+          <button id="btnViewToggle" class="btn-view-toggle-float">🔳 Ver Múltiples Cuerpos</button>
 
           <div id="productModal" class="modal-overlay">
             <div class="modal-content" id="modalContent">
@@ -1176,7 +1193,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
           <div class="fullscreen-legend-bar" id="fsLegendBar">
             <div class="fs-header-row">
-              <button id="fsToggleBtn" class="fs-toggle-btn">📍 Leyenda y Filtros ▾</button>
+              <div class="fs-controls-group">
+                <button id="fsToggleBtn" class="fs-toggle-btn">📍 Leyenda y Filtros ▾</button>
+                <button id="fsToggleViewBtn" class="fs-toggle-btn" style="background: {t['accent']}33;">🔳 Múltiples Cuerpos</button>
+              </div>
               <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 5px 12px; font-weight: 800;">✕ Salir Pantalla Completa</button>
             </div>
             
@@ -1202,7 +1222,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
           <button class="nav-btn nav-btn-prev" id="btnPrev" title="Cuerpo Anterior">❮</button>
           <div class="zoom-layer" id="zoomLayer">
-            <div class="aisle-container" id="aisleContainer">
+            <div class="aisle-container mode-multi" id="aisleContainer">
               {html_cuerpos}
             </div>
           </div>
@@ -1221,7 +1241,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         const exitFsBtn = document.getElementById('exitFsBtn');
         const fsToggleBtn = document.getElementById('fsToggleBtn');
         const fsCollapsible = document.getElementById('fsCollapsible');
-        const btnReturnAll = document.getElementById('btnReturnAll');
+        const btnViewToggle = document.getElementById('btnViewToggle');
+        const fsToggleViewBtn = document.getElementById('fsToggleViewBtn');
         
         let scale = 1, minScale = 0.4, maxScale = 3.5;
         let posX = 0, posY = 0;
@@ -1229,7 +1250,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         let initialDist = 0;
         let isTouching = false;
         let lastTap = 0;
-        let isSingleFocus = false;
+        let isSingleMode = false;
 
         function updateZoom() {{
           zoomLayer.style.transform = `translate3d(${{posX}}px, ${{posY}}px, 0) scale(${{scale}})`;
@@ -1239,33 +1260,42 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
         }}
 
-        function enfocarCuerpoIndividual(bayNum) {{
-          isSingleFocus = true;
-          baySelect.value = bayNum;
-          btnReturnAll.style.display = 'block';
+        function alternarModoVista(targetSingle = null) {{
+          if (targetSingle !== null) {{
+            isSingleMode = targetSingle;
+          }} else {{
+            isSingleMode = !isSingleMode;
+          }}
+
+          if (isSingleMode) {{
+            container.classList.remove('mode-multi');
+            container.classList.add('mode-single');
+            btnViewToggle.textContent = '🔳 Ver Múltiples Cuerpos';
+            btnViewToggle.style.display = 'block';
+            fsToggleViewBtn.textContent = '🔳 Múltiples Cuerpos';
+          }} else {{
+            container.classList.remove('mode-single');
+            container.classList.add('mode-multi');
+            btnViewToggle.textContent = '🔲 Modo 1 Cuerpo';
+            btnViewToggle.style.display = 'none';
+            fsToggleViewBtn.textContent = '🔲 1 Cuerpo';
+          }}
           scale = 1; posX = 0; posY = 0; updateZoom();
-          applyFilters();
+          setTimeout(updateScrollButtons, 300);
         }}
 
-        function regresarAVistaGeneral() {{
-          isSingleFocus = false;
-          baySelect.value = 'ALL';
-          btnReturnAll.style.display = 'none';
-          scale = 1; posX = 0; posY = 0; updateZoom();
-          applyFilters();
-        }}
+        btnViewToggle.addEventListener('click', () => alternarModoVista(false));
+        fsToggleViewBtn.addEventListener('click', () => alternarModoVista());
 
-        btnReturnAll.addEventListener('click', regresarAVistaGeneral);
-
-        // CLIC EN EL ENCABEZADO DEL CUERPO PARA EXPANDIRLO A PANTALLA COMPLETA
+        // CLIC EN EL ENCABEZADO DEL CUERPO PARA EXPANDIRLO AL 100% SIN FILTRAR LOS DEMÁS
         document.querySelectorAll('.bay-title').forEach(titleElem => {{
           titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
             if (bayElem) {{
-              const bayId = bayElem.getAttribute('data-module');
-              if (baySelect.value === 'ALL') {{
-                enfocarCuerpoIndividual(bayId);
-              }}
+              alternarModoVista(true);
+              setTimeout(() => {{
+                bayElem.scrollIntoView({{ behavior: 'smooth', inline: 'center', block: 'nearest' }});
+              }}, 100);
             }}
           }});
         }});
@@ -1284,16 +1314,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               startY = e.touches[0].clientY - posY;
             }}
             const now = new Date().getTime();
-            // DOBLE TOQUE: ENFOCA EL CUERPO O VUELVE A LA VISTA GENERAL
+            // DOBLE TOQUE: ALTERNA ENTRE 1 CUERPO Y VISTA MÚLTIPLE SIN CERRAR FULLSCREEN
             if (now - lastTap < 320 && now - lastTap > 0) {{
               const clickedBay = e.target.closest('.bay-column');
-              if (clickedBay) {{
-                const bayId = clickedBay.getAttribute('data-module');
-                if (baySelect.value === 'ALL') {{
-                  enfocarCuerpoIndividual(bayId);
-                }} else {{
-                  regresarAVistaGeneral();
-                }}
+              if (!isSingleMode && clickedBay) {{
+                alternarModoVista(true);
+                setTimeout(() => {{
+                  clickedBay.scrollIntoView({{ behavior: 'smooth', inline: 'center' }});
+                }}, 100);
+              }} else {{
+                alternarModoVista(false);
               }}
             }}
             lastTap = now;
@@ -1315,9 +1345,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             const currentDist = getDistance(e.touches);
             const factor = currentDist / initialDist;
             
-            // GESTO PELLIZCO PARA ALEJAR (ZOOM OUT): REGRESA A LA VISTA DE VARIOS CUERPOS
-            if (factor < 0.88 && isSingleFocus) {{
-              regresarAVistaGeneral();
+            // PELLIZCO PARA ALEJAR (ZOOM OUT): REGRESA A LA VISTA MÚLTIPLE
+            if (factor < 0.88 && isSingleMode) {{
+              alternarModoVista(false);
               isTouching = false;
               return;
             }}
@@ -1339,12 +1369,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
 
         btnPrev.addEventListener('click', () => {{
-          container.scrollBy({{ left: -(container.clientWidth * 0.75), behavior: 'smooth' }});
+          const scrollStep = isSingleMode ? container.clientWidth : (container.clientWidth * 0.75);
+          container.scrollBy({{ left: -scrollStep, behavior: 'smooth' }});
           setTimeout(updateScrollButtons, 350);
         }});
         
         btnNext.addEventListener('click', () => {{
-          container.scrollBy({{ left: (container.clientWidth * 0.75), behavior: 'smooth' }});
+          const scrollStep = isSingleMode ? container.clientWidth : (container.clientWidth * 0.75);
+          container.scrollBy({{ left: scrollStep, behavior: 'smooth' }});
           setTimeout(updateScrollButtons, 350);
         }});
         
@@ -1370,7 +1402,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         document.addEventListener('fullscreenchange', () => {{
           if (!document.fullscreenElement) {{
             fullscreenBtn.textContent = "⛶ Pantalla Completa";
-            regresarAVistaGeneral();
+            alternarModoVista(false);
           }}
           scale = 1; posX = 0; posY = 0; updateZoom();
         }});
@@ -1541,7 +1573,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           levelSelect.innerHTML = '';
           allLevels.forEach(opt => {{ if(opt.val === 'ALL' || availableLevels.has(opt.val)) levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel)); }});
 
-          let visibleBaysCount = 0;
           document.querySelectorAll('.bay-column').forEach(bay => {{
             const bayNum = bay.getAttribute('data-module');
             const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
@@ -1552,19 +1583,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
             const isVisible = passesBayFilter && hasMatch;
             bay.classList.toggle('hidden', !isVisible);
-            if (isVisible) visibleBaysCount++;
           }});
-
-          // DISTRIBUCIÓN HORIZONTAL ADAPTATIVA: SI HAY 1 SOLO CUERPO O POCOS, SE EXPANDEN
-          document.querySelectorAll('.bay-column').forEach(bay => {{
-            if (selectedBay !== 'ALL' || visibleBaysCount === 1) {{
-              bay.classList.add('expanded-single');
-            }} else {{
-              bay.classList.remove('expanded-single');
-            }}
-          }});
-
-          btnReturnAll.style.display = (selectedBay !== 'ALL') ? 'block' : 'none';
 
           document.querySelectorAll('.shelf-row').forEach(shelf => {{
             const shelfLevel = shelf.getAttribute('data-level');
@@ -1608,11 +1627,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           applyFilters();
         }});
 
-        baySelect.addEventListener('change', () => {{
-          isSingleFocus = (baySelect.value !== 'ALL');
-          applyFilters();
-        }});
-
+        baySelect.addEventListener('change', applyFilters);
         levelSelect.addEventListener('change', applyFilters);
         topNInput.addEventListener('input', applyFilters);
         
@@ -1625,9 +1640,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           levelSelect.innerHTML = ''; allLevels.forEach(o => levelSelect.add(new Option(o.text, o.val)));
           brandSelect.value = 'ALL'; catSelect.value = 'ALL'; fsCatSelect.value = 'ALL'; baySelect.value = 'ALL'; levelSelect.value = 'ALL';
           topNInput.value = 5;
-          isSingleFocus = false;
-          btnReturnAll.style.display = 'none';
-          scale = 1; posX = 0; posY = 0; updateZoom();
+          alternarModoVista(false);
           applyFilters();
         }});
 
@@ -1668,14 +1681,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             }}
         }});
 
-        // INICIALIZACIÓN: Todos los filtros arrancan en "Todos"
+        // INICIALIZACIÓN
         setTimeout(() => {{
           brandSelect.value = 'ALL';
           catSelect.value = 'ALL';
           fsCatSelect.value = 'ALL';
           baySelect.value = 'ALL';
           levelSelect.value = 'ALL';
-          btnReturnAll.style.display = 'none';
+          btnViewToggle.style.display = 'none';
           applyFilters();
         }}, 100);
       </script>
@@ -1817,7 +1830,7 @@ def cargar_todas_las_fuentes():
             
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- APLICACIÓN DE CRUCES SECUENCIALES ORIGINALES ---
+        # --- APLICACIÓN DE CRUCES SECUENCIALES ---
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
@@ -1946,7 +1959,7 @@ if df_raw is not None and not df_raw.empty:
             )
             es_realograma = ("Realograma" in modo_vista)
         with col_view2:
-            st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Pellizca para Zoom o haz <b>doble toque</b> para auto-encajar el cuerpo.</i></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para expandirlo o usa el botón superior para alternar vistas.</i></div>", unsafe_allow_html=True)
             
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma, es_oscuro=es_oscuro)
         components.html(html_pasillo, height=960, scrolling=True)
