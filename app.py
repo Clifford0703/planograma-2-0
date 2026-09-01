@@ -99,7 +99,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON ANCHO FORZADO AL 100% Y DISEÑO RESPONSIVO
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -419,168 +419,191 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA ---
+# --- GENERADOR DEL PLANOGRAMA (PASILLO Y LATERAL) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
     df['TieneOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').notna()
     df['NumOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').fillna(999999)
     
+    # Mapeo de columnas PASILLO y LATERAL
+    pasillo_col = 'PASILLO' if 'PASILLO' in df.columns else ('Pasillo' if 'Pasillo' in df.columns else None)
+    lateral_col = 'LATERAL' if 'LATERAL' in df.columns else ('Lateral' if 'Lateral' in df.columns else None)
+    
+    df['Pasillo_Val'] = df[pasillo_col].astype(str).str.strip().str.upper() if pasillo_col else "1"
+    df['Lateral_Val'] = df[lateral_col].astype(str).str.strip().str.upper() if lateral_col else "A"
+
     bandeja_str = df.get('Bandeja', pd.Series(["1.1"]*len(df))).astype(str)
     df[['Cuerpo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')
     df['Cuerpo_Ord'] = pd.to_numeric(df['Cuerpo_Ord'], errors='coerce').fillna(1)
     df['Nivel_Num'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
 
-    # Ordenamiento numérico descendente por nivel (10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
     df = df.sort_values(
-        by=['Cuerpo_Ord', 'Nivel_Num', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
-        ascending=[True, False, False, True, True]
+        by=['Pasillo_Val', 'Lateral_Val', 'Cuerpo_Ord', 'Nivel_Num', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
+        ascending=[True, True, True, False, False, True, True]
     )
 
-    cuerpos = {}
+    pasillos = {}
     todas_marcas = sorted(list(df["Marca"].dropna().unique())) if "Marca" in df.columns else []
     todas_categorias = sorted([c for c in df["Categoría"].dropna().unique() if c not in ['SIN DATOS', 'S/C', 'nan', '']]) if "Categoría" in df.columns else []
-    todos_niveles = sorted(list(df["Nivel_Num"].dropna().unique()), reverse=True)
+    todos_pasillos = sorted(list(df["Pasillo_Val"].dropna().unique()))
+    todos_laterales = sorted(list(df["Lateral_Val"].dropna().unique()))
 
     for _, r in df.iterrows():
+        p_val = r['Pasillo_Val']
+        lat_val = r['Lateral_Val']
         b_str = str(r.get("Bandeja", "1.1")).strip()
         cuerpo_id = f"Cuerpo {b_str.split('.')[0]}" if "." in b_str else "Cuerpo 1"
-        if cuerpo_id not in cuerpos: cuerpos[cuerpo_id] = {}
-        if b_str not in cuerpos[cuerpo_id]: cuerpos[cuerpo_id][b_str] = []
-        cuerpos[cuerpo_id][b_str].append(r)
-
-    html_cuerpos = ""
-    for cuerpo_nombre, niveles_dict in sorted(cuerpos.items()):
-        cuerpo_num = cuerpo_nombre.replace("Cuerpo ", "").strip()
-        niveles_ordenados = sorted(niveles_dict.keys(), key=lambda x: int(str(x).split('.')[-1]) if str(x).replace('.','').isdigit() else 1, reverse=True)
-        html_niveles = ""
         
-        todos_items_cuerpo = [it for sublist in niveles_dict.values() for it in sublist]
-        cats_cuerpo = [str(it.get('Categoría', '')) for it in todos_items_cuerpo if str(it.get('Categoría', '')) not in ['', 'S/C', 'SIN DATOS', 'nan']]
-        cat_predominante = max(set(cats_cuerpo), key=cats_cuerpo.count) if cats_cuerpo else ""
+        if p_val not in pasillos: pasillos[p_val] = {}
+        if lat_val not in pasillos[p_val]: pasillos[p_val][lat_val] = {}
+        if cuerpo_id not in pasillos[p_val][lat_val]: pasillos[p_val][lat_val][cuerpo_id] = {}
+        if b_str not in pasillos[p_val][lat_val][cuerpo_id]: pasillos[p_val][lat_val][cuerpo_id][b_str] = []
+        
+        pasillos[p_val][lat_val][cuerpo_id][b_str].append(r)
 
-        for b_nombre in niveles_ordenados:
-            items = niveles_dict[b_nombre]
-            total_caras = sum([int(it.get("Caras", 1)) if str(it.get("Caras", 1)).isdigit() else 1 for it in items])
-            nivel_num = str(b_nombre).split(".")[-1] if "." in str(b_nombre) else str(b_nombre)
+    html_pasillos = ""
+    for p_val, laterals_dict in sorted(pasillos.items()):
+        for lat_val, cuerpos_dict in sorted(laterals_dict.items()):
+            html_cuerpos = ""
+            for cuerpo_nombre, niveles_dict in sorted(cuerpos_dict.items()):
+                cuerpo_num = cuerpo_nombre.replace("Cuerpo ", "").strip()
+                niveles_ordenados = sorted(niveles_dict.keys(), key=lambda x: int(str(x).split('.')[-1]) if str(x).replace('.','').isdigit() else 1, reverse=True)
+                html_niveles = ""
+                
+                todos_items_cuerpo = [it for sublist in niveles_dict.values() for it in sublist]
+                cats_cuerpo = [str(it.get('Categoría', '')) for it in todos_items_cuerpo if str(it.get('Categoría', '')) not in ['', 'S/C', 'SIN DATOS', 'nan']]
+                cat_predominante = max(set(cats_cuerpo), key=cats_cuerpo.count) if cats_cuerpo else ""
 
-            cards_html = ""
-            for it in items:
-                cod_real = str(it.get("COD REAL", ""))
-                ean = str(it.get("EAN", ""))
-                nombre = str(it.get("Descripción", it.get("Nombre", "")))
-                marca = str(it.get("Marca", "S/M"))
-                estado = str(it.get("Estado", ""))
-                
-                caras_val = str(it.get("Caras", "1"))
-                caras = int(caras_val) if caras_val.isdigit() and int(caras_val) > 0 else 1
-                pos = str(it.get("N°", "-")) if not pd.isna(it.get("N°", "-")) else "-"
+                for b_nombre in niveles_ordenados:
+                    items = niveles_dict[b_nombre]
+                    total_caras = sum([int(it.get("Caras", 1)) if str(it.get("Caras", 1)).isdigit() else 1 for it in items])
+                    nivel_num = str(b_nombre).split(".")[-1] if "." in str(b_nombre) else str(b_nombre)
 
-                stock_val = safe_float(it.get("Stock", -999.0))
-                cob_val = safe_float(it.get("Cobertura", -999.0))
-                venta_val = safe_float(it.get("Venta", -999.0))
-                part_val = safe_float(it.get("% Part", -999.0))
-                
-                dept_val = str(it.get("Departamento", "SIN DATOS")).replace('"', '&quot;')
-                sec_val = str(it.get("Sección", "SIN DATOS")).replace('"', '&quot;')
-                catjer_val = str(it.get("Categoría", "SIN DATOS")).replace('"', '&quot;')
-                ga_val = str(it.get("Grupo de Artículo", "SIN DATOS")).replace('"', '&quot;')
-                
-                part_fmt = format_pct(part_val)
-                stock_fmt = f"{stock_val:.2f}" if stock_val != -999.0 else "SIN DATOS"
-                cob_fmt = f"{cob_val:.2f}" if cob_val != -999.0 else "SIN DATOS"
-                estilo_cobertura = "color: #ef4444; font-weight: 800;" if cob_val != -999.0 and cob_val >= 30 else ""
-                
-                if es_realograma:
-                    link_foto = str(it.get("Links de fotos", ""))
-                    if link_foto in ['nan', '', 'None', 'SIN DATOS']:
-                        link_foto = "https://via.placeholder.com/60x150.png/1e293b/94a3b8?text=Sin+Foto"
+                    cards_html = ""
+                    for it in items:
+                        cod_real = str(it.get("COD REAL", ""))
+                        ean = str(it.get("EAN", ""))
+                        nombre = str(it.get("Descripción", it.get("Nombre", "")))
+                        marca = str(it.get("Marca", "S/M"))
+                        estado = str(it.get("Estado", ""))
+                        
+                        caras_val = str(it.get("Caras", "1"))
+                        caras = int(caras_val) if caras_val.isdigit() and int(caras_val) > 0 else 1
+                        pos = str(it.get("N°", "-")) if not pd.isna(it.get("N°", "-")) else "-"
+
+                        stock_val = safe_float(it.get("Stock", -999.0))
+                        cob_val = safe_float(it.get("Cobertura", -999.0))
+                        venta_val = safe_float(it.get("Venta", -999.0))
+                        part_val = safe_float(it.get("% Part", -999.0))
+                        
+                        dept_val = str(it.get("Departamento", "SIN DATOS")).replace('"', '&quot;')
+                        sec_val = str(it.get("Sección", "SIN DATOS")).replace('"', '&quot;')
+                        catjer_val = str(it.get("Categoría", "SIN DATOS")).replace('"', '&quot;')
+                        ga_val = str(it.get("Grupo de Artículo", "SIN DATOS")).replace('"', '&quot;')
+                        
+                        part_fmt = format_pct(part_val)
+                        stock_fmt = f"{stock_val:.2f}" if stock_val != -999.0 else "SIN DATOS"
+                        cob_fmt = f"{cob_val:.2f}" if cob_val != -999.0 else "SIN DATOS"
+                        estilo_cobertura = "color: #ef4444; font-weight: 800;" if cob_val != -999.0 and cob_val >= 30 else ""
+                        
+                        if es_realograma:
+                            link_foto = str(it.get("Links de fotos", ""))
+                            if link_foto in ['nan', '', 'None', 'SIN DATOS']:
+                                link_foto = "https://via.placeholder.com/60x150.png/1e293b/94a3b8?text=Sin+Foto"
+                            else:
+                                link_foto = link_foto.replace("http://", "https://")
+                            
+                            clase_alerta, cat_leyenda = obtener_alerta_css(estado, stock_val)
+                            img_tags = "".join([f'<img src="{link_foto}" alt="{marca}">' for _ in range(caras)])
+                            
+                            html_interno = f"""
+                              <div class="top-badge"></div>
+                              <div class="sku-images-wrapper">{img_tags}</div>
+                              <div class="sku-fleje">
+                                <span class="fleje-ean">{ean}</span>
+                                <span class="fleje-caras">{caras}C</span>
+                              </div>
+                            """
+                            clase_wrapper = f"sku-item sku-group {clase_alerta}"
+                            estilo_wrapper = f"flex: {caras};"
+                        else:
+                            bg_color, border_color, text_color, name_color, cat_leyenda = obtener_estado_y_color(estado, stock_val, dark=es_oscuro)
+                            
+                            html_interno = f"""
+                              <div class="sku-header-row">
+                                <span class="sku-pos" style="color: {text_color}; font-weight: 800;">{pos}</span>
+                                <span class="sku-caras-tag" style="color: {text_color}; background: rgba(0,0,0,0.25); border: 1px solid {text_color}44;">{caras}C</span>
+                              </div>
+                              <div class="sku-details">
+                                <span class="sku-brand-text" style="color: {text_color};">{marca}</span>
+                                <span class="sku-name-text" style="color: {name_color};">{nombre}</span>
+                              </div>
+                              <div class="sku-bottom-bar" style="border-top: 1px dashed {border_color};">
+                                <span class="sku-stock-pill" style="color: {text_color}; font-weight: 800;">Stk: {stock_fmt}</span>
+                                <span class="sku-cap-val" style="{estilo_cobertura}">Cob: {cob_fmt}</span>
+                              </div>
+                            """
+                            clase_wrapper = "sku-item sku-card"
+                            estilo_wrapper = f"flex: {caras}; background-color: {bg_color}; border: 1.5px solid {border_color};"
+
+                        cards_html += f"""
+                        <div class="{clase_wrapper}" style="{estilo_wrapper}" 
+                             data-brand="{marca}" data-name="{nombre}" data-ean="{ean}"
+                             data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_val}" data-part="{part_fmt}" 
+                             data-cod="{cod_real}" data-cat="{cat_leyenda}" 
+                             data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
+                             title="Detalles: {nombre}">
+                          {html_interno}
+                        </div>
+                        """
+
+                    if es_realograma:
+                        shelf_render = f"""
+                          <div class="shelf-products">{cards_html}</div>
+                          <div class="shelf-base"><span class="shelf-name-tag">NIVEL {nivel_num} • {total_caras} CARAS</span></div>
+                        """
                     else:
-                        link_foto = link_foto.replace("http://", "https://")
-                    
-                    clase_alerta, cat_leyenda = obtener_alerta_css(estado, stock_val)
-                    img_tags = "".join([f'<img src="{link_foto}" alt="{marca}">' for _ in range(caras)])
-                    
-                    html_interno = f"""
-                      <div class="top-badge"></div>
-                      <div class="sku-images-wrapper">{img_tags}</div>
-                      <div class="sku-fleje">
-                        <span class="fleje-ean">{ean}</span>
-                        <span class="fleje-caras">{caras}C</span>
-                      </div>
-                    """
-                    clase_wrapper = f"sku-item sku-group {clase_alerta}"
-                    estilo_wrapper = f"flex: {caras};"
-                else:
-                    bg_color, border_color, text_color, name_color, cat_leyenda = obtener_estado_y_color(estado, stock_val, dark=es_oscuro)
-                    
-                    html_interno = f"""
-                      <div class="sku-header-row">
-                        <span class="sku-pos" style="color: {text_color}; font-weight: 800;">{pos}</span>
-                        <span class="sku-caras-tag" style="color: {text_color}; background: rgba(0,0,0,0.25); border: 1px solid {text_color}44;">{caras}C</span>
-                      </div>
-                      <div class="sku-details">
-                        <span class="sku-brand-text" style="color: {text_color};">{marca}</span>
-                        <span class="sku-name-text" style="color: {name_color};">{nombre}</span>
-                      </div>
-                      <div class="sku-bottom-bar" style="border-top: 1px dashed {border_color};">
-                        <span class="sku-stock-pill" style="color: {text_color}; font-weight: 800;">Stk: {stock_fmt}</span>
-                        <span class="sku-cap-val" style="{estilo_cobertura}">Cob: {cob_fmt}</span>
-                      </div>
-                    """
-                    clase_wrapper = "sku-item sku-card"
-                    estilo_wrapper = f"flex: {caras}; background-color: {bg_color}; border: 1.5px solid {border_color};"
+                        shelf_render = f"""
+                          <div class="shelf-info"><span>NIVEL {nivel_num}</span><span class="shelf-caras-count">{total_caras} CARAS</span></div>
+                          <div class="shelf-products">{cards_html}</div>
+                          <div class="shelf-bottom-rail"></div>
+                        """
 
-                cards_html += f"""
-                <div class="{clase_wrapper}" style="{estilo_wrapper}" 
-                     data-brand="{marca}" data-name="{nombre}" data-ean="{ean}"
-                     data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_val}" data-part="{part_fmt}" 
-                     data-cod="{cod_real}" data-cat="{cat_leyenda}" 
-                     data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
-                     title="Detalles: {nombre}">
-                  {html_interno}
+                    html_niveles += f"""
+                    <div class="shelf-row" data-level="{nivel_num}">
+                      {shelf_render}
+                    </div>
+                    """
+
+                subtitulo_cat = f'<span class="bay-subcat">{cat_predominante}</span>' if cat_predominante else ''
+
+                html_cuerpos += f"""
+                <div class="bay-column" data-module="{cuerpo_num}">
+                  <div class="bay-title" title="Haz clic para ajustar a lo ancho">
+                    <span class="bay-main-title">{cuerpo_nombre.upper()} 🔍</span>
+                    {subtitulo_cat}
+                  </div>
+                  <div class="bay-shelves">
+                    {html_niveles}
+                  </div>
                 </div>
                 """
 
-            if es_realograma:
-                shelf_render = f"""
-                  <div class="shelf-products">{cards_html}</div>
-                  <div class="shelf-base"><span class="shelf-name-tag">NIVEL {nivel_num} • {total_caras} CARAS</span></div>
-                """
-            else:
-                shelf_render = f"""
-                  <div class="shelf-info"><span>NIVEL {nivel_num}</span><span class="shelf-caras-count">{total_caras} CARAS</span></div>
-                  <div class="shelf-products">{cards_html}</div>
-                  <div class="shelf-bottom-rail"></div>
-                """
-
-            html_niveles += f"""
-            <div class="shelf-row" data-level="{nivel_num}">
-              {shelf_render}
+            html_pasillos += f"""
+            <div class="pasillo-section" data-pasillo="{p_val}" data-lateral="{lat_val}">
+              <div class="aisle-container mode-multi" id="aisleContainer_{p_val}_{lat_val}">
+                {html_cuerpos}
+              </div>
             </div>
             """
 
-        subtitulo_cat = f'<span class="bay-subcat">{cat_predominante}</span>' if cat_predominante else ''
-
-        html_cuerpos += f"""
-        <div class="bay-column" data-module="{cuerpo_num}">
-          <div class="bay-title" title="Haz clic para ajustar a lo ancho">
-            <span class="bay-main-title">{cuerpo_nombre.upper()} 🔍</span>
-            {subtitulo_cat}
-          </div>
-          <div class="bay-shelves">
-            {html_niveles}
-          </div>
-        </div>
-        """
-
     options_marcas = "".join([f'<option value="{m}">{m}</option>' for m in todas_marcas])
     options_categorias = "".join([f'<option value="{c}">{c}</option>' for c in todas_categorias])
-    options_cuerpos = "".join([f'<option value="{k.replace("Cuerpo ", "")}">{k}</option>' for k in cuerpos.keys()])
-    options_niveles = "".join([f'<option value="{int(lvl)}">Nivel {int(lvl)}</option>' for lvl in todos_niveles])
+    options_pasillos = "".join([f'<option value="{p}">{p}</option>' for p in todos_pasillos])
+    options_laterales = "".join([f'<option value="{l}">{l}</option>' for l in todos_laterales])
 
     app_bg = t["bg_app"]
-    surface_bg = t["bg_surface"]
     card_bg = t["bg_card"]
     border_col = t["input_border"]
     text_primary = t["text_primary"]
@@ -773,7 +796,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: visible; 
         }}
 
-        /* BOTÓN FLOTANTE MODO VISTA (1 CUERPO VS MÚLTIPLE) */
         .btn-view-toggle-float {{
           position: absolute;
           top: 10px;
@@ -790,11 +812,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           cursor: pointer;
           transition: transform 0.2s ease;
         }}
-        .btn-view-toggle-float:hover {{
-          transform: scale(1.04);
-        }}
+        .btn-view-toggle-float:hover {{ transform: scale(1.04); }}
 
-        /* PANEL DESPLEGABLE EN FULLSCREEN CON ALTURA ROBUSTA */
         .fullscreen-legend-bar {{
           display: none; 
           background: {card_bg}; 
@@ -809,19 +828,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           flex-shrink: 0 !important;
         }}
 
-        .fs-header-row {{
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          width: 100%;
-        }}
-
-        .fs-controls-group {{
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }}
-
+        .fs-header-row {{ display: flex; align-items: center; justify-content: space-between; width: 100%; }}
+        .fs-controls-group {{ display: flex; align-items: center; gap: 10px; }}
         .fs-toggle-btn {{
           background: {t['accent']}1a;
           color: {t['accent']};
@@ -835,25 +843,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           align-items: center;
           gap: 6px;
         }}
-
-        .fs-collapsible-content {{
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 12px;
-          width: 100%;
-          padding-top: 4px;
-        }}
-        .fs-collapsible-content.collapsed {{
-          display: none !important;
-        }}
-        
-        .fs-cat-wrapper {{
-          display: flex; 
-          align-items: center; 
-          gap: 10px; 
-          margin-left: auto; 
-        }}
+        .fs-collapsible-content {{ display: flex; flex-wrap: wrap; align-items: center; gap: 12px; width: 100%; padding-top: 4px; }}
+        .fs-collapsible-content.collapsed {{ display: none !important; }}
+        .fs-cat-wrapper {{ display: flex; align-items: center; gap: 10px; margin-left: auto; }}
         .fs-cat-select {{
           background: {input_bg}; 
           border: 1.5px solid {border_col}; 
@@ -866,7 +858,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           min-height: 36px;
         }}
         
-        /* PANTALLA COMPLETA CON SCROLL VERTICAL HABILITADO Y VISIBLE */
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
           background: {app_bg} !important; 
           width: 100vw !important; 
@@ -878,9 +869,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden !important; 
         }}
         .aisle-wrapper:fullscreen .fullscreen-legend-bar, 
-        .aisle-wrapper:-webkit-full-screen .fullscreen-legend-bar {{
-          display: flex !important; 
-        }}
+        .aisle-wrapper:-webkit-full-screen .fullscreen-legend-bar {{ display: flex !important; }}
         .aisle-wrapper:fullscreen .zoom-layer,
         .aisle-wrapper:-webkit-full-screen .zoom-layer {{
           flex: 1 1 auto !important;
@@ -935,6 +924,15 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           align-items: flex-start; 
         }}
 
+        .pasillo-section {{
+          display: none;
+          width: 100%;
+          height: 100%;
+        }}
+        .pasillo-section.active {{
+          display: block;
+        }}
+
         .aisle-container {{ 
           display: flex; 
           flex-direction: row; 
@@ -951,7 +949,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           align-items: flex-start;
         }}
 
-        /* MODO MÚLTIPLES CUERPOS (MÁXIMO 4 POR PANTALLA EN ESCRITORIO O DISTRIBUCIÓN EXPANDIDA) */
         .aisle-container.mode-multi .bay-column {{
           flex: 1 1 calc((100% - 48px) / 4) !important; 
           min-width: 280px !important; 
@@ -959,7 +956,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           scroll-snap-align: start;
         }}
 
-        /* MODO 1 CUERPO EXPANDIDO (CADA CUERPO OCUPA EL 100% Y SE PUEDE DESLIZAR POR TODOS) */
         .aisle-container.mode-single {{
           scroll-snap-type: x mandatory !important;
         }}
@@ -997,9 +993,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           cursor: pointer;
           user-select: none;
         }}
-        .bay-title:hover {{
-          background: {t['accent']}11;
-        }}
+        .bay-title:hover {{ background: {t['accent']}11; }}
         .bay-main-title {{ font-size: 0.82rem; font-weight: 800; color: {text_primary}; letter-spacing: 0.5px; }}
         .bay-subcat {{ font-size: 0.70rem; font-weight: 600; color: #3b82f6; text-transform: uppercase; }}
         
@@ -1039,7 +1033,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
         
-        /* BLOQUES DE PRODUCTOS */
         .sku-card {{ 
           border-radius: 6px; 
           padding: 6px; 
@@ -1054,10 +1047,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           flex-shrink: 0; 
           box-shadow: 0 1px 3px rgba(0,0,0,0.15); 
         }}
-        .sku-card:hover {{
-          transform: translateY(-2px); 
-          box-shadow: 0 4px 10px rgba(0,0,0,0.25); 
-        }}
+        .sku-card:hover {{ transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.25); }}
         .sku-card.is-top {{ outline: 2.5px solid #f59e0b !important; outline-offset: -1px; }}
         .sku-header-row {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }}
         .sku-pos {{ font-size: 0.60rem; font-weight: 900; }}
@@ -1074,7 +1064,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
-        /* MODAL ENCAPSULADO CON Z-INDEX MÁXIMO GLOBAL */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
@@ -1112,38 +1101,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .m-label {{ font-weight: 600; color: {text_secondary}; }}
         .m-val {{ font-weight: 700; text-align: right; max-width: 65%; font-feature-settings: "tnum"; }}
 
-        /* RESPONSIVIDAD PARA MÓVILES */
         @media (max-width: 768px) {{
-            body, html {{ 
-              height: auto !important; 
-              overflow-y: auto !important; 
-              overflow-x: hidden !important; 
-            }}
-            .main-container {{ 
-              height: auto !important; 
-              min-height: 100vh !important; 
-              overflow-y: visible !important; 
-              padding-bottom: 25px !important;
-            }}
-            .aisle-wrapper {{ 
-              height: auto !important; 
-              min-height: fit-content !important; 
-              flex: none !important; 
-              margin-bottom: 15px !important; 
-              overflow: visible !important;
-            }}
-            .zoom-layer {{
-              height: auto !important;
-              min-height: fit-content !important;
-            }}
-            .aisle-container {{
-              height: auto !important;
-              min-height: fit-content !important;
-              overflow-y: visible !important;
-              padding: 8px 6px 40px 6px !important; 
-              touch-action: pan-x pan-y !important; 
-              gap: 10px !important; 
-            }}
+            body, html {{ height: auto !important; overflow-y: auto !important; overflow-x: hidden !important; }}
+            .main-container {{ height: auto !important; min-height: 100vh !important; overflow-y: visible !important; padding-bottom: 25px !important; }}
+            .aisle-wrapper {{ height: auto !important; min-height: fit-content !important; flex: none !important; margin-bottom: 15px !important; overflow: visible !important; }}
+            .zoom-layer {{ height: auto !important; min-height: fit-content !important; }}
+            .aisle-container {{ height: auto !important; min-height: fit-content !important; overflow-y: visible !important; padding: 8px 6px 40px 6px !important; touch-action: pan-x pan-y !important; gap: 10px !important; }}
             .nav-btn {{ display: none !important; }}
             .btn-view-toggle-float {{ display: none !important; }}
             .kpi-container {{ display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }}
@@ -1186,8 +1149,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           <div class="filter-group"><span class="filter-label">🔍 Buscar Producto</span><input type="text" id="searchInput" class="filter-input" placeholder="Nombre o EAN..."></div>
           <div class="filter-group"><span class="filter-label">🏷️ Marca</span><select id="brandSelect" class="filter-select"><option value="ALL">Todas</option>{options_marcas}</select></div>
           <div class="filter-group"><span class="filter-label">📂 Categoría</span><select id="catSelect" class="filter-select"><option value="ALL">Todas</option>{options_categorias}</select></div>
-          <div class="filter-group"><span class="filter-label">📦 Cuerpo</span><select id="baySelect" class="filter-select"><option value="ALL">Todos</option>{options_cuerpos}</select></div>
-          <div class="filter-group"><span class="filter-label">📶 Nivel</span><select id="levelSelect" class="filter-select"><option value="ALL">Todos</option>{options_niveles}</select></div>
+          <div class="filter-group"><span class="filter-label">📦 Pasillo</span><select id="pasilloSelect" class="filter-select">{options_pasillos}</select></div>
+          <div class="filter-group"><span class="filter-label">📶 Lateral</span><select id="lateralSelect" class="filter-select">{options_laterales}</select></div>
           <div class="btn-group">
             <button id="fullscreenBtn" class="btn-saas btn-fullscreen" title="Pantalla Completa">⛶ Pantalla Completa</button>
             <button id="resetBtn" class="btn-saas btn-reset">Restablecer</button>
@@ -1202,15 +1165,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'}; --bd: 1px solid {'#7c2d12' if es_oscuro else '#fdba74'};">Sin Stock</button>
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
-            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
         <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           
-          <!-- BOTÓN FLOTANTE MODO VISTA -->
           <button id="btnViewToggle" class="btn-view-toggle-float">🔲 Modo 1 Cuerpo</button>
 
           <div id="productModal" class="modal-overlay">
@@ -1262,9 +1224,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
           <button class="nav-btn nav-btn-prev" id="btnPrev" title="Cuerpo Anterior">❮</button>
           <div class="zoom-layer" id="zoomLayer">
-            <div class="aisle-container mode-multi" id="aisleContainer">
-              {html_cuerpos}
-            </div>
+            {html_pasillos}
           </div>
           <button class="nav-btn nav-btn-next" id="btnNext" title="Cuerpo Siguiente">❯</button>
         </div>
@@ -1274,7 +1234,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
       <script>
         const aisleWrapper = document.getElementById('aisleWrapper');
         const zoomLayer = document.getElementById('zoomLayer');
-        const container = document.getElementById('aisleContainer');
         const btnPrev = document.getElementById('btnPrev');
         const btnNext = document.getElementById('btnNext');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -1292,6 +1251,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         let lastTap = 0;
         let isSingleMode = false;
 
+        function getActiveContainer() {{
+          const activeSec = document.querySelector('.pasillo-section.active');
+          return activeSec ? activeSec.querySelector('.aisle-container') : null;
+        }}
+
         function updateZoom() {{
           zoomLayer.style.transform = `translate3d(${{posX}}px, ${{posY}}px, 0) scale(${{scale}})`;
         }}
@@ -1307,16 +1271,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             isSingleMode = !isSingleMode;
           }}
 
-          if (isSingleMode) {{
-            container.classList.remove('mode-multi');
-            container.classList.add('mode-single');
-            btnViewToggle.textContent = '🔳 Ver Múltiples Cuerpos';
-            fsToggleViewBtn.textContent = '🔳 Múltiples Cuerpos';
-          }} else {{
-            container.classList.remove('mode-single');
-            container.classList.add('mode-multi');
-            btnViewToggle.textContent = '🔲 Modo 1 Cuerpo';
-            fsToggleViewBtn.textContent = '🔲 1 Cuerpo';
+          const container = getActiveContainer();
+          if (container) {{
+            if (isSingleMode) {{
+              container.classList.remove('mode-multi');
+              container.classList.add('mode-single');
+              btnViewToggle.textContent = '🔳 Ver Múltiples Cuerpos';
+              fsToggleViewBtn.textContent = '🔳 Múltiples Cuerpos';
+            }} else {{
+              container.classList.remove('mode-single');
+              container.classList.add('mode-multi');
+              btnViewToggle.textContent = '🔲 Modo 1 Cuerpo';
+              fsToggleViewBtn.textContent = '🔲 1 Cuerpo';
+            }}
           }}
           scale = 1; posX = 0; posY = 0; updateZoom();
           setTimeout(updateScrollButtons, 300);
@@ -1325,11 +1292,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         btnViewToggle.addEventListener('click', () => alternarModoVista(false));
         fsToggleViewBtn.addEventListener('click', () => alternarModoVista());
 
-        // CLIC EN EL ENCABEZADO DEL CUERPO: AJUSTE HORIZONTAL DIRECTO
         document.querySelectorAll('.bay-title').forEach(titleElem => {{
           titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
-            if (bayElem) {{
+            const container = getActiveContainer();
+            if (bayElem && container) {{
               alternarModoVista(true);
               setTimeout(() => {{
                 container.scrollTop = 0;
@@ -1339,7 +1306,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           }});
         }});
 
-        // TOGGLE LEYENDA EN FULLSCREEN
         fsToggleBtn.addEventListener('click', () => {{
           const isCollapsed = fsCollapsible.classList.toggle('collapsed');
           fsToggleBtn.textContent = isCollapsed ? '📍 Leyenda y Filtros ▸' : '📍 Leyenda y Filtros ▾';
@@ -1355,7 +1321,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             const now = new Date().getTime();
             if (now - lastTap < 320 && now - lastTap > 0) {{
               const clickedBay = e.target.closest('.bay-column');
-              if (!isSingleMode && clickedBay) {{
+              const container = getActiveContainer();
+              if (!isSingleMode && clickedBay && container) {{
                 alternarModoVista(true);
                 setTimeout(() => {{
                   container.scrollTop = 0;
@@ -1399,6 +1366,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         aisleWrapper.addEventListener('touchend', () => {{ isTouching = false; }});
 
         function updateScrollButtons() {{
+          const container = getActiveContainer();
+          if (!container) return;
           requestAnimationFrame(() => {{
             const maxScroll = container.scrollWidth - container.clientWidth;
             btnPrev.disabled = container.scrollLeft <= 10;
@@ -1407,19 +1376,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
 
         btnPrev.addEventListener('click', () => {{
+          const container = getActiveContainer();
+          if (!container) return;
           const scrollStep = isSingleMode ? container.clientWidth : (container.clientWidth * 0.75);
           container.scrollBy({{ left: -scrollStep, behavior: 'smooth' }});
           setTimeout(updateScrollButtons, 350);
         }});
         
         btnNext.addEventListener('click', () => {{
+          const container = getActiveContainer();
+          if (!container) return;
           const scrollStep = isSingleMode ? container.clientWidth : (container.clientWidth * 0.75);
           container.scrollBy({{ left: scrollStep, behavior: 'smooth' }});
           setTimeout(updateScrollButtons, 350);
         }});
-        
-        container.addEventListener('scroll', updateScrollButtons);
-        window.addEventListener('resize', updateScrollButtons);
 
         fullscreenBtn.addEventListener('click', () => {{
           if (!document.fullscreenElement) {{
@@ -1449,8 +1419,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         const brandSelect = document.getElementById('brandSelect');
         const catSelect = document.getElementById('catSelect');
         const fsCatSelect = document.getElementById('fsCatSelect');
-        const baySelect = document.getElementById('baySelect');
-        const levelSelect = document.getElementById('levelSelect');
+        const pasilloSelect = document.getElementById('pasilloSelect');
+        const lateralSelect = document.getElementById('lateralSelect');
         const resetBtn = document.getElementById('resetBtn');
         const printBayBtn = document.getElementById('printBayBtn');
         const topNInput = document.getElementById('topNInput');
@@ -1458,25 +1428,32 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         let currentLegendFilter = null;
         const allBrands = Array.from(brandSelect.options).map(o => ({{val: o.value, text: o.text}}));
         const allCats = Array.from(catSelect.options).map(o => ({{val: o.value, text: o.text}}));
-        const allBays = Array.from(baySelect.options).map(o => ({{val: o.value, text: o.text}}));
-        const allLevels = Array.from(levelSelect.options).map(o => ({{val: o.value, text: o.text}}));
 
         function applyFilters() {{
           const query = searchInput.value.toLowerCase().trim();
           let selectedBrand = brandSelect.value;
           let selectedCat = catSelect.value;
-          let selectedBay = baySelect.value;
-          let selectedLevel = levelSelect.value;
+          let selectedPasillo = pasilloSelect.value;
+          let selectedLateral = lateralSelect.value;
           const topN = parseInt(topNInput.value) || 5;
+
+          // Mostrar la sección activa según Pasillo y Lateral
+          document.querySelectorAll('.pasillo-section').forEach(sec => {{
+             const p = sec.getAttribute('data-pasillo');
+             const l = sec.getAttribute('data-lateral');
+             if (p === selectedPasillo && l === selectedLateral) {{
+                 sec.classList.add('active');
+             }} else {{
+                 sec.classList.remove('active');
+             }}
+          }});
 
           let visibleSkus = new Map();
           let totalVentasFiltered = 0;
 
-          document.querySelectorAll('.sku-item').forEach(card => {{
+          document.querySelectorAll('.pasillo-section.active .sku-item').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const catjer = card.getAttribute('data-catjer') || '';
-             const bay = card.closest('.bay-column').getAttribute('data-module');
-             const level = card.closest('.shelf-row').getAttribute('data-level');
              const name = (card.getAttribute('data-name') || '').toLowerCase();
              const ean = card.getAttribute('data-ean') || '';
              const cod = card.getAttribute('data-cod');
@@ -1486,10 +1463,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
              const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
              const matchCat = (selectedCat === 'ALL' || catjer === selectedCat);
-             const matchBay = (selectedBay === 'ALL' || bay === selectedBay);
-             const matchLevel = (selectedLevel === 'ALL' || level === selectedLevel);
 
-             if (matchSearch && matchBrand && matchCat && matchBay && matchLevel) {{
+             if (matchSearch && matchBrand && matchCat) {{
                  if (!visibleSkus.has(cod)) {{
                      visibleSkus.set(cod, venta);
                      if (venta > 0) totalVentasFiltered += venta;
@@ -1511,16 +1486,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
           let availableBrands = new Set();
           let availableCats = new Set();
-          let availableBays = new Set();
-          let availableLevels = new Set();
           
           let setTot = new Set(), setBloq = new Set(), setSin = new Set(), setBajo = new Set(), setOk = new Set(), setCob = new Set(), setTop = new Set();
 
-          document.querySelectorAll('.sku-item').forEach(card => {{
+          document.querySelectorAll('.pasillo-section.active .sku-item').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const catjer = card.getAttribute('data-catjer') || '';
-             const bay = card.closest('.bay-column').getAttribute('data-module');
-             const level = card.closest('.shelf-row').getAttribute('data-level');
              const name = (card.getAttribute('data-name') || '').toLowerCase();
              const ean = card.getAttribute('data-ean') || '';
              const cat = card.getAttribute('data-cat') || '';
@@ -1534,15 +1505,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
              const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
              const matchCat = (selectedCat === 'ALL' || catjer === selectedCat);
-             const matchBay = (selectedBay === 'ALL' || bay === selectedBay);
-             const matchLevel = (selectedLevel === 'ALL' || level === selectedLevel);
 
-             const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
+             const passesStandard = matchSearch && matchBrand && matchCat;
 
-             if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
-             if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
-             if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
+             if(matchSearch && matchCat) availableBrands.add(brand);
+             if(matchSearch && matchBrand && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
 
              if(passesStandard) {{
                  setTot.add(cod);
@@ -1561,7 +1528,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                  else passesLegend = (cat === currentLegendFilter);
              }}
 
-             if (matchBrand && matchCat && matchSearch) {{
+             if (matchBrand && matchSearch) {{
                  if (currentLegendFilter) {{
                      if (passesLegend) {{
                          card.classList.remove('dimmed');
@@ -1590,8 +1557,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
           if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
           if (selectedCat !== 'ALL' && !availableCats.has(selectedCat)) selectedCat = 'ALL';
-          if (selectedBay !== 'ALL' && !availableBays.has(selectedBay)) selectedBay = 'ALL';
-          if (selectedLevel !== 'ALL' && !availableLevels.has(selectedLevel)) selectedLevel = 'ALL';
 
           brandSelect.innerHTML = '';
           allBrands.forEach(opt => {{ if(opt.val === 'ALL' || availableBrands.has(opt.val)) brandSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBrand)); }});
@@ -1605,38 +1570,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             }}
           }});
 
-          baySelect.innerHTML = '';
-          allBays.forEach(opt => {{ if(opt.val === 'ALL' || availableBays.has(opt.val)) baySelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBay)); }});
-
-          levelSelect.innerHTML = '';
-          allLevels.forEach(opt => {{ if(opt.val === 'ALL' || availableLevels.has(opt.val)) levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel)); }});
-
-          document.querySelectorAll('.bay-column').forEach(bay => {{
-            const bayNum = bay.getAttribute('data-module');
-            const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
-            const hasMatch = Array.from(bay.querySelectorAll('.sku-item')).some(card => {{
-                if (currentLegendFilter) return card.classList.contains('highlighted');
-                return !card.classList.contains('dimmed');
-            }});
-
-            const isVisible = passesBayFilter && hasMatch;
-            bay.classList.toggle('hidden', !isVisible);
-          }});
-
-          document.querySelectorAll('.shelf-row').forEach(shelf => {{
-            const shelfLevel = shelf.getAttribute('data-level');
-            const passesLevelFilter = (selectedLevel === 'ALL' || selectedLevel === shelfLevel);
-            shelf.classList.toggle('hidden', !passesLevelFilter);
-          }});
-          
           updateScrollButtons();
         }}
 
-        printBayBtn.addEventListener('click', () => {{
-            window.print();
-        }});
+        printBayBtn.addEventListener('click', () => {{ window.print(); }});
 
-        // LEYENDA
         document.querySelectorAll('.legend-chip').forEach(chip => {{
             chip.addEventListener('click', () => {{
                 const filter = chip.getAttribute('data-filter');
@@ -1654,19 +1592,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
         searchInput.addEventListener('input', applyFilters);
         brandSelect.addEventListener('change', applyFilters);
-        
-        catSelect.addEventListener('change', () => {{
-          fsCatSelect.value = catSelect.value;
-          applyFilters();
-        }});
-        
-        fsCatSelect.addEventListener('change', () => {{
-          catSelect.value = fsCatSelect.value;
-          applyFilters();
-        }});
-
-        baySelect.addEventListener('change', applyFilters);
-        levelSelect.addEventListener('change', applyFilters);
+        catSelect.addEventListener('change', () => {{ fsCatSelect.value = catSelect.value; applyFilters(); }});
+        fsCatSelect.addEventListener('change', () => {{ catSelect.value = fsCatSelect.value; applyFilters(); }});
+        pasilloSelect.addEventListener('change', applyFilters);
+        lateralSelect.addEventListener('change', applyFilters);
         topNInput.addEventListener('input', applyFilters);
         
         resetBtn.addEventListener('click', () => {{
@@ -1674,15 +1603,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
           brandSelect.innerHTML = ''; allBrands.forEach(o => brandSelect.add(new Option(o.text, o.val)));
           catSelect.innerHTML = ''; fsCatSelect.innerHTML = ''; allCats.forEach(o => {{ catSelect.add(new Option(o.text, o.val)); fsCatSelect.add(new Option(o.text, o.val)); }});
-          baySelect.innerHTML = ''; allBays.forEach(o => baySelect.add(new Option(o.text, o.val)));
-          levelSelect.innerHTML = ''; allLevels.forEach(o => levelSelect.add(new Option(o.text, o.val)));
-          brandSelect.value = 'ALL'; catSelect.value = 'ALL'; fsCatSelect.value = 'ALL'; baySelect.value = 'ALL'; levelSelect.value = 'ALL';
+          brandSelect.value = 'ALL'; catSelect.value = 'ALL'; fsCatSelect.value = 'ALL';
           topNInput.value = 5;
           alternarModoVista(false);
           applyFilters();
         }});
 
-        // MODAL PRODUCTO
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         
@@ -1719,13 +1645,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             }}
         }});
 
-        // INICIALIZACIÓN
         setTimeout(() => {{
           brandSelect.value = 'ALL';
           catSelect.value = 'ALL';
           fsCatSelect.value = 'ALL';
-          baySelect.value = 'ALL';
-          levelSelect.value = 'ALL';
           applyFilters();
         }}, 100);
       </script>
@@ -1774,10 +1697,17 @@ def cargar_todas_las_fuentes():
             df_matriz = pd.read_excel(url_planos, sheet_name=0, skiprows=2)
             df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
 
+        df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
         df_matriz['COD_REAL_Str'] = df_matriz['COD REAL'].astype(str).apply(clean_sku)
         df_matriz['COD REAL'] = df_matriz['COD_REAL_Str']
 
-        # 2. Coberturas y Stock (TCOBERT -> Material <-> Cob./días)
+        # Asegurar columnas PASILLO y LATERAL en df_matriz
+        if 'PASILLO' not in df_matriz.columns:
+            df_matriz['PASILLO'] = "1"
+        if 'LATERAL' not in df_matriz.columns:
+            df_matriz['LATERAL'] = "A"
+
+        # 2. Coberturas y Stock
         df_cob_raw = leer_tabla_por_ancla(url_coberturas, "Material", sheet_target=0, skiprows_fallback=3)
         if "Material" not in df_cob_raw.columns:
             df_cob_raw = pd.read_excel(url_coberturas, sheet_name=0, skiprows=3)
@@ -1801,7 +1731,7 @@ def cargar_todas_las_fuentes():
             df_cob['Cobertura'] = df_cob_raw[col_cob].apply(safe_float) if col_cob else -999.0
             df_cob = df_cob[df_cob['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 3. Ventas y Margen (factVentas)
+        # 3. Ventas y Margen
         df_vta_raw = leer_tabla_por_ancla(url_ventas, "Material", sheet_target=0, skiprows_fallback=2)
         df_vta = pd.DataFrame()
         col_mat_vta = 'Material' if 'Material' in df_vta_raw.columns else ('COD REAL' if 'COD REAL' in df_vta_raw.columns else None)
@@ -1816,34 +1746,31 @@ def cargar_todas_las_fuentes():
             df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p in df_vta_raw.columns else -999.0
             df_vta = df_vta[df_vta['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 4. Código de Barras (dimCodbarras -> CBARRAS / Material -> Grupo de A como G.A.)
+        # 4. Código de Barras
         df_bar_raw = leer_tabla_por_ancla(url_barras, "Material", sheet_target=0, skiprows_fallback=2)
         df_bar = pd.DataFrame()
         col_mat_bar = 'Material' if 'Material' in df_bar_raw.columns else ('COD REAL' if 'COD REAL' in df_bar_raw.columns else None)
         if col_mat_bar:
             df_bar['Material_Str'] = df_bar_raw[col_mat_bar].astype(str).apply(clean_sku)
             df_bar['EAN_Master'] = df_bar_raw['Código EAN/UPC'].astype(str).apply(clean_sku) if 'Código EAN/UPC' in df_bar_raw.columns else ""
-            
             bar_map = {str(c).strip().lower(): c for c in df_bar_raw.columns}
             col_ga_orig = bar_map.get('grupo de a', bar_map.get('grupo de artículo', None))
-            
             df_bar['G.A.'] = df_bar_raw[col_ga_orig].astype(str).apply(clean_sku) if col_ga_orig else 'SIN DATOS'
             df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 5. Links de Fotos (Links de fotos 03.09 -> SKUReferenceCode)
+        # 5. Links de Fotos
         df_fotos_raw = leer_tabla_por_ancla(url_fotos, "SKUReferenceCode", sheet_target=0, skiprows_fallback=0)
         df_fotos = pd.DataFrame()
         if not df_fotos_raw.empty:
             fotos_map = {str(c).strip().lower(): c for c in df_fotos_raw.columns}
             col_sku_foto = fotos_map.get('_skureferencecode', fotos_map.get('skureferencecode', None))
             col_link_foto = fotos_map.get('links de fotos', fotos_map.get('link', None))
-            
             if col_sku_foto and col_link_foto:
                 df_fotos['Sku_Foto_Str'] = df_fotos_raw[col_sku_foto].astype(str).apply(clean_sku)
                 df_fotos['Links de fotos'] = df_fotos_raw[col_link_foto].astype(str).str.strip()
                 df_fotos = df_fotos[df_fotos['Sku_Foto_Str'] != ""].drop_duplicates(subset=['Sku_Foto_Str'])
 
-        # 6. Nueva Jerarquía Comercial SAP (Hoja: 'NuevaJqGA' -> Columna K: CodGA, D: Depto, F: Sección, H: Categoría)
+        # 6. Nueva Jerarquía Comercial SAP
         try:
             df_sap_raw = pd.read_excel(url_jerarquia, sheet_name='NuevaJqGA', skiprows=2)
         except Exception:
@@ -1854,10 +1781,10 @@ def cargar_todas_las_fuentes():
 
         df_sap = pd.DataFrame()
         if not df_sap_raw.empty and len(df_sap_raw.columns) >= 11:
-            col_k_codga = df_sap_raw.columns[10]  # Columna K (CodGA)
-            col_d_depto = df_sap_raw.columns[3]   # Columna D (DEPARTAMENTO (2))
-            col_f_seccion = df_sap_raw.columns[5] # Columna F (SECCIÓN (3))
-            col_h_cat = df_sap_raw.columns[7]     # Columna H (CATEGORIA (4))
+            col_k_codga = df_sap_raw.columns[10]
+            col_d_depto = df_sap_raw.columns[3]
+            col_f_seccion = df_sap_raw.columns[5]
+            col_h_cat = df_sap_raw.columns[7]
             col_n_ga = df_sap_raw.columns[13] if len(df_sap_raw.columns) > 13 else df_sap_raw.columns[10]
 
             df_sap['CodGA_Str'] = df_sap_raw[col_k_codga].astype(str).apply(clean_sku)
@@ -1865,7 +1792,6 @@ def cargar_todas_las_fuentes():
             df_sap['Sección'] = df_sap_raw[col_f_seccion].fillna('SIN DATOS').astype(str).str.strip()
             df_sap['Categoría'] = df_sap_raw[col_h_cat].fillna('SIN DATOS').astype(str).str.strip()
             df_sap['Grupo de Artículo'] = df_sap_raw[col_n_ga].fillna('SIN DATOS').astype(str).str.strip()
-            
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
         # --- APLICACIÓN DE CRUCES SECUENCIALES ---
@@ -1910,7 +1836,7 @@ def cargar_todas_las_fuentes():
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
             df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
-        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS')]:
+        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS'), ('PASILLO', '1'), ('LATERAL', 'A')]:
             df_matriz[col] = df_matriz[col].fillna(val_def).astype(str).str.strip() if col in df_matriz.columns else val_def
 
         if 'Bandeja' in df_matriz.columns and 'EAN' in df_matriz.columns:
@@ -1999,7 +1925,6 @@ if df_raw is not None and not df_raw.empty:
         with col_view2:
             st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para expandirlo a lo ancho.</i></div>", unsafe_allow_html=True)
             
-        # Altura dinámica calculada
         bandeja_series = df_base.get('Bandeja', pd.Series(["1.1"]*len(df_base))).astype(str)
         niveles_extraidos = bandeja_series.str.extract(r'(\d+)\.(\d+)')[1]
         max_niveles_count = int(pd.to_numeric(niveles_extraidos, errors='coerce').fillna(6).max())
@@ -2009,7 +1934,7 @@ if df_raw is not None and not df_raw.empty:
         components.html(html_pasillo, height=altura_dinamica, scrolling=True)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO E INDEPENDIENTE) ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (CONEXIÓN CORREGIDA Y ROBUSTA) ---
     # =========================================================================
     with tab2:
         if "dash_orden" not in st.session_state:
@@ -2052,7 +1977,7 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todos":
+        if filtro_marca != "Todas":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
