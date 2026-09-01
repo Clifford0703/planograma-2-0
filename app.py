@@ -123,7 +123,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* PESTAÑAS (TABS) - VISIBILIDAD FORZADA AL 100% */
+        /* PESTAÑAS (TABS) */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
             background-color: {t["tab_container_bg"]} !important;
@@ -481,7 +481,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (CON MODAL Y Z-INDEX MÁXIMO) ---
+# --- GENERADOR DEL PLANOGRAMA (MODAL INTEGRADO EN AISLE-WRAPPER) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -963,6 +963,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-row {{ display: flex; flex-direction: column; position: relative; padding-top: 4px; }}
         .shelf-row.hidden {{ display: none !important; }}
         
+        /* DISTRIBUCIÓN EQUITATIVA Y EXPANDIDA (space-between) */
         .shelf-products {{ 
           display: flex; 
           flex-direction: row; 
@@ -995,6 +996,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
         .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
         
+        /* BLOQUES DE PRODUCTOS */
         .sku-card {{ 
           border-radius: 6px; 
           padding: 6px; 
@@ -1029,12 +1031,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
-        /* MODAL CON Z-INDEX MÁXIMO GLOBAL PARA PANTALLA COMPLETA */
+        /* MODAL ENCAPSULADO DIRECTAMENTE EN EL FULLSCREEN CON Z-INDEX MÁXIMO */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
-          width: 100vw !important; 
-          height: 100vh !important; 
+          width: 100% !important; 
+          height: 100% !important; 
           background: rgba(0,0,0,0.75) !important; 
           z-index: 2147483647 !important; 
           opacity: 0; 
@@ -1082,25 +1084,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </head>
     <body>
       <div class="main-container" id="mainContainer">
-
-        <!-- MODAL GLOBAL -->
-        <div id="productModal" class="modal-overlay">
-          <div class="modal-content" id="modalContent">
-            <span class="modal-close">&times;</span>
-            <h3 id="m-name" style="margin-top: 0; font-size: 1.05rem; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; line-height: 1.3;">Producto</h3>
-            <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod" style="font-family: monospace;"></span></div>
-            <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean" style="font-family: monospace;"></span></div>
-            <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
-            <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept"></span></div>
-            <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec"></span></div>
-            <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
-            <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga"></span></div>
-            <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
-            <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
-            <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
-            <div class="m-row" style="border-bottom: none;"><span class="m-label" style="color: #f59e0b; font-weight: 700;">★ TOP Ventas:</span><span class="m-val" id="m-top" style="color: #f59e0b; font-weight: 800;"></span></div>
-          </div>
-        </div>
 
         <div class="saas-top-bar">
           <div class="top-highlight-badge">
@@ -1150,8 +1133,28 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           </div>
         </div>
 
-        <!-- CONTENEDOR CON SCROLL -->
+        <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO DIRECTAMENTE EN EL FULLSCREEN -->
         <div class="aisle-wrapper" id="aisleWrapper">
+          
+          <!-- MODAL DENTRO DE AISLE-WRAPPER PARA QUE NUNCA QUEDE POR DETRÁS EN FULLSCREEN -->
+          <div id="productModal" class="modal-overlay">
+            <div class="modal-content" id="modalContent">
+              <span class="modal-close">&times;</span>
+              <h3 id="m-name" style="margin-top: 0; font-size: 1.05rem; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; line-height: 1.3;">Producto</h3>
+              <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod" style="font-family: monospace;"></span></div>
+              <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean" style="font-family: monospace;"></span></div>
+              <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
+              <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept"></span></div>
+              <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec"></span></div>
+              <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
+              <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga"></span></div>
+              <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
+              <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
+              <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
+              <div class="m-row" style="border-bottom: none;"><span class="m-label" style="color: #f59e0b; font-weight: 700;">★ TOP Ventas:</span><span class="m-val" id="m-top" style="color: #f59e0b; font-weight: 800;"></span></div>
+            </div>
+          </div>
+
           <div class="fullscreen-legend-bar">
             <span style="font-size: 0.80rem; font-weight: 800; color: #3b82f6;">📍 LEYENDA:</span>
             <div class="legend-chips">
@@ -1593,6 +1596,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         closeBtn.addEventListener('click', () => modal.classList.remove('active'));
         window.addEventListener('click', (e) => {{ if(e.target === modal) modal.classList.remove('active'); }});
 
+        // CERRAR MODAL CON TECLA ESCAPE
+        document.addEventListener('keydown', (e) => {{
+            if (e.key === 'Escape' && modal.classList.contains('active')) {{
+                modal.classList.remove('active');
+            }}
+        }});
+
         setTimeout(() => {{
           applyFilters();
           if (window.innerWidth <= 768) {{
@@ -1791,9 +1801,9 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_matriz, hora_lectura, None
+        return df_matriz, df_vta, hora_lectura, None
     except Exception as e:
-        return None, None, str(e)
+        return None, None, None, str(e)
 
 # --- HEADER SAAS UNIFICADO CON CRÉDITO DE AUTORÍA ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
@@ -1824,7 +1834,7 @@ with col_head3:
         header_time_placeholder = st.empty()
 
 with st.spinner("Sincronizando fuentes externas en la nube..."):
-    df_nube, info_hora, error_nube = cargar_todas_las_fuentes()
+    df_nube, df_vta_global, info_hora, error_nube = cargar_todas_las_fuentes()
 
 header_time_placeholder.markdown(f"""
     <div style="text-align: right; line-height: 1.3;">
@@ -1920,24 +1930,35 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todos":
+        if filtro_marca != "Todas":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
-        ventas_globales = df_dash_unicos['Venta_Num'].sum()
+        # 1. Ventas y SKUs en el Planograma (Filtrados)
+        ventas_plano = df_dash_unicos['Venta_Num'].sum()
         margen_global = df_dash_unicos['Margen_Num'].sum()
-        margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
-        total_skus_activos = len(df_dash_unicos)
-        promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
+        margen_pct_global = (margen_global / ventas_plano) if ventas_plano > 0 else 0
+        skus_plano = len(df_dash_unicos)
+
+        # 2. Total General de Ventas y SKUs (desde factVentas sin restricción de plano)
+        if df_vta_global is not None and not df_vta_global.empty:
+            total_venta_maestra = df_vta_global['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
+            total_skus_maestros = len(df_vta_global['Material_Str'].drop_duplicates())
+        else:
+            total_venta_maestra = ventas_plano
+            total_skus_maestros = skus_plano
+
+        pct_venta_representada = (ventas_plano / total_venta_maestra * 100) if total_venta_maestra > 0 else 100.0
+        pct_skus_representados = (skus_plano / total_skus_maestros * 100) if total_skus_maestros > 0 else 100.0
         
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #3b82f6;">
-                    <div class="fin-kpi-title"><span>Ventas Brutas Filtradas</span><span>💳</span></div>
-                    <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
-                    <div class="fin-kpi-subtitle">Ticket Promedio/SKU: S/ {promedio_venta_sku:,.2f}</div>
+                    <div class="fin-kpi-title"><span>Ventas Planograma</span><span>💳</span></div>
+                    <div class="fin-kpi-val">S/ {ventas_plano:,.2f}</div>
+                    <div class="fin-kpi-subtitle"><b>{pct_venta_representada:.1f}%</b> de la venta total (S/ {total_venta_maestra:,.2f})</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #10b981;">
                     <div class="fin-kpi-title"><span>Margen Total Bruto</span><span>📈</span></div>
@@ -1947,12 +1968,12 @@ if df_raw is not None and not df_raw.empty:
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #8b5cf6;">
                     <div class="fin-kpi-title"><span>Margen Global (%)</span><span>📊</span></div>
                     <div class="fin-kpi-val" style="color: {t['accent_purple']};">{margen_pct_global*100:.1f}%</div>
-                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta</div>
+                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta Planograma</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #fbbf24;">
-                    <div class="fin-kpi-title"><span>Surtido Activo</span><span>📦</span></div>
-                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{total_skus_activos}</div>
-                    <div class="fin-kpi-subtitle">SKUs Únicos Filtrados</div>
+                    <div class="fin-kpi-title"><span>SKUs en Planograma</span><span>📦</span></div>
+                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{skus_plano}</div>
+                    <div class="fin-kpi-subtitle"><b>{pct_skus_representados:.1f}%</b> del surtido total ({total_skus_maestros} SKUs)</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
