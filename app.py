@@ -234,27 +234,13 @@ st.markdown(f"""
             padding: 0 12px !important;
         }}
         
-        .stButton > button p, .stButton > button span, .stButton > button div {{
-            color: {t["btn_text"]} !important;
-            -webkit-text-fill-color: {t["btn_text"]} !important;
-            pointer-events: none !important;
-            font-weight: 700 !important;
-            line-height: 1 !important;
-        }}
-        
         .stButton > button:hover {{
             border-color: {t["accent"]} !important;
             color: {t["accent"]} !important;
             -webkit-text-fill-color: {t["accent"]} !important;
             background-color: {t["popover_hover"]} !important;
-            background: {t["popover_hover"]} !important;
         }}
 
-        .stButton > button:hover p, .stButton > button:hover span {{
-            color: {t["accent"]} !important;
-            -webkit-text-fill-color: {t["accent"]} !important;
-        }}
-        
         .stDownloadButton > button {{
             background-color: #10b981 !important;
             background: #10b981 !important;
@@ -265,13 +251,6 @@ st.markdown(f"""
             font-weight: 800 !important;
             box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
             cursor: pointer !important;
-        }}
-        
-        /* TABLA DE DATAFRAME */
-        [data-testid="stDataFrame"], [data-testid="stDataFrame"] > div {{
-            background-color: {t["bg_card"]} !important;
-            border: 1px solid {t["border_subtle"]} !important;
-            border-radius: 8px !important;
         }}
         
         /* TARJETAS KPIS */
@@ -352,12 +331,6 @@ st.markdown(f"""
             gap: 6px;
         }}
         
-        .stSelectbox label, .stRadio label {{
-            color: {t["text_primary"]} !important;
-            font-weight: 800 !important;
-            font-size: 0.80rem !important;
-        }}
-
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -441,7 +414,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (RESPONSIVE EN MÓVIL Y MODAL SEGURO EN FULLSCREEN) ---
+# --- GENERADOR DEL PLANOGRAMA ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -585,8 +558,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
         html_cuerpos += f"""
         <div class="bay-column" data-module="{cuerpo_num}">
-          <div class="bay-title">
-            <span class="bay-main-title">{cuerpo_nombre.upper()}</span>
+          <div class="bay-title" title="Haz clic para enfocar a todo lo ancho">
+            <span class="bay-main-title">{cuerpo_nombre.upper()} 🔍</span>
             {subtitulo_cat}
           </div>
           <div class="bay-shelves">
@@ -633,7 +606,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           height: 100vh; 
           display: flex; 
           flex-direction: column; 
-          box-sizing: border-box;
+          box-sizing: border-box; 
           overflow: hidden; 
         }}
 
@@ -793,7 +766,25 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden; 
         }}
 
-        /* NUEVO DISEÑO RESPONSIVE Y DESPLEGABLE DE LEYENDA EN PANTALLA COMPLETA */
+        /* BOTÓN FLOTANTE PARA SALIR DEL MODO ENFOQUE DE CUERPO INDIVIDUAL */
+        .btn-return-all {{
+          display: none;
+          position: absolute;
+          top: 10px;
+          left: 14px;
+          z-index: 500;
+          background: #3b82f6;
+          color: #ffffff;
+          border: none;
+          border-radius: 6px;
+          padding: 6px 14px;
+          font-weight: 800;
+          font-size: 0.76rem;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          cursor: pointer;
+        }}
+
+        /* PANEL DESPLEGABLE DE LEYENDA EN FULLSCREEN */
         .fullscreen-legend-bar {{
           display: none; 
           position: sticky; 
@@ -803,7 +794,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           background: {card_bg}; 
           border-bottom: 1px solid {t["border_subtle"]}; 
           padding: 10px 16px; 
-          min-height: 52px;
+          min-height: 50px;
           z-index: 10000; 
           backdrop-filter: blur(10px); 
           flex-direction: column;
@@ -823,7 +814,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           color: {t['accent']};
           border: 1px solid {t['accent']}44;
           font-weight: 800;
-          font-size: 0.76rem;
+          font-size: 0.78rem;
           padding: 6px 12px;
           border-radius: 6px;
           cursor: pointer;
@@ -924,11 +915,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           box-sizing: border-box; 
           align-items: flex-start;
         }}
-        
-        /* FLUJO CONTINUO DE CUERPOS */
+
+        /* MÁXIMO 4 CUERPOS EN ESCRITORIO O DISTRIBUCIÓN EXPANDIDA */
         .bay-column {{ 
-          flex: 0 0 340px; 
-          width: 340px; 
+          flex: 1 1 calc((100% - 48px) / 4); 
+          min-width: 280px; 
+          max-width: calc((100% - 48px) / 4);
           background: {card_bg}; 
           border: 1px solid {t["border_subtle"]}; 
           border-radius: 8px; 
@@ -938,6 +930,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           padding-bottom: 12px; 
           box-sizing: border-box; 
           box-shadow: {t["card_shadow"]}; 
+          transition: max-width 0.2s ease, flex 0.2s ease;
+        }}
+
+        /* CUANDO HAY MENOS DE 4 CUERPOS VISIBLES O MODO INDIVIDUAL */
+        .bay-column.expanded-single {{
+          flex: 0 0 100% !important;
+          width: 100% !important;
+          max-width: 100% !important;
         }}
         .bay-column.hidden {{ display: none !important; }}
         
@@ -950,6 +950,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           justify-content: space-between; 
           align-items: center; 
           flex-shrink: 0; 
+          cursor: pointer;
+          user-select: none;
+        }}
+        .bay-title:hover {{
+          background: {t['accent']}11;
         }}
         .bay-main-title {{ font-size: 0.82rem; font-weight: 800; color: {text_primary}; letter-spacing: 0.5px; }}
         .bay-subcat {{ font-size: 0.70rem; font-weight: 600; color: #3b82f6; text-transform: uppercase; }}
@@ -1087,7 +1092,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             .kpi-container {{ display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }}
             .kpi-card {{ min-width: unset !important; }}
             .kpi-card:last-child {{ grid-column: 1 / -1 !important; }}
-            .bay-column {{ flex: 0 0 300px !important; width: 300px !important; }}
+            .bay-column {{ flex: 0 0 88vw !important; width: 88vw !important; max-width: 88vw !important; }}
             .shelf-products {{ min-height: 70px !important; }}
             .sku-card {{ min-width: 75px !important; }}
             .sku-images-wrapper img {{ height: 70px !important; max-width: 40px !important; }}
@@ -1148,6 +1153,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           
+          <!-- BOTÓN PARA REGRESAR A VISTA DE VARIOS CUERPOS -->
+          <button id="btnReturnAll" class="btn-return-all">← Ver Todos los Cuerpos</button>
+
           <div id="productModal" class="modal-overlay">
             <div class="modal-content" id="modalContent">
               <span class="modal-close">&times;</span>
@@ -1213,13 +1221,15 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         const exitFsBtn = document.getElementById('exitFsBtn');
         const fsToggleBtn = document.getElementById('fsToggleBtn');
         const fsCollapsible = document.getElementById('fsCollapsible');
+        const btnReturnAll = document.getElementById('btnReturnAll');
         
-        let scale = 1, minScale = 0.35, maxScale = 3.5;
+        let scale = 1, minScale = 0.4, maxScale = 3.5;
         let posX = 0, posY = 0;
         let startX = 0, startY = 0;
         let initialDist = 0;
         let isTouching = false;
         let lastTap = 0;
+        let isSingleFocus = false;
 
         function updateZoom() {{
           zoomLayer.style.transform = `translate3d(${{posX}}px, ${{posY}}px, 0) scale(${{scale}})`;
@@ -1229,24 +1239,36 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
         }}
 
-        function autoFitCuerpo(targetBay) {{
-          const bay = targetBay || document.querySelector('.bay-column:not(.hidden)');
-          if (bay) {{
-            const viewportW = container.clientWidth;
-            const viewportH = container.clientHeight;
-            const bayW = bay.offsetWidth || bay.scrollWidth;
-            const bayH = bay.offsetHeight || bay.scrollHeight;
-
-            if (bayW > 0 && bayH > 0) {{
-              const scaleW = (viewportW - 16) / bayW;
-              const scaleH = (viewportH - 20) / bayH;
-              scale = Math.min(scaleW, scaleH, 1.0);
-              posX = 0;
-              posY = 0;
-              updateZoom();
-            }}
-          }}
+        function enfocarCuerpoIndividual(bayNum) {{
+          isSingleFocus = true;
+          baySelect.value = bayNum;
+          btnReturnAll.style.display = 'block';
+          scale = 1; posX = 0; posY = 0; updateZoom();
+          applyFilters();
         }}
+
+        function regresarAVistaGeneral() {{
+          isSingleFocus = false;
+          baySelect.value = 'ALL';
+          btnReturnAll.style.display = 'none';
+          scale = 1; posX = 0; posY = 0; updateZoom();
+          applyFilters();
+        }}
+
+        btnReturnAll.addEventListener('click', regresarAVistaGeneral);
+
+        // CLIC EN EL ENCABEZADO DEL CUERPO PARA EXPANDIRLO A PANTALLA COMPLETA
+        document.querySelectorAll('.bay-title').forEach(titleElem => {{
+          titleElem.addEventListener('click', (e) => {{
+            const bayElem = titleElem.closest('.bay-column');
+            if (bayElem) {{
+              const bayId = bayElem.getAttribute('data-module');
+              if (baySelect.value === 'ALL') {{
+                enfocarCuerpoIndividual(bayId);
+              }}
+            }}
+          }});
+        }});
 
         // TOGGLE PARA DESPLEGAR/OCULTAR LEYENDA EN PANTALLA COMPLETA
         fsToggleBtn.addEventListener('click', () => {{
@@ -1262,12 +1284,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               startY = e.touches[0].clientY - posY;
             }}
             const now = new Date().getTime();
-            if (now - lastTap < 300 && now - lastTap > 0) {{
-              if (scale < 0.95 || scale > 1.05) {{
-                scale = 1; posX = 0; posY = 0; updateZoom();
-              }} else {{
-                const clickedBay = e.target.closest('.bay-column');
-                autoFitCuerpo(clickedBay);
+            // DOBLE TOQUE: ENFOCA EL CUERPO O VUELVE A LA VISTA GENERAL
+            if (now - lastTap < 320 && now - lastTap > 0) {{
+              const clickedBay = e.target.closest('.bay-column');
+              if (clickedBay) {{
+                const bayId = clickedBay.getAttribute('data-module');
+                if (baySelect.value === 'ALL') {{
+                  enfocarCuerpoIndividual(bayId);
+                }} else {{
+                  regresarAVistaGeneral();
+                }}
               }}
             }}
             lastTap = now;
@@ -1288,6 +1314,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             e.preventDefault();
             const currentDist = getDistance(e.touches);
             const factor = currentDist / initialDist;
+            
+            // GESTO PELLIZCO PARA ALEJAR (ZOOM OUT): REGRESA A LA VISTA DE VARIOS CUERPOS
+            if (factor < 0.88 && isSingleFocus) {{
+              regresarAVistaGeneral();
+              isTouching = false;
+              return;
+            }}
+
             scale = Math.min(Math.max(scale * (factor > 1 ? 1.03 : 0.97), minScale), maxScale);
             initialDist = currentDist;
             updateZoom();
@@ -1305,19 +1339,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
 
         btnPrev.addEventListener('click', () => {{
-          const visibleModule = container.querySelector('.bay-column:not(.hidden)');
-          if(visibleModule) {{
-            container.scrollBy({{ left: -(visibleModule.offsetWidth + 16), behavior: 'smooth' }});
-            setTimeout(updateScrollButtons, 350);
-          }}
+          container.scrollBy({{ left: -(container.clientWidth * 0.75), behavior: 'smooth' }});
+          setTimeout(updateScrollButtons, 350);
         }});
         
         btnNext.addEventListener('click', () => {{
-          const visibleModule = container.querySelector('.bay-column:not(.hidden)');
-          if(visibleModule) {{
-            container.scrollBy({{ left: (visibleModule.offsetWidth + 16), behavior: 'smooth' }});
-            setTimeout(updateScrollButtons, 350);
-          }}
+          container.scrollBy({{ left: (container.clientWidth * 0.75), behavior: 'smooth' }});
+          setTimeout(updateScrollButtons, 350);
         }});
         
         container.addEventListener('scroll', updateScrollButtons);
@@ -1340,7 +1368,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }});
 
         document.addEventListener('fullscreenchange', () => {{
-          if (!document.fullscreenElement) fullscreenBtn.textContent = "⛶ Pantalla Completa";
+          if (!document.fullscreenElement) {{
+            fullscreenBtn.textContent = "⛶ Pantalla Completa";
+            regresarAVistaGeneral();
+          }}
           scale = 1; posX = 0; posY = 0; updateZoom();
         }});
 
@@ -1441,7 +1472,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
              if(matchSearch && matchBrand && matchCat && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
-             if(matchSearch && matchBrand && matchCat && matchLevel) availableLevels.add(level);
+             if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
              if(passesStandard) {{
                  setTot.add(cod);
@@ -1510,6 +1541,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           levelSelect.innerHTML = '';
           allLevels.forEach(opt => {{ if(opt.val === 'ALL' || availableLevels.has(opt.val)) levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel)); }});
 
+          let visibleBaysCount = 0;
           document.querySelectorAll('.bay-column').forEach(bay => {{
             const bayNum = bay.getAttribute('data-module');
             const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
@@ -1518,8 +1550,21 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 return !card.classList.contains('dimmed');
             }});
 
-            bay.classList.toggle('hidden', !(passesBayFilter && hasMatch));
+            const isVisible = passesBayFilter && hasMatch;
+            bay.classList.toggle('hidden', !isVisible);
+            if (isVisible) visibleBaysCount++;
           }});
+
+          // DISTRIBUCIÓN HORIZONTAL ADAPTATIVA: SI HAY 1 SOLO CUERPO O POCOS, SE EXPANDEN
+          document.querySelectorAll('.bay-column').forEach(bay => {{
+            if (selectedBay !== 'ALL' || visibleBaysCount === 1) {{
+              bay.classList.add('expanded-single');
+            }} else {{
+              bay.classList.remove('expanded-single');
+            }}
+          }});
+
+          btnReturnAll.style.display = (selectedBay !== 'ALL') ? 'block' : 'none';
 
           document.querySelectorAll('.shelf-row').forEach(shelf => {{
             const shelfLevel = shelf.getAttribute('data-level');
@@ -1531,15 +1576,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }}
 
         printBayBtn.addEventListener('click', () => {{
-            let currentBay = baySelect.value;
-            if (currentBay === 'ALL') {{
-                const firstVisible = document.querySelector('.bay-column:not(.hidden)');
-                if (firstVisible) {{
-                    const bayId = firstVisible.getAttribute('data-module');
-                    baySelect.value = bayId;
-                    applyFilters();
-                }}
-            }}
             window.print();
         }});
 
@@ -1572,7 +1608,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           applyFilters();
         }});
 
-        baySelect.addEventListener('change', applyFilters);
+        baySelect.addEventListener('change', () => {{
+          isSingleFocus = (baySelect.value !== 'ALL');
+          applyFilters();
+        }});
+
         levelSelect.addEventListener('change', applyFilters);
         topNInput.addEventListener('input', applyFilters);
         
@@ -1585,6 +1625,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           levelSelect.innerHTML = ''; allLevels.forEach(o => levelSelect.add(new Option(o.text, o.val)));
           brandSelect.value = 'ALL'; catSelect.value = 'ALL'; fsCatSelect.value = 'ALL'; baySelect.value = 'ALL'; levelSelect.value = 'ALL';
           topNInput.value = 5;
+          isSingleFocus = false;
+          btnReturnAll.style.display = 'none';
           scale = 1; posX = 0; posY = 0; updateZoom();
           applyFilters();
         }});
@@ -1594,7 +1636,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         const closeBtn = document.querySelector('.modal-close');
         
         document.querySelectorAll('.sku-item').forEach(card => {{
-            card.addEventListener('click', () => {{
+            card.addEventListener('click', (e) => {{
+                e.stopPropagation();
                 document.getElementById('m-name').textContent = card.getAttribute('data-name');
                 document.getElementById('m-cod').textContent = card.getAttribute('data-cod');
                 document.getElementById('m-ean').textContent = card.getAttribute('data-ean');
@@ -1625,13 +1668,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             }}
         }});
 
-        // INICIALIZACIÓN: Todos los filtros arrancan en "Todos" sin forzar Cuerpo 1
+        // INICIALIZACIÓN: Todos los filtros arrancan en "Todos"
         setTimeout(() => {{
           brandSelect.value = 'ALL';
           catSelect.value = 'ALL';
           fsCatSelect.value = 'ALL';
           baySelect.value = 'ALL';
           levelSelect.value = 'ALL';
+          btnReturnAll.style.display = 'none';
           applyFilters();
         }}, 100);
       </script>
@@ -1773,7 +1817,7 @@ def cargar_todas_las_fuentes():
             
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- APLICACIÓN DE CRUCES SECUENCIALES ---
+        # --- APLICACIÓN DE CRUCES SECUENCIALES ORIGINALES ---
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
