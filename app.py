@@ -99,7 +99,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE Y BLOQUEO DE SCROLL EN MODAL
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -295,6 +295,25 @@ st.markdown(f"""
             box-shadow: {t["card_shadow"]};
         }}
 
+        /* CONTENEDOR CON BARRA DE DESPLAZAMIENTO NATIVA TRADICIONAL */
+        .chart-scroll-wrapper {{
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 8px;
+        }}
+        .chart-scroll-wrapper::-webkit-scrollbar {{
+            height: 8px;
+        }}
+        .chart-scroll-wrapper::-webkit-scrollbar-track {{
+            background: {t["bg_app"]};
+            border-radius: 4px;
+        }}
+        .chart-scroll-wrapper::-webkit-scrollbar-thumb {{
+            background: {t["accent"]};
+            border-radius: 4px;
+        }}
+
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -392,7 +411,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df['Lateral_Val'] = df[lateral_col].astype(str).str.strip().str.upper() if lateral_col else "A"
 
     bandeja_str = df.get('Bandeja', pd.Series(["1.1"]*len(df))).astype(str)
-    df[['Cuerpo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')
+    df[['Cuerpo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0:2]
     df['Cuerpo_Ord'] = pd.to_numeric(df['Cuerpo_Ord'], errors='coerce').fillna(1)
     df['Nivel_Num'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
 
@@ -1019,13 +1038,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
-        /* MODAL CON IMAGEN INTEGRADA */
+        /* MODAL PERFECTAMENTE CENTRADO Y BLOQUEO DE FONDO EN VISTA NORMAL Y FULLSCREEN */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
-          width: 100% !important; 
-          height: 100% !important; 
-          background: rgba(0,0,0,0.75) !important; 
+          width: 100vw !important; 
+          height: 100vh !important; 
+          background: rgba(0,0,0,0.78) !important; 
           z-index: 2147483647 !important; 
           opacity: 0; 
           pointer-events: none; 
@@ -1033,22 +1052,25 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           display: flex !important; 
           align-items: center !important; 
           justify-content: center !important; 
-          padding: 16px !important; 
+          padding: 20px !important; 
           backdrop-filter: blur(6px); 
+          overflow: hidden !important;
         }}
         .modal-overlay.active {{ opacity: 1 !important; pointer-events: auto !important; }}
+        
         .modal-content {{ 
           background: {card_bg} !important; 
           color: {text_primary} !important; 
           padding: 24px !important; 
           border-radius: 12px !important; 
           width: 90% !important; 
-          max-width: 450px !important; 
-          max-height: 90vh !important; 
+          max-width: 440px !important; 
+          max-height: 85vh !important; 
           overflow-y: auto !important; 
           border: 1.5px solid {t["accent"]} !important; 
-          box-shadow: 0 25px 50px rgba(0,0,0,0.5) !important; 
+          box-shadow: 0 25px 50px rgba(0,0,0,0.6) !important; 
           position: relative !important; 
+          margin: auto !important;
           z-index: 2147483647 !important; 
         }}
         .modal-close {{ position: absolute; top: 12px; right: 16px; font-size: 1.5rem; cursor: pointer; color: {text_secondary}; font-weight: 700; }}
@@ -1153,7 +1175,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
             <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
@@ -1606,7 +1628,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           applyFilters();
         }});
 
-        // MODAL DE DETALLE CON IMAGEN
+        // MODAL DE DETALLE CON BLOQUEO TOTAL DE FONDO Y CENTRADO
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         const modalImg = document.getElementById('m-img');
@@ -1646,14 +1668,21 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
                 modal.classList.add('active');
+                document.body.style.overflow = 'hidden';
             }});
         }});
-        closeBtn.addEventListener('click', () => modal.classList.remove('active'));
-        window.addEventListener('click', (e) => {{ if(e.target === modal) modal.classList.remove('active'); }});
+        
+        function closeModal() {{
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }}
+
+        closeBtn.addEventListener('click', closeModal);
+        window.addEventListener('click', (e) => {{ if(e.target === modal) closeModal(); }});
 
         document.addEventListener('keydown', (e) => {{
             if (e.key === 'Escape' && modal.classList.contains('active')) {{
-                modal.classList.remove('active');
+                closeModal();
             }}
         }});
 
@@ -1945,7 +1974,7 @@ if df_raw is not None and not df_raw.empty:
         components.html(html_pasillo, height=altura_dinamica, scrolling=True)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO E INDEPENDIENTE) ---
     # =========================================================================
     with tab2:
         if "dash_orden" not in st.session_state:
@@ -1988,7 +2017,7 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todas":
+        if filtro_marca != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
@@ -2036,7 +2065,7 @@ if df_raw is not None and not df_raw.empty:
         
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
-        # --- NIVEL 2: GRÁFICOS OPERATIVOS (MÁXIMO 8 COLUMNAS Y SLIDER CON SCROLL) ---
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS (MÁXIMO 5 COLUMNAS VISIBLES CON SCROLL HORIZONTAL TRADICIONAL) ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
@@ -2086,7 +2115,6 @@ if df_raw is not None and not df_raw.empty:
                 SKUs_Total=('COD REAL', 'count')
             ).reset_index()
 
-            # Prevenir ValueError y conflictos de indexación
             if not ventas_cuerpo.empty:
                 ventas_cuerpo['Cuerpo_Label_Simple'] = [
                     f"P{row['Pasillo_Key']} [{row['Lateral_Key']}] • C{int(row['Cuerpo_Num'])}" 
@@ -2146,39 +2174,36 @@ if df_raw is not None and not df_raw.empty:
                 ), secondary_y=True
             )
 
-            total_cols = len(ventas_cuerpo)
-            mostrar_slider = total_cols > 8
-            rango_x = [-0.5, 7.5] if mostrar_slider else None
+            # Ancho dinámico para que se muestren exactamente máximo 5 columnas en la vista inicial
+            num_cols = len(ventas_cuerpo)
+            ancho_grafico = max(650, int(num_cols * 130))
 
             fig.update_layout(
+                width=ancho_grafico,
                 paper_bgcolor='rgba(0,0,0,0)', 
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
                 hoverlabel=dict(bgcolor=t["bg_surface"], font_size=12, font_family="Inter"),
                 legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
-                margin=dict(t=30, b=65 if mostrar_slider else 35, l=10, r=10),
+                margin=dict(t=30, b=30, l=10, r=10),
                 xaxis=dict(
                     showgrid=False, 
                     color=t["plotly_text"], 
                     tickfont=dict(size=10, weight='bold', color=t["plotly_text"]),
-                    tickangle=0,
-                    range=rango_x,
-                    autorange=False if mostrar_slider else True,
-                    rangeslider=dict(
-                        visible=mostrar_slider,
-                        thickness=0.045,
-                        bgcolor=t["bg_surface"],
-                        yaxis=dict(rangemode="match")
-                    ) if mostrar_slider else dict(visible=False)
+                    tickangle=0
                 ),
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["plotly_text"], zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color=t["accent_green"], zeroline=False)
             )
             
-            fig.update_xaxes(fixedrange=False)
+            fig.update_xaxes(fixedrange=True)
             fig.update_yaxes(fixedrange=True)
 
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            # Contenedor con barra desplazadora horizontal simple y tradicional
+            st.markdown('<div class="chart-scroll-wrapper">', unsafe_allow_html=True)
+            st.plotly_chart(fig, use_container_width=False, config={'displayModeBar': False, 'scrollZoom': False})
+            st.markdown('</div>', unsafe_allow_html=True)
+
             st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
             
         with col_graf_der:
