@@ -2081,7 +2081,6 @@ if df_raw is not None and not df_raw.empty:
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             
-            # Barras de Ventas con Tooltip ancho que evita recortes (como "Café y Complementos")
             fig.add_trace(
                 go.Bar(
                     x=ventas_cuerpo['Cuerpo_Label_Simple'], 
@@ -2117,7 +2116,7 @@ if df_raw is not None and not df_raw.empty:
                 paper_bgcolor='rgba(0,0,0,0)', 
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
-                hoverlabel=dict(bgcolor=t["bg_surface"], font_size=12, font_family="Inter"), # Tooltip ancho y claro que no corta texto
+                hoverlabel=dict(bgcolor=t["bg_surface"], font_size=12, font_family="Inter"),
                 legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
                 margin=dict(t=30, b=50, l=10, r=10),
                 xaxis=dict(
@@ -2125,11 +2124,11 @@ if df_raw is not None and not df_raw.empty:
                     color=t["plotly_text"], 
                     tickfont=dict(size=10, weight='bold', color=t["plotly_text"]),
                     tickangle=0,
-                    range=[-0.5, 6.5],  # Muestra exactamente las primeras 7 columnas por defecto
+                    range=[-0.5, 6.5],
                     autorange=False,
                     rangeslider=dict(
                         visible=True, 
-                        thickness=0.04,  # Barra desplazadora delgada inferior
+                        thickness=0.04,
                         bgcolor=t["bg_surface"]
                     )
                 ),
@@ -2137,9 +2136,9 @@ if df_raw is not None and not df_raw.empty:
                 yaxis2=dict(title="Margen (%)", showgrid=False, color=t["accent_green"], zeroline=False)
             )
             
-            fig.update_xaxes(fixedrange=False)
+            fig.update_xaxes(fixedrange=True)
             fig.update_yaxes(fixedrange=True)
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False, 'scrollZoom': False})
             st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
             
         with col_graf_der:
