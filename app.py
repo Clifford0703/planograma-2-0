@@ -330,6 +330,12 @@ st.markdown(f"""
             gap: 6px;
         }}
         
+        .stSelectbox label, .stRadio label {{
+            color: {t["text_primary"]} !important;
+            font-weight: 800 !important;
+            font-size: 0.80rem !important;
+        }}
+
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -447,7 +453,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     html_cuerpos = ""
     for cuerpo_nombre, niveles_dict in sorted(cuerpos.items()):
         cuerpo_num = cuerpo_nombre.replace("Cuerpo ", "").strip()
-        # Ordenar claves numéricamente por nivel de manera descendente
         niveles_ordenados = sorted(niveles_dict.keys(), key=lambda x: int(str(x).split('.')[-1]) if str(x).replace('.','').isdigit() else 1, reverse=True)
         html_niveles = ""
         
@@ -1301,7 +1306,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         btnViewToggle.addEventListener('click', () => alternarModoVista(false));
         fsToggleViewBtn.addEventListener('click', () => alternarModoVista());
 
-        // CLIC EN EL ENCABEZADO DEL CUERPO: AJUSTE HORIZONTAL DIRECTO SIN SALTO VERTICAL
+        // CLIC EN EL TÍTULO DEL CUERPO: AJUSTE HORIZONTAL DIRECTO
         document.querySelectorAll('.bay-title').forEach(titleElem => {{
           titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
@@ -1315,7 +1320,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           }});
         }});
 
-        // TOGGLE PARA DESPLEGAR/OCULTAR LEYENDA EN PANTALLA COMPLETA
+        // TOGGLE LEYENDA EN FULLSCREEN
         fsToggleBtn.addEventListener('click', () => {{
           const isCollapsed = fsCollapsible.classList.toggle('collapsed');
           fsToggleBtn.textContent = isCollapsed ? '📍 Leyenda y Filtros ▸' : '📍 Leyenda y Filtros ▾';
@@ -1516,7 +1521,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchCat && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
@@ -1892,9 +1897,9 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_matriz, hora_lectura, None
+        return df_matriz, df_vta, hora_lectura, None
     except Exception as e:
-        return None, None, str(e)
+        return None, None, None, str(e)
 
 # --- HEADER SAAS UNIFICADO CON CRÉDITO DE AUTORÍA ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
@@ -1925,7 +1930,7 @@ with col_head3:
         header_time_placeholder = st.empty()
 
 with st.spinner("Sincronizando fuentes externas en la nube..."):
-    df_nube, info_hora, error_nube = cargar_todas_las_fuentes()
+    df_nube, df_vta_global, info_hora, error_nube = cargar_todas_las_fuentes()
 
 header_time_placeholder.markdown(f"""
     <div style="text-align: right; line-height: 1.3;">
@@ -1974,11 +1979,11 @@ if df_raw is not None and not df_raw.empty:
         with col_view2:
             st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para expandirlo a lo ancho.</i></div>", unsafe_allow_html=True)
             
-        # Cálculo dinámico de la altura del componente según el número máximo de niveles presentes
+        # Cálculo dinámico basado en los niveles reales del DataFrame
         bandeja_series = df_base.get('Bandeja', pd.Series(["1.1"]*len(df_base))).astype(str)
         niveles_extraidos = bandeja_series.str.extract(r'(\d+)\.(\d+)')[1]
-        max_niveles_count = pd.to_numeric(niveles_extraidos, errors='coerce').fillna(6).max()
-        altura_dinamica = int(max(950, 220 + max_niveles_count * 135))
+        max_niveles_count = int(pd.to_numeric(niveles_extraidos, errors='coerce').fillna(6).max())
+        altura_dinamica = max(950, 240 + max_niveles_count * 140)
 
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma, es_oscuro=es_oscuro)
         components.html(html_pasillo, height=altura_dinamica, scrolling=True)
@@ -2033,18 +2038,27 @@ if df_raw is not None and not df_raw.empty:
 
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
-        ventas_globales = df_dash_unicos['Venta_Num'].sum()
+        ventas_plano = df_dash_unicos['Venta_Num'].sum()
         margen_global = df_dash_unicos['Margen_Num'].sum()
-        margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
-        total_skus_activos = len(df_dash_unicos)
-        promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
+        margen_pct_global = (margen_global / ventas_plano) if ventas_plano > 0 else 0
+        skus_plano = len(df_dash_unicos)
+
+        if df_vta_global is not None and not df_vta_global.empty:
+            total_venta_maestra = df_vta_global['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
+            total_skus_maestros = len(df_vta_global['Material_Str'].drop_duplicates())
+        else:
+            total_venta_maestra = ventas_plano
+            total_skus_maestros = skus_plano
+
+        pct_venta_representada = (ventas_plano / total_venta_maestra * 100) if total_venta_maestra > 0 else 100.0
+        pct_skus_representados = (skus_plano / total_skus_maestros * 100) if total_skus_maestros > 0 else 100.0
         
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #3b82f6;">
-                    <div class="fin-kpi-title"><span>Ventas Brutas Filtradas</span><span>💳</span></div>
-                    <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
-                    <div class="fin-kpi-subtitle">Ticket Promedio/SKU: S/ {promedio_venta_sku:,.2f}</div>
+                    <div class="fin-kpi-title"><span>Ventas Planograma</span><span>💳</span></div>
+                    <div class="fin-kpi-val">S/ {ventas_plano:,.2f}</div>
+                    <div class="fin-kpi-subtitle"><b>{pct_venta_representada:.1f}%</b> de la venta total (S/ {total_venta_maestra:,.2f})</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #10b981;">
                     <div class="fin-kpi-title"><span>Margen Total Bruto</span><span>📈</span></div>
@@ -2054,12 +2068,12 @@ if df_raw is not None and not df_raw.empty:
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #8b5cf6;">
                     <div class="fin-kpi-title"><span>Margen Global (%)</span><span>📊</span></div>
                     <div class="fin-kpi-val" style="color: {t['accent_purple']};">{margen_pct_global*100:.1f}%</div>
-                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta</div>
+                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta Planograma</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #fbbf24;">
-                    <div class="fin-kpi-title"><span>Surtido Activo</span><span>📦</span></div>
-                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{total_skus_activos}</div>
-                    <div class="fin-kpi-subtitle">SKUs Únicos Filtrados</div>
+                    <div class="fin-kpi-title"><span>SKUs en Planograma</span><span>📦</span></div>
+                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{skus_plano}</div>
+                    <div class="fin-kpi-subtitle"><b>{pct_skus_representados:.1f}%</b> del surtido total ({total_skus_maestros} SKUs)</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -2428,7 +2442,7 @@ if df_raw is not None and not df_raw.empty:
             )
             st.markdown("</div>", unsafe_allow_html=True)
             
-        st.dataframe(df_rep[cols_to_show], use_keyword=False, use_container_width=True, hide_index=True)
+        st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     # =========================================================================
