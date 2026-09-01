@@ -126,7 +126,7 @@ st.markdown(f"""
         /* PESTAÑAS (TABS) */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
-            background-color: {t["bg_card"]} !important;
+            background-color: {t["tab_container_bg"]} !important;
             padding: 6px !important;
             border-radius: 8px !important;
             border: 1.5px solid {t["border_subtle"]} !important;
@@ -134,40 +134,58 @@ st.markdown(f"""
         }}
         
         .stTabs [data-baseweb="tab"] {{
-            height: 38px !important;
+            height: 40px !important;
             padding: 0 20px !important;
             border-radius: 6px !important;
             font-weight: 800 !important;
-            font-size: 0.86rem !important;
+            font-size: 0.88rem !important;
             background-color: {t["tab_inactive_bg"]} !important;
-            color: {t["tab_inactive_text"]} !important;
-            border: 1px solid {t["border_subtle"]} !important;
+            border: 1.5px solid {t["tab_inactive_border"]} !important;
             opacity: 1 !important;
+            transition: all 0.2s ease !important;
         }}
         
+        .stTabs [data-baseweb="tab"],
+        .stTabs [data-baseweb="tab"] *,
         .stTabs [data-baseweb="tab"] p,
         .stTabs [data-baseweb="tab"] span,
         .stTabs [data-baseweb="tab"] div,
-        .stTabs [data-baseweb="tab"] * {{
+        .stTabs [data-baseweb="tab"] [data-testid="stMarkdownContainer"] p {{
             color: {t["tab_inactive_text"]} !important;
             -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
             font-weight: 800 !important;
         }}
         
-        .stTabs [aria-selected="true"] {{
+        .stTabs [aria-selected="true"],
+        .stTabs [data-baseweb="tab"][aria-selected="true"] {{
             background-color: {t["accent"]} !important;
             background: {t["accent"]} !important;
-            color: #ffffff !important;
             border-color: {t["accent"]} !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
         }}
         
+        .stTabs [aria-selected="true"] *,
         .stTabs [aria-selected="true"] p,
         .stTabs [aria-selected="true"] span,
         .stTabs [aria-selected="true"] div,
-        .stTabs [aria-selected="true"] * {{
+        .stTabs [aria-selected="true"] [data-testid="stMarkdownContainer"] p {{
             color: #ffffff !important;
             -webkit-text-fill-color: #ffffff !important;
             font-weight: 900 !important;
+        }}
+        
+        /* OPCIONES DE RADIO */
+        [data-testid="stRadio"],
+        [data-testid="stRadio"] *,
+        [data-testid="stRadio"] label,
+        [data-testid="stRadio"] p,
+        [data-testid="stRadio"] span,
+        [data-testid="stRadio"] div,
+        [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p,
+        label[data-baseweb="radio"] * {{
+            color: {t["text_primary"]} !important;
+            -webkit-text-fill-color: {t["text_primary"]} !important;
+            font-weight: 700 !important;
         }}
         
         /* SELECTBOXES */
@@ -848,7 +866,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           min-height: 36px;
         }}
         
-        /* SOPORTE FULLSCREEN CON DESPLAZAMIENTO VERTICAL HABILITADO */
+        /* PANTALLA COMPLETA CON SCROLL VERTICAL HABILITADO */
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
           background: {app_bg} !important; 
           width: 100vw !important; 
@@ -874,9 +892,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .aisle-wrapper:-webkit-full-screen .aisle-container {{
           flex: 1 1 auto !important;
           height: 100% !important;
+          max-height: 100% !important;
           overflow-y: auto !important;
           overflow-x: auto !important;
-          padding-bottom: 70px !important;
+          padding-bottom: 80px !important;
         }}
 
         .nav-btn {{ 
@@ -931,7 +950,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           align-items: flex-start;
         }}
 
-        /* MODO MÚLTIPLES CUERPOS (MÁXIMO 4 POR PANTALLA EN ESCRITORIO O DISTRIBUCIÓN EXPANDIDA) */
+        /* MODO MÚLTIPLES CUERPOS (MÁXIMO 4 POR PANTALLA EN ESCRITORIO) */
         .aisle-container.mode-multi .bay-column {{
           flex: 1 1 calc((100% - 48px) / 4) !important; 
           min-width: 280px !important; 
@@ -939,7 +958,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           scroll-snap-align: start;
         }}
 
-        /* MODO 1 CUERPO EXPANDIDO (CADA CUERPO OCUPA EL 100% Y SE PUEDE DESLIZAR POR TODOS) */
+        /* MODO 1 CUERPO EXPANDIDO */
         .aisle-container.mode-single {{
           scroll-snap-type: x mandatory !important;
         }}
@@ -957,8 +976,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           border-radius: 8px; 
           display: flex; 
           flex-direction: column; 
-          height: auto; 
-          min-height: fit-content;
+          height: fit-content; 
           padding-bottom: 12px; 
           box-sizing: border-box; 
           box-shadow: {t["card_shadow"]}; 
@@ -1306,7 +1324,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         btnViewToggle.addEventListener('click', () => alternarModoVista(false));
         fsToggleViewBtn.addEventListener('click', () => alternarModoVista());
 
-        // CLIC EN EL TÍTULO DEL CUERPO: AJUSTE HORIZONTAL DIRECTO
+        // CLIC EN EL ENCABEZADO DEL CUERPO: AJUSTE HORIZONTAL DIRECTO
         document.querySelectorAll('.bay-title').forEach(titleElem => {{
           titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
@@ -1980,7 +1998,7 @@ if df_raw is not None and not df_raw.empty:
         with col_view2:
             st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para expandirlo a lo ancho.</i></div>", unsafe_allow_html=True)
             
-        # Altura calculada según los niveles reales
+        # Cálculo dinámico basado en los niveles reales del DataFrame
         bandeja_series = df_base.get('Bandeja', pd.Series(["1.1"]*len(df_base))).astype(str)
         niveles_extraidos = bandeja_series.str.extract(r'(\d+)\.(\d+)')[1]
         max_niveles_count = int(pd.to_numeric(niveles_extraidos, errors='coerce').fillna(6).max())
@@ -2033,7 +2051,7 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todas":
+        if filtro_marca != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
