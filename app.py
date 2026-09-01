@@ -330,12 +330,6 @@ st.markdown(f"""
             gap: 6px;
         }}
         
-        .stSelectbox label, .stRadio label {{
-            color: {t["text_primary"]} !important;
-            font-weight: 800 !important;
-            font-size: 0.80rem !important;
-        }}
-
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -426,7 +420,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df['TieneOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').notna()
     df['NumOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').fillna(999999)
     
-    # Mapeo de columnas PASILLO y LATERAL
     pasillo_col = 'PASILLO' if 'PASILLO' in df.columns else ('Pasillo' if 'Pasillo' in df.columns else None)
     lateral_col = 'LATERAL' if 'LATERAL' in df.columns else ('Lateral' if 'Lateral' in df.columns else None)
     
@@ -600,8 +593,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
     options_marcas = "".join([f'<option value="{m}">{m}</option>' for m in todas_marcas])
     options_categorias = "".join([f'<option value="{c}">{c}</option>' for c in todas_categorias])
-    options_pasillos = "".join([f'<option value="{p}">{p}</option>' for p in todos_pasillos])
-    options_laterales = "".join([f'<option value="{l}">{l}</option>' for l in todos_laterales])
+    options_pasillos = "".join([f'<option value="{p}">Pasillo {p}</option>' for p in todos_pasillos])
+    options_laterales = "".join([f'<option value="{l}">Lateral {l}</option>' for l in todos_laterales])
 
     app_bg = t["bg_app"]
     card_bg = t["bg_card"]
@@ -1028,11 +1021,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .fleje-ean {{ font-weight: 600; font-family: monospace; }}
         .fleje-caras {{ font-weight: 800; color: #3b82f6; }}
         
-        .alerta-bloqueado .sku-images-wrapper img {{ filter: grayscale(100%) opacity(0.4); }}
-        .alerta-sinstock .sku-images-wrapper img {{ filter: drop-shadow(0 0 8px #ef4444); }}
-        .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
-        .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
-        
         .sku-card {{ 
           border-radius: 6px; 
           padding: 6px; 
@@ -1437,7 +1425,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           let selectedLateral = lateralSelect.value;
           const topN = parseInt(topNInput.value) || 5;
 
-          // Mostrar la sección activa según Pasillo y Lateral
           document.querySelectorAll('.pasillo-section').forEach(sec => {{
              const p = sec.getAttribute('data-pasillo');
              const l = sec.getAttribute('data-lateral');
@@ -1701,7 +1688,6 @@ def cargar_todas_las_fuentes():
         df_matriz['COD_REAL_Str'] = df_matriz['COD REAL'].astype(str).apply(clean_sku)
         df_matriz['COD REAL'] = df_matriz['COD_REAL_Str']
 
-        # Asegurar columnas PASILLO y LATERAL en df_matriz
         if 'PASILLO' not in df_matriz.columns:
             df_matriz['PASILLO'] = "1"
         if 'LATERAL' not in df_matriz.columns:
@@ -1934,11 +1920,11 @@ if df_raw is not None and not df_raw.empty:
         components.html(html_pasillo, height=altura_dinamica, scrolling=True)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (CONEXIÓN CORREGIDA Y ROBUSTA) ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO E INDEPENDIENTE) ---
     # =========================================================================
     with tab2:
         if "dash_orden" not in st.session_state:
-            st.session_state.dash_orden = "Secuencial (Cuerpo 1..N)"
+            st.session_state.dash_orden = "Secuencial"
         if "dash_analizar" not in st.session_state:
             st.session_state.dash_analizar = "Categoría"
 
@@ -2025,66 +2011,74 @@ if df_raw is not None and not df_raw.empty:
         
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
-        # --- NIVEL 2: GRÁFICOS OPERATIVOS ---
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS (JERARQUÍA ESTRICTA PASILLO -> LATERAL -> CUERPO) ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
-            h_c1, h_c2 = st.columns([6.5, 3.5])
+            h_c1, h_c2 = st.columns([5.2, 4.8])
             with h_c1:
                 st.markdown(f"""
                     <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px;">
-                        📈 Rendimiento Comercial por Cuerpo <span style="font-size: 0.68rem; color: {t['text_secondary']}; font-weight: 700;">(VENTAS vs MARGEN)</span>
+                        📈 Rendimiento por Pasillo / Lateral / Cuerpo <span style="font-size: 0.68rem; color: {t['text_secondary']}; font-weight: 700;">(VENTAS vs MARGEN)</span>
                     </div>
                 """, unsafe_allow_html=True)
             with h_c2:
                 b_s, b_v, b_m = st.columns(3)
                 with b_s:
-                    if st.button("🔢", key="btn_ord_seq", help="Secuencial", use_container_width=True):
-                        st.session_state.dash_orden = "Secuencial (Cuerpo 1..N)"
+                    if st.button("🔢", key="btn_ord_seq", help="Orden Secuencial", use_container_width=True):
+                        st.session_state.dash_orden = "Secuencial"
                         st.rerun()
                 with b_v:
                     if st.button("💰", key="btn_ord_ven", help="Mayor a Menor Venta", use_container_width=True):
-                        st.session_state.dash_orden = "Mayor a Menor Venta"
+                        st.session_state.dash_orden = "Mayor Venta"
                         st.rerun()
                 with b_m:
                     if st.button("📈", key="btn_ord_mar", help="Mayor Margen (%)", use_container_width=True):
-                        st.session_state.dash_orden = "Mayor Margen (%)"
+                        st.session_state.dash_orden = "Mayor Margen"
                         st.rerun()
 
             st.markdown(f'<div class="dash-card" style="margin-top: 4px;">', unsafe_allow_html=True)
             
+            p_col = 'PASILLO' if 'PASILLO' in df_dash_base.columns else 'Pasillo'
+            l_col = 'LATERAL' if 'LATERAL' in df_dash_base.columns else 'Lateral'
+            
+            df_dash_base['Pasillo_Key'] = df_dash_base[p_col].astype(str).str.strip().str.upper() if p_col else "1"
+            df_dash_base['Lateral_Key'] = df_dash_base[l_col].astype(str).str.strip().str.upper() if l_col else "A"
+            
             bandeja_str = df_dash_base.get('Bandeja', pd.Series(["1.1"]*len(df_dash_base))).astype(str)
-            df_dash_base['Cuerpo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
-            df_dash_base['Cuerpo_Ord'] = pd.to_numeric(df_dash_base['Cuerpo_Ord'], errors='coerce').fillna(1)
+            df_dash_base['Cuerpo_Num'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
+            df_dash_base['Cuerpo_Num'] = pd.to_numeric(df_dash_base['Cuerpo_Num'], errors='coerce').fillna(1)
             
-            df_sku_cuerpo = df_dash_base.drop_duplicates(subset=['COD REAL', 'Cuerpo_Ord']).copy()
+            df_sku_cuerpo = df_dash_base.drop_duplicates(subset=['COD REAL', 'Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num']).copy()
             
-            cat_por_cuerpo = df_sku_cuerpo.groupby('Cuerpo_Ord')['Categoría'].agg(
+            cat_por_bloque = df_sku_cuerpo.groupby(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num'])['Categoría'].agg(
                 lambda x: max(set([str(i) for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]) > 0 else ""
             ).to_dict()
             
-            ventas_cuerpo = df_sku_cuerpo.groupby('Cuerpo_Ord').agg(
+            ventas_cuerpo = df_sku_cuerpo.groupby(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num']).agg(
                 Venta_Total=('Venta_Num', 'sum'),
                 Margen_Total=('Margen_Num', 'sum'),
                 SKUs_Total=('COD REAL', 'count')
             ).reset_index()
             
-            def crear_etiqueta_eje(c_num):
-                cat_nombre = cat_por_cuerpo.get(c_num, "")
-                if cat_nombre and len(cat_nombre) > 14:
-                    cat_nombre = cat_nombre[:12] + ".."
-                return f"Cuerpo {int(c_num)}<br><sub>{cat_nombre}</sub>" if cat_nombre else f"Cuerpo {int(c_num)}"
+            def crear_etiqueta_jerarquica(row):
+                p = row['Pasillo_Key']
+                l = row['Lateral_Key']
+                c = int(row['Cuerpo_Num'])
+                cat = cat_por_bloque.get((p, l, row['Cuerpo_Num']), "")
+                if cat and len(cat) > 10: cat = cat[:8] + ".."
+                return f"P{p} [{l}] • C{c}<br><sub>{cat}</sub>" if cat else f"P{p} [{l}] • C{c}"
 
-            ventas_cuerpo['Cuerpo_Label'] = ventas_cuerpo['Cuerpo_Ord'].apply(crear_etiqueta_eje)
+            ventas_cuerpo['Cuerpo_Label'] = ventas_cuerpo.apply(crear_etiqueta_jerarquica, axis=1)
             ventas_cuerpo['Margen_Pct'] = ventas_cuerpo.apply(
                 lambda row: row['Margen_Total'] / row['Venta_Total'] if row['Venta_Total'] > 0 else 0, 
                 axis=1
             )
             
             orden_activo = st.session_state.dash_orden
-            if orden_activo == "Mayor a Menor Venta": ventas_cuerpo = ventas_cuerpo.sort_values('Venta_Total', ascending=False)
-            elif orden_activo == "Mayor Margen (%)": ventas_cuerpo = ventas_cuerpo.sort_values('Margen_Pct', ascending=False)
-            else: ventas_cuerpo = ventas_cuerpo.sort_values('Cuerpo_Ord')
+            if orden_activo == "Mayor Venta": ventas_cuerpo = ventas_cuerpo.sort_values('Venta_Total', ascending=False)
+            elif orden_activo == "Mayor Margen": ventas_cuerpo = ventas_cuerpo.sort_values('Margen_Pct', ascending=False)
+            else: ventas_cuerpo = ventas_cuerpo.sort_values(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num'])
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             
@@ -2096,10 +2090,10 @@ if df_raw is not None and not df_raw.empty:
                     text=ventas_cuerpo['Venta_Total'].apply(lambda x: f"S/ {x/1000:,.1f}K" if x >= 1000 else f"S/ {x:,.0f}"),
                     textposition='inside',
                     insidetextanchor='middle',
-                    textfont=dict(color='#ffffff', size=11, family='Inter', weight='bold'),
+                    textfont=dict(color='#ffffff', size=9, family='Inter', weight='bold'),
                     marker=dict(color='#2563eb', line=dict(color='#1d4ed8', width=1.5)),
-                    hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata}<extra></extra>",
-                    customdata=ventas_cuerpo['SKUs_Total']
+                    hovertemplate="<b>Pasillo %{customdata[0]} [%{customdata[1]}] - Cuerpo %{customdata[2]}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata[3]}<extra></extra>",
+                    customdata=ventas_cuerpo[['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num', 'SKUs_Total']]
                 ), secondary_y=False
             )
 
@@ -2111,10 +2105,10 @@ if df_raw is not None and not df_raw.empty:
                     mode="lines+markers+text",
                     text=ventas_cuerpo['Margen_Pct'].apply(lambda x: f"{x*100:,.1f}%"),
                     textposition='top center',
-                    textfont=dict(color=t["accent_green"], size=11, family='Inter', weight='bold'),
-                    marker=dict(color=t["accent_green"], size=9, symbol='circle', line=dict(color=t["bg_card"], width=2)),
-                    line=dict(color=t["accent_green"], width=3, shape='spline'),
-                    hovertemplate="<b>%{x}</b><br>Margen: %{text}<extra></extra>"
+                    textfont=dict(color=t["accent_green"], size=10, family='Inter', weight='bold'),
+                    marker=dict(color=t["accent_green"], size=8, symbol='circle', line=dict(color=t["bg_card"], width=2)),
+                    line=dict(color=t["accent_green"], width=2.5, shape='spline'),
+                    hovertemplate="Margen: %{text}<extra></extra>"
                 ), secondary_y=True
             )
 
@@ -2122,9 +2116,9 @@ if df_raw is not None and not df_raw.empty:
                 paper_bgcolor='rgba(0,0,0,0)', 
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
-                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
-                margin=dict(t=10, b=10, l=10, r=10),
-                xaxis=dict(showgrid=False, color=t["plotly_text"], tickfont=dict(size=10, weight='bold', color=t["plotly_text"])),
+                legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
+                margin=dict(t=15, b=10, l=10, r=10),
+                xaxis=dict(showgrid=False, color=t["plotly_text"], tickfont=dict(size=9, weight='bold', color=t["plotly_text"])),
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["plotly_text"], zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color=t["accent_green"], zeroline=False)
             )
