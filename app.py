@@ -99,7 +99,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
+# INYECCIÓN CSS CON ANCHO FORZADO AL 100% Y DISEÑO RESPONSIVO
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -126,7 +126,7 @@ st.markdown(f"""
         /* PESTAÑAS (TABS) */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
-            background-color: {t["tab_container_bg"]} !important;
+            background-color: {t["bg_card"]} !important;
             padding: 6px !important;
             border-radius: 8px !important;
             border: 1.5px solid {t["border_subtle"]} !important;
@@ -134,58 +134,40 @@ st.markdown(f"""
         }}
         
         .stTabs [data-baseweb="tab"] {{
-            height: 40px !important;
+            height: 38px !important;
             padding: 0 20px !important;
             border-radius: 6px !important;
             font-weight: 800 !important;
-            font-size: 0.88rem !important;
+            font-size: 0.86rem !important;
             background-color: {t["tab_inactive_bg"]} !important;
-            border: 1.5px solid {t["tab_inactive_border"]} !important;
+            color: {t["tab_inactive_text"]} !important;
+            border: 1px solid {t["border_subtle"]} !important;
             opacity: 1 !important;
-            transition: all 0.2s ease !important;
         }}
         
-        .stTabs [data-baseweb="tab"],
-        .stTabs [data-baseweb="tab"] *,
         .stTabs [data-baseweb="tab"] p,
         .stTabs [data-baseweb="tab"] span,
         .stTabs [data-baseweb="tab"] div,
-        .stTabs [data-baseweb="tab"] [data-testid="stMarkdownContainer"] p {{
+        .stTabs [data-baseweb="tab"] * {{
             color: {t["tab_inactive_text"]} !important;
             -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
             font-weight: 800 !important;
         }}
         
-        .stTabs [aria-selected="true"],
-        .stTabs [data-baseweb="tab"][aria-selected="true"] {{
+        .stTabs [aria-selected="true"] {{
             background-color: {t["accent"]} !important;
             background: {t["accent"]} !important;
+            color: #ffffff !important;
             border-color: {t["accent"]} !important;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
         }}
         
-        .stTabs [aria-selected="true"] *,
         .stTabs [aria-selected="true"] p,
         .stTabs [aria-selected="true"] span,
         .stTabs [aria-selected="true"] div,
-        .stTabs [aria-selected="true"] [data-testid="stMarkdownContainer"] p {{
+        .stTabs [aria-selected="true"] * {{
             color: #ffffff !important;
             -webkit-text-fill-color: #ffffff !important;
             font-weight: 900 !important;
-        }}
-        
-        /* OPCIONES DE RADIO */
-        [data-testid="stRadio"],
-        [data-testid="stRadio"] *,
-        [data-testid="stRadio"] label,
-        [data-testid="stRadio"] p,
-        [data-testid="stRadio"] span,
-        [data-testid="stRadio"] div,
-        [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p,
-        label[data-baseweb="radio"] * {{
-            color: {t["text_primary"]} !important;
-            -webkit-text-fill-color: {t["text_primary"]} !important;
-            font-weight: 700 !important;
         }}
         
         /* SELECTBOXES */
@@ -431,7 +413,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df['Cuerpo_Ord'] = pd.to_numeric(df['Cuerpo_Ord'], errors='coerce').fillna(1)
     df['Nivel_Num'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
 
-    # Ordenamiento estrictamente numérico descendente por nivel (10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
     df = df.sort_values(
         by=['Cuerpo_Ord', 'Nivel_Num', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
         ascending=[True, False, False, True, True]
@@ -440,7 +421,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     cuerpos = {}
     todas_marcas = sorted(list(df["Marca"].dropna().unique())) if "Marca" in df.columns else []
     todas_categorias = sorted([c for c in df["Categoría"].dropna().unique() if c not in ['SIN DATOS', 'S/C', 'nan', '']]) if "Categoría" in df.columns else []
-    
     todos_niveles = sorted(list(df["Nivel_Num"].dropna().unique()), reverse=True)
 
     for _, r in df.iterrows():
@@ -1183,8 +1163,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'}; --bd: 1px solid {'#7c2d12' if es_oscuro else '#fdba74'};">Sin Stock</button>
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
-            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥ 30</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
@@ -1521,7 +1501,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchCat && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchCat && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
@@ -1756,6 +1736,7 @@ def cargar_todas_las_fuentes():
             df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
 
         df_matriz['COD_REAL_Str'] = df_matriz['COD REAL'].astype(str).apply(clean_sku)
+        df_matriz['COD REAL'] = df_matriz['COD_REAL_Str']
 
         # 2. Coberturas y Stock (TCOBERT -> Material <-> Cob./días)
         df_cob_raw = leer_tabla_por_ancla(url_coberturas, "Material", sheet_target=0, skiprows_fallback=3)
@@ -1897,6 +1878,7 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
+        # Retorna exactamente 4 valores para desempaquetar correctamente
         return df_matriz, df_vta, hora_lectura, None
     except Exception as e:
         return None, None, None, str(e)
@@ -1956,8 +1938,9 @@ if df_raw is not None and not df_raw.empty:
     col_unid_bandeja = 'Total Unid en Bandeja' if 'Total Unid en Bandeja' in df_base.columns else ('Total_Unidades' if 'Total_Unidades' in df_base.columns else 'Stock')
     df_base['Unid_Bandeja_Num'] = df_base[col_unid_bandeja].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     
+    # Asegurar que COD REAL no sea nulo ni vacío
     df_unicos = df_base.drop_duplicates(subset=['COD REAL']).copy()
-    df_unicos = df_unicos[df_unicos['COD REAL'].notna()]
+    df_unicos = df_unicos[df_unicos['COD REAL'].astype(str).str.strip() != ""]
     
     tab1, tab2, tab3 = st.tabs([
         "🛒 Vista Interactiva del Pasillo", 
@@ -2032,7 +2015,7 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todos":
+        if filtro_marca != "Todas":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
@@ -2216,6 +2199,11 @@ if df_raw is not None and not df_raw.empty:
             df_pie = df_pie[df_pie['Venta_Num'] > 0].sort_values(by='Venta_Num', ascending=False)
             ventas_dash_total = df_dash_unicos['Venta_Num'].sum()
             
+            # Fallback en caso de que la dimensión esté vacía
+            if df_pie.empty:
+                df_pie = df_dash_unicos.groupby('Marca')['Venta_Num'].sum().reset_index().sort_values(by='Venta_Num', ascending=False)
+                vista_anillo = 'Marca'
+                
             fig_pie = go.Figure(data=[go.Pie(
                 labels=df_pie[vista_anillo], 
                 values=df_pie['Venta_Num'], 
@@ -2258,18 +2246,20 @@ if df_raw is not None and not df_raw.empty:
 
         col_espacio_elegida = 'Caras_Num' if metrica_espacio == "Caras (Facings)" else 'Unid_Bandeja_Num'
         
-        df_espacio_cat = df_dash_base.groupby('Categoría').agg(
+        dim_fs = 'Categoría' if len([c for c in df_dash_base['Categoría'].unique() if str(c) not in ['SIN DATOS', 'nan', '']]) > 1 else 'Marca'
+
+        df_espacio_cat = df_dash_base.groupby(dim_fs).agg(
             Espacio_Total=(col_espacio_elegida, 'sum')
         ).reset_index()
 
-        df_unicos_cat = df_dash_base.drop_duplicates(subset=['COD REAL', 'Categoría']).copy()
-        df_fin_cat = df_unicos_cat.groupby('Categoría').agg(
+        df_unicos_cat = df_dash_base.drop_duplicates(subset=['COD REAL', dim_fs]).copy()
+        df_fin_cat = df_unicos_cat.groupby(dim_fs).agg(
             Ventas_Total=('Venta_Num', 'sum'),
             Margen_Total=('Margen_Num', 'sum')
         ).reset_index()
 
-        df_fs = pd.merge(df_espacio_cat, df_fin_cat, on='Categoría', how='outer').fillna(0)
-        df_fs = df_fs[~df_fs['Categoría'].isin(['SIN DATOS', 'S/D', 'S/C', 'S/S', 'S/G', 'nan', ''])].copy()
+        df_fs = pd.merge(df_espacio_cat, df_fin_cat, on=dim_fs, how='outer').fillna(0)
+        df_fs = df_fs[~df_fs[dim_fs].isin(['SIN DATOS', 'S/D', 'S/C', 'S/S', 'S/G', 'nan', ''])].copy()
         
         total_espacio_sum = df_fs['Espacio_Total'].sum()
         total_ventas_sum = df_fs['Ventas_Total'].sum()
@@ -2287,7 +2277,7 @@ if df_raw is not None and not df_raw.empty:
             fig_fs = go.Figure()
             
             fig_fs.add_trace(go.Bar(
-                x=df_fs['Categoría'],
+                x=df_fs[dim_fs],
                 y=df_fs['Pct_Espacio'],
                 name=f"% Espacio ({'Caras' if metrica_espacio == 'Caras (Facings)' else 'Unid. Bandeja'})",
                 text=df_fs['Pct_Espacio'].apply(lambda x: f"{x*100:.1f}%"),
@@ -2300,7 +2290,7 @@ if df_raw is not None and not df_raw.empty:
             ))
             
             fig_fs.add_trace(go.Bar(
-                x=df_fs['Categoría'],
+                x=df_fs[dim_fs],
                 y=df_fs['Pct_Ventas'],
                 name="% Ventas (Monto S/)",
                 text=df_fs['Pct_Ventas'].apply(lambda x: f"{x*100:.1f}%"),
@@ -2313,7 +2303,7 @@ if df_raw is not None and not df_raw.empty:
             ))
 
             fig_fs.add_trace(go.Bar(
-                x=df_fs['Categoría'],
+                x=df_fs[dim_fs],
                 y=df_fs['Pct_Margen'],
                 name="% Margen (Ganancia S/)",
                 text=df_fs['Pct_Margen'].apply(lambda x: f"{x*100:.1f}%"),
@@ -2349,7 +2339,7 @@ if df_raw is not None and not df_raw.empty:
                     top_sub = subdimensionados.sort_values(by='Brecha_Margen', ascending=False).iloc[0]
                     st.markdown(f"""
                         <div class="insight-box" style="background-color: {t['insight_green_bg']}; border-left: 4px solid #10b981; color: {t['insight_green_text']};">
-                            <b>🚀 Categoría Altamente Rentable:</b> La categoría <b>{top_sub['Categoría']}</b> aporta el <b>{top_sub['Pct_Margen']*100:.1f}%</b> del margen total y el <b>{top_sub['Pct_Ventas']*100:.1f}%</b> de la venta, pero solo ocupa el <b>{top_sub['Pct_Espacio']*100:.1f}%</b> del espacio físico. Su alta rentabilidad justifica asignarle mayor cantidad de caras.
+                            <b>🚀 Categoría Altamente Rentable:</b> La categoría <b>{top_sub[dim_fs]}</b> aporta el <b>{top_sub['Pct_Margen']*100:.1f}%</b> del margen total y el <b>{top_sub['Pct_Ventas']*100:.1f}%</b> de la venta, pero solo ocupa el <b>{top_sub['Pct_Espacio']*100:.1f}%</b> del espacio físico. Su alta rentabilidad justifica asignarle mayor cantidad de caras.
                         </div>
                     """, unsafe_allow_html=True)
                 else:
@@ -2364,7 +2354,7 @@ if df_raw is not None and not df_raw.empty:
                     top_sobre = sobredimensionados.sort_values(by='Brecha_Share', ascending=True).iloc[0]
                     st.markdown(f"""
                         <div class="insight-box" style="background-color: {t['insight_amber_bg']}; border-left: 4px solid #f59e0b; color: {t['insight_amber_text']};">
-                            <b>⚠️ Alerta de Espacio Ocioso/Bajo Margen:</b> La categoría <b>{top_sobre['Categoría']}</b> consume el <b>{top_sobre['Pct_Espacio']*100:.1f}%</b> de la repisa pero solo aporta el <b>{top_sobre['Pct_Ventas']*100:.1f}%</b> de las ventas y el <b>{top_sobre['Pct_Margen']*100:.1f}%</b> del margen. Se sugiere evaluar reducción de facings.
+                            <b>⚠️ Alerta de Espacio Ocioso/Bajo Margen:</b> La categoría <b>{top_sobre[dim_fs]}</b> consume el <b>{top_sobre['Pct_Espacio']*100:.1f}%</b> de la repisa pero solo aporta el <b>{top_sobre['Pct_Ventas']*100:.1f}%</b> de las ventas y el <b>{top_sobre['Pct_Margen']*100:.1f}%</b> del margen. Se sugiere evaluar reducción de facings.
                         </div>
                     """, unsafe_allow_html=True)
                 else:
@@ -2415,11 +2405,11 @@ if df_raw is not None and not df_raw.empty:
             if filtro_reporte == "Bloqueados (Estado B)":
                 df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
             elif filtro_reporte == "Sin Stock (Quiebre: Stock = 0)":
-                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock'] <= 0)]
+                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
             elif filtro_reporte == "Stock Bajo (Alerta: Stock 1 a 5)":
-                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock'] > 0) & (df_rep['Stock'] <= 5)]
+                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
             elif filtro_reporte == "Cobertura Alta (Sobreabastecido: ≥ 30 días)":
-                df_rep = df_rep[df_rep['Cobertura'] >= 30]
+                df_rep = df_rep[df_rep['Cob_Num'] >= 30]
                 
             col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
             cols_to_show = [
