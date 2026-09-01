@@ -99,7 +99,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON MÁXIMO CONTRASTE Y BLOQUEO DE SCROLL EN MODAL
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE Y BLOQUEO DE SCROLL GLOBAL CUANDO EL MODAL ESTÁ ACTIVO
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -109,6 +109,11 @@ st.markdown(f"""
             background: {t["bg_app"]} !important;
             color: {t["text_primary"]} !important;
             font-family: 'Inter', sans-serif !important;
+        }}
+        
+        body.modal-active {{
+            overflow: hidden !important;
+            height: 100vh !important;
         }}
         
         header[data-testid="stHeader"] {{
@@ -293,25 +298,6 @@ st.markdown(f"""
             padding: 14px 16px;
             margin-bottom: 12px;
             box-shadow: {t["card_shadow"]};
-        }}
-
-        /* CONTENEDOR CON BARRA DE DESPLAZAMIENTO NATIVA TRADICIONAL */
-        .chart-scroll-wrapper {{
-            width: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
-            padding-bottom: 8px;
-        }}
-        .chart-scroll-wrapper::-webkit-scrollbar {{
-            height: 8px;
-        }}
-        .chart-scroll-wrapper::-webkit-scrollbar-track {{
-            background: {t["bg_app"]};
-            border-radius: 4px;
-        }}
-        .chart-scroll-wrapper::-webkit-scrollbar-thumb {{
-            background: {t["accent"]};
-            border-radius: 4px;
         }}
 
         .insight-box {{
@@ -1038,7 +1024,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
-        /* MODAL PERFECTAMENTE CENTRADO Y BLOQUEO DE FONDO EN VISTA NORMAL Y FULLSCREEN */
+        /* MODAL ROBUSTO ORIGINAL (CENTRALIZADO Y BLOQUEO DE FONDO) */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
@@ -1052,9 +1038,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           display: flex !important; 
           align-items: center !important; 
           justify-content: center !important; 
-          padding: 20px !important; 
+          padding: 16px !important; 
           backdrop-filter: blur(6px); 
-          overflow: hidden !important;
+          overflow-y: auto !important;
         }}
         .modal-overlay.active {{ opacity: 1 !important; pointer-events: auto !important; }}
         
@@ -1628,7 +1614,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           applyFilters();
         }});
 
-        // MODAL DE DETALLE CON BLOQUEO TOTAL DE FONDO Y CENTRADO
+        // MODAL DE DETALLE ORIGINAL ROBUSTO CON BLOQUEO DE SCROLL DE FONDO
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         const modalImg = document.getElementById('m-img');
@@ -1668,13 +1654,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
                 modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
+                document.body.classList.add('modal-active');
             }});
         }});
         
         function closeModal() {{
             modal.classList.remove('active');
-            document.body.style.overflow = 'auto';
+            document.body.classList.remove('modal-active');
         }}
 
         closeBtn.addEventListener('click', closeModal);
@@ -2017,7 +2003,7 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todos":
+        if filtro_marca != "Todas":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
@@ -2065,7 +2051,7 @@ if df_raw is not None and not df_raw.empty:
         
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
-        # --- NIVEL 2: GRÁFICOS OPERATIVOS (MÁXIMO 5 COLUMNAS VISIBLES CON SCROLL HORIZONTAL TRADICIONAL) ---
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS (MÁXIMO 5 COLUMNAS VISIBLES CON SCROLL HORIZONTAL) ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
@@ -2174,7 +2160,6 @@ if df_raw is not None and not df_raw.empty:
                 ), secondary_y=True
             )
 
-            # Ancho dinámico para que se muestren exactamente máximo 5 columnas en la vista inicial
             num_cols = len(ventas_cuerpo)
             ancho_grafico = max(650, int(num_cols * 130))
 
@@ -2199,7 +2184,6 @@ if df_raw is not None and not df_raw.empty:
             fig.update_xaxes(fixedrange=True)
             fig.update_yaxes(fixedrange=True)
 
-            # Contenedor con barra desplazadora horizontal simple y tradicional
             st.markdown('<div class="chart-scroll-wrapper">', unsafe_allow_html=True)
             st.plotly_chart(fig, use_container_width=False, config={'displayModeBar': False, 'scrollZoom': False})
             st.markdown('</div>', unsafe_allow_html=True)
