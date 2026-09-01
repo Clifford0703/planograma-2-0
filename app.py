@@ -48,8 +48,10 @@ theme_vars = {
         "popover_hover_text": "#60a5fa",
         "btn_bg": "#111c30",
         "btn_text": "#ffffff",
-        "tab_inactive_bg": "#0f172a",
-        "tab_inactive_text": "#94a3b8",
+        "tab_container_bg": "#0f172a",
+        "tab_inactive_bg": "#111c30",
+        "tab_inactive_text": "#cbd5e1",
+        "tab_inactive_border": "#1e293b",
         "insight_green_bg": "rgba(16, 185, 129, 0.12)",
         "insight_green_text": "#6ee7b7",
         "insight_amber_bg": "rgba(245, 158, 11, 0.12)",
@@ -83,8 +85,10 @@ theme_vars = {
         "popover_hover_text": "#2563eb",
         "btn_bg": "#ffffff",
         "btn_text": "#0f172a",
-        "tab_inactive_bg": "#f1f5f9",
+        "tab_container_bg": "#f1f5f9",
+        "tab_inactive_bg": "#e2e8f0",
         "tab_inactive_text": "#0f172a",
+        "tab_inactive_border": "#cbd5e1",
         "insight_green_bg": "#dcfce7",
         "insight_green_text": "#14532d",
         "insight_amber_bg": "#fef3c7",
@@ -95,7 +99,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
+# INYECCIÓN CSS CON ANCHO FORZADO AL 100% Y ELIMINACIÓN DE BORDES LATERALES
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -148,6 +152,7 @@ st.markdown(f"""
             color: {t["tab_inactive_text"]} !important;
             -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
             font-weight: 800 !important;
+            opacity: 1 !important;
         }}
         
         .stTabs [aria-selected="true"] {{
@@ -186,6 +191,48 @@ st.markdown(f"""
 
         [data-testid="stSelectbox"] svg {{
             fill: {t["text_secondary"]} !important;
+        }}
+        
+        /* BOTONES STREAMLIT */
+        .stButton {{
+            position: relative;
+        }}
+        .stButton > button {{
+            background-color: {t["btn_bg"]} !important;
+            background: {t["btn_bg"]} !important;
+            color: {t["btn_text"]} !important;
+            -webkit-text-fill-color: {t["btn_text"]} !important;
+            border: 1.5px solid {t["border_subtle"]} !important;
+            border-radius: 6px !important;
+            font-weight: 700 !important;
+            box-shadow: {t["card_shadow"]} !important;
+            transition: all 0.2s ease !important;
+            cursor: pointer !important;
+            width: 100% !important;
+            height: 38px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 12px !important;
+        }}
+        
+        .stButton > button:hover {{
+            border-color: {t["accent"]} !important;
+            color: {t["accent"]} !important;
+            -webkit-text-fill-color: {t["accent"]} !important;
+            background-color: {t["popover_hover"]} !important;
+        }}
+
+        .stDownloadButton > button {{
+            background-color: #10b981 !important;
+            background: #10b981 !important;
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            border: none !important;
+            border-radius: 6px !important;
+            font-weight: 800 !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+            cursor: pointer !important;
         }}
         
         /* TARJETAS KPIS */
@@ -1206,158 +1253,158 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         let lastTap = 0;
         let isSingleMode = false;
 
-        function updateZoom() {
-          zoomLayer.style.transform = `translate3d(${posX}px, ${posY}px, 0) scale(${scale})`;
-        }
+        function updateZoom() {{
+          zoomLayer.style.transform = `translate3d(${{posX}}px, ${{posY}}px, 0) scale(${{scale}})`;
+        }}
 
-        function getDistance(t) {
+        function getDistance(t) {{
           return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
-        }
+        }}
 
-        function alternarModoVista(targetSingle = null) {
-          if (targetSingle !== null) {
+        function alternarModoVista(targetSingle = null) {{
+          if (targetSingle !== null) {{
             isSingleMode = targetSingle;
-          } else {
+          }} else {{
             isSingleMode = !isSingleMode;
-          }
+          }}
 
-          if (isSingleMode) {
+          if (isSingleMode) {{
             container.classList.remove('mode-multi');
             container.classList.add('mode-single');
             btnViewToggle.textContent = '🔳 Ver Múltiples Cuerpos';
             fsToggleViewBtn.textContent = '🔳 Múltiples Cuerpos';
-          } else {
+          }} else {{
             container.classList.remove('mode-single');
             container.classList.add('mode-multi');
             btnViewToggle.textContent = '🔲 Modo 1 Cuerpo';
             fsToggleViewBtn.textContent = '🔲 1 Cuerpo';
-          }
+          }}
           scale = 1; posX = 0; posY = 0; updateZoom();
           setTimeout(updateScrollButtons, 300);
-        }
+        }}
 
         btnViewToggle.addEventListener('click', () => alternarModoVista(false));
         fsToggleViewBtn.addEventListener('click', () => alternarModoVista());
 
         // CLIC EN EL ENCABEZADO DEL CUERPO: AJUSTE HORIZONTAL DIRECTO SIN INVASIÓN VERTICAL
-        document.querySelectorAll('.bay-title').forEach(titleElem => {
-          titleElem.addEventListener('click', (e) => {
+        document.querySelectorAll('.bay-title').forEach(titleElem => {{
+          titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
-            if (bayElem) {
+            if (bayElem) {{
               alternarModoVista(true);
-              setTimeout(() => {
+              setTimeout(() => {{
                 container.scrollTop = 0;
-                container.scrollTo({ left: bayElem.offsetLeft - 14, behavior: 'smooth' });
-              }, 60);
-            }
-          });
-        });
+                container.scrollTo({{ left: bayElem.offsetLeft - 14, behavior: 'smooth' }});
+              }}, 60);
+            }}
+          }});
+        }});
 
         // TOGGLE PARA DESPLEGAR/OCULTAR LEYENDA EN PANTALLA COMPLETA
-        fsToggleBtn.addEventListener('click', () => {
+        fsToggleBtn.addEventListener('click', () => {{
           const isCollapsed = fsCollapsible.classList.toggle('collapsed');
           fsToggleBtn.textContent = isCollapsed ? '📍 Leyenda y Filtros ▸' : '📍 Leyenda y Filtros ▾';
-        });
+        }});
 
-        aisleWrapper.addEventListener('touchstart', (e) => {
-          if (e.touches.length === 1) {
-            if (scale > 1) {
+        aisleWrapper.addEventListener('touchstart', (e) => {{
+          if (e.touches.length === 1) {{
+            if (scale > 1) {{
               isTouching = true;
               startX = e.touches[0].clientX - posX;
               startY = e.touches[0].clientY - posY;
-            }
+            }}
             const now = new Date().getTime();
-            if (now - lastTap < 320 && now - lastTap > 0) {
+            if (now - lastTap < 320 && now - lastTap > 0) {{
               const clickedBay = e.target.closest('.bay-column');
-              if (!isSingleMode && clickedBay) {
+              if (!isSingleMode && clickedBay) {{
                 alternarModoVista(true);
-                setTimeout(() => {
+                setTimeout(() => {{
                   container.scrollTop = 0;
-                  container.scrollTo({ left: clickedBay.offsetLeft - 14, behavior: 'smooth' });
-                }, 60);
-              } else {
+                  container.scrollTo({{ left: clickedBay.offsetLeft - 14, behavior: 'smooth' }});
+                }}, 60);
+              }} else {{
                 alternarModoVista(false);
-              }
-            }
+              }}
+            }}
             lastTap = now;
-          } else if (e.touches.length === 2) {
+          }} else if (e.touches.length === 2) {{
             isTouching = true;
             initialDist = getDistance(e.touches);
-          }
-        }, { passive: false });
+          }}
+        }}, {{ passive: false }});
 
-        aisleWrapper.addEventListener('touchmove', (e) => {
+        aisleWrapper.addEventListener('touchmove', (e) => {{
           if (!isTouching) return;
-          if (e.touches.length === 1 && scale > 1) {
+          if (e.touches.length === 1 && scale > 1) {{
             e.preventDefault();
             posX = e.touches[0].clientX - startX;
             posY = e.touches[0].clientY - startY;
             updateZoom();
-          } else if (e.touches.length === 2) {
+          }} else if (e.touches.length === 2) {{
             e.preventDefault();
             const currentDist = getDistance(e.touches);
             const factor = currentDist / initialDist;
             
-            if (factor < 0.88 && isSingleMode) {
+            if (factor < 0.88 && isSingleMode) {{
               alternarModoVista(false);
               isTouching = false;
               return;
-            }
+            }}
 
             scale = Math.min(Math.max(scale * (factor > 1 ? 1.03 : 0.97), minScale), maxScale);
             initialDist = currentDist;
             updateZoom();
-          }
-        }, { passive: false });
+          }}
+        }}, {{ passive: false }});
 
-        aisleWrapper.addEventListener('touchend', () => { isTouching = false; });
+        aisleWrapper.addEventListener('touchend', () => {{ isTouching = false; }});
 
-        function updateScrollButtons() {
-          requestAnimationFrame(() => {
+        function updateScrollButtons() {{
+          requestAnimationFrame(() => {{
             const maxScroll = container.scrollWidth - container.clientWidth;
             btnPrev.disabled = container.scrollLeft <= 10;
             btnNext.disabled = container.scrollLeft >= maxScroll - 10;
-          });
-        }
+          }});
+        }}
 
-        btnPrev.addEventListener('click', () => {
+        btnPrev.addEventListener('click', () => {{
           const scrollStep = isSingleMode ? container.clientWidth : (container.clientWidth * 0.75);
-          container.scrollBy({ left: -scrollStep, behavior: 'smooth' });
+          container.scrollBy({{ left: -scrollStep, behavior: 'smooth' }});
           setTimeout(updateScrollButtons, 350);
-        });
+        }});
         
-        btnNext.addEventListener('click', () => {
+        btnNext.addEventListener('click', () => {{
           const scrollStep = isSingleMode ? container.clientWidth : (container.clientWidth * 0.75);
-          container.scrollBy({ left: scrollStep, behavior: 'smooth' });
+          container.scrollBy({{ left: scrollStep, behavior: 'smooth' }});
           setTimeout(updateScrollButtons, 350);
-        });
+        }});
         
         container.addEventListener('scroll', updateScrollButtons);
         window.addEventListener('resize', updateScrollButtons);
 
-        fullscreenBtn.addEventListener('click', () => {
-          if (!document.fullscreenElement) {
+        fullscreenBtn.addEventListener('click', () => {{
+          if (!document.fullscreenElement) {{
             if (aisleWrapper.requestFullscreen) aisleWrapper.requestFullscreen();
             else if (aisleWrapper.webkitRequestFullscreen) aisleWrapper.webkitRequestFullscreen();
             fullscreenBtn.textContent = "✕ Salir Pantalla Completa";
-          } else {
+          }} else {{
             if (document.exitFullscreen) document.exitFullscreen();
             fullscreenBtn.textContent = "⛶ Pantalla Completa";
-          }
-        });
+          }}
+        }});
 
-        exitFsBtn.addEventListener('click', () => {
+        exitFsBtn.addEventListener('click', () => {{
           if (document.exitFullscreen) document.exitFullscreen();
           fullscreenBtn.textContent = "⛶ Pantalla Completa";
-        });
+        }});
 
-        document.addEventListener('fullscreenchange', () => {
-          if (!document.fullscreenElement) {
+        document.addEventListener('fullscreenchange', () => {{
+          if (!document.fullscreenElement) {{
             fullscreenBtn.textContent = "⛶ Pantalla Completa";
             alternarModoVista(false);
-          }
+          }}
           scale = 1; posX = 0; posY = 0; updateZoom();
-        });
+        }});
 
         const searchInput = document.getElementById('searchInput');
         const brandSelect = document.getElementById('brandSelect');
@@ -1370,12 +1417,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         const topNInput = document.getElementById('topNInput');
 
         let currentLegendFilter = null;
-        const allBrands = Array.from(brandSelect.options).map(o => ({val: o.value, text: o.text}));
-        const allCats = Array.from(catSelect.options).map(o => ({val: o.value, text: o.text}));
-        const allBays = Array.from(baySelect.options).map(o => ({val: o.value, text: o.text}));
-        const allLevels = Array.from(levelSelect.options).map(o => ({val: o.value, text: o.text}));
+        const allBrands = Array.from(brandSelect.options).map(o => ({{val: o.value, text: o.text}}));
+        const allCats = Array.from(catSelect.options).map(o => ({{val: o.value, text: o.text}}));
+        const allBays = Array.from(baySelect.options).map(o => ({{val: o.value, text: o.text}}));
+        const allLevels = Array.from(levelSelect.options).map(o => ({{val: o.value, text: o.text}}));
 
-        function applyFilters() {
+        function applyFilters() {{
           const query = searchInput.value.toLowerCase().trim();
           let selectedBrand = brandSelect.value;
           let selectedCat = catSelect.value;
@@ -1386,7 +1433,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           let visibleSkus = new Map();
           let totalVentasFiltered = 0;
 
-          document.querySelectorAll('.sku-item').forEach(card => {
+          document.querySelectorAll('.sku-item').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const catjer = card.getAttribute('data-catjer') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
@@ -1403,25 +1450,25 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const matchBay = (selectedBay === 'ALL' || bay === selectedBay);
              const matchLevel = (selectedLevel === 'ALL' || level === selectedLevel);
 
-             if (matchSearch && matchBrand && matchCat && matchBay && matchLevel) {
-                 if (!visibleSkus.has(cod)) {
+             if (matchSearch && matchBrand && matchCat && matchBay && matchLevel) {{
+                 if (!visibleSkus.has(cod)) {{
                      visibleSkus.set(cod, venta);
                      if (venta > 0) totalVentasFiltered += venta;
-                 }
-             }
-          });
+                 }}
+             }}
+          }});
 
           let sortedSkus = Array.from(visibleSkus.entries()).sort((a, b) => b[1] - a[1]);
           let topNSkusSet = new Set();
           let topVentasSum = 0;
 
-          for (let i = 0; i < Math.min(topN, sortedSkus.length); i++) {
+          for (let i = 0; i < Math.min(topN, sortedSkus.length); i++) {{
               topNSkusSet.add(sortedSkus[i][0]);
               topVentasSum += sortedSkus[i][1];
-          }
+          }}
 
           let pct = totalVentasFiltered > 0 ? (topVentasSum / totalVentasFiltered) * 100 : 0;
-          document.getElementById('topNInfo').innerHTML = "TOP <b>" + topNSkusSet.size + "</b> concentra el <b style='color:#10b981;'>" + pct.toFixed(1) + "%</b> de la venta (S/ " + totalVentasFiltered.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + ").";
+          document.getElementById('topNInfo').innerHTML = "TOP <b>" + topNSkusSet.size + "</b> concentra el <b style='color:#10b981;'>" + pct.toFixed(1) + "%</b> de la venta (S/ " + totalVentasFiltered.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}}) + ").";
 
           let availableBrands = new Set();
           let availableCats = new Set();
@@ -1430,7 +1477,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           
           let setTot = new Set(), setBloq = new Set(), setSin = new Set(), setBajo = new Set(), setOk = new Set(), setCob = new Set(), setTop = new Set();
 
-          document.querySelectorAll('.sku-item').forEach(card => {
+          document.querySelectorAll('.sku-item').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const catjer = card.getAttribute('data-catjer') || '';
              const bay = card.closest('.bay-column').getAttribute('data-module');
@@ -1454,11 +1501,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchCat && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
-             if(passesStandard) {
+             if(passesStandard) {{
                  setTot.add(cod);
                  if(cat === 'Bloqueado') setBloq.add(cod);
                  if(cat === 'Sin Stock') setSin.add(cod);
@@ -1466,33 +1513,33 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                  if(cat === 'Stock OK') setOk.add(cod);
                  if(cobVal >= 30) setCob.add(cod);
                  if(isTop) setTop.add(cod);
-             }
+             }}
 
              let passesLegend = true;
-             if (currentLegendFilter) {
+             if (currentLegendFilter) {{
                  if (currentLegendFilter === 'cob-alta') passesLegend = (cobVal >= 30);
                  else if (currentLegendFilter === 'top-ventas') passesLegend = isTop;
                  else passesLegend = (cat === currentLegendFilter);
-             }
+             }}
 
-             if (matchBrand && matchCat && matchSearch) {
-                 if (currentLegendFilter) {
-                     if (passesLegend) {
+             if (matchBrand && matchCat && matchSearch) {{
+                 if (currentLegendFilter) {{
+                     if (passesLegend) {{
                          card.classList.remove('dimmed');
                          card.classList.add('highlighted');
-                     } else {
+                     }} else {{
                          card.classList.add('dimmed');
                          card.classList.remove('highlighted');
-                     }
-                 } else {
+                     }}
+                 }} else {{
                      card.classList.remove('dimmed');
                      card.classList.toggle('highlighted', (query !== '' || selectedBrand !== 'ALL' || selectedCat !== 'ALL'));
-                 }
-             } else {
+                 }}
+             }} else {{
                  card.classList.add('dimmed');
                  card.classList.remove('highlighted');
-             }
-          });
+             }}
+          }});
 
           document.getElementById('t-total').textContent = setTot.size;
           document.getElementById('t-bloq').textContent = setBloq.size;
@@ -1508,100 +1555,100 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           if (selectedLevel !== 'ALL' && !availableLevels.has(selectedLevel)) selectedLevel = 'ALL';
 
           brandSelect.innerHTML = '';
-          allBrands.forEach(opt => { if(opt.val === 'ALL' || availableBrands.has(opt.val)) brandSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBrand)); });
+          allBrands.forEach(opt => {{ if(opt.val === 'ALL' || availableBrands.has(opt.val)) brandSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBrand)); }});
 
           catSelect.innerHTML = '';
           fsCatSelect.innerHTML = '';
-          allCats.forEach(opt => { 
-            if(opt.val === 'ALL' || availableCats.has(opt.val)) {
+          allCats.forEach(opt => {{ 
+            if(opt.val === 'ALL' || availableCats.has(opt.val)) {{
               catSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedCat));
               fsCatSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedCat));
-            }
-          });
+            }}
+          }});
 
           baySelect.innerHTML = '';
-          allBays.forEach(opt => { if(opt.val === 'ALL' || availableBays.has(opt.val)) baySelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBay)); });
+          allBays.forEach(opt => {{ if(opt.val === 'ALL' || availableBays.has(opt.val)) baySelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBay)); }});
 
           levelSelect.innerHTML = '';
-          allLevels.forEach(opt => { if(opt.val === 'ALL' || availableLevels.has(opt.val)) levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel)); });
+          allLevels.forEach(opt => {{ if(opt.val === 'ALL' || availableLevels.has(opt.val)) levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel)); }});
 
-          document.querySelectorAll('.bay-column').forEach(bay => {
+          document.querySelectorAll('.bay-column').forEach(bay => {{
             const bayNum = bay.getAttribute('data-module');
             const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
-            const hasMatch = Array.from(bay.querySelectorAll('.sku-item')).some(card => {
+            const hasMatch = Array.from(bay.querySelectorAll('.sku-item')).some(card => {{
                 if (currentLegendFilter) return card.classList.contains('highlighted');
                 return !card.classList.contains('dimmed');
-            });
+            }});
 
             const isVisible = passesBayFilter && hasMatch;
             bay.classList.toggle('hidden', !isVisible);
-          });
+          }});
 
-          document.querySelectorAll('.shelf-row').forEach(shelf => {
+          document.querySelectorAll('.shelf-row').forEach(shelf => {{
             const shelfLevel = shelf.getAttribute('data-level');
             const passesLevelFilter = (selectedLevel === 'ALL' || selectedLevel === shelfLevel);
             shelf.classList.toggle('hidden', !passesLevelFilter);
-          });
+          }});
           
           updateScrollButtons();
-        }
+        }}
 
-        printBayBtn.addEventListener('click', () => {
+        printBayBtn.addEventListener('click', () => {{
             window.print();
-        });
+        }});
 
         // LEYENDA
-        document.querySelectorAll('.legend-chip').forEach(chip => {
-            chip.addEventListener('click', () => {
+        document.querySelectorAll('.legend-chip').forEach(chip => {{
+            chip.addEventListener('click', () => {{
                 const filter = chip.getAttribute('data-filter');
-                if (currentLegendFilter === filter) {
+                if (currentLegendFilter === filter) {{
                     currentLegendFilter = null;
                     document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
-                } else {
+                }} else {{
                     document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
-                    document.querySelectorAll(`.legend-chip[data-filter="${filter}"]`).forEach(c => c.classList.add('active'));
+                    document.querySelectorAll(`.legend-chip[data-filter="${{filter}}"]`).forEach(c => c.classList.add('active'));
                     currentLegendFilter = filter;
-                }
+                }}
                 applyFilters();
-            });
-        });
+            }});
+        }});
 
         searchInput.addEventListener('input', applyFilters);
         brandSelect.addEventListener('change', applyFilters);
         
-        catSelect.addEventListener('change', () => {
+        catSelect.addEventListener('change', () => {{
           fsCatSelect.value = catSelect.value;
           applyFilters();
-        });
+        }});
         
-        fsCatSelect.addEventListener('change', () => {
+        fsCatSelect.addEventListener('change', () => {{
           catSelect.value = fsCatSelect.value;
           applyFilters();
-        });
+        }});
 
         baySelect.addEventListener('change', applyFilters);
         levelSelect.addEventListener('change', applyFilters);
         topNInput.addEventListener('input', applyFilters);
         
-        resetBtn.addEventListener('click', () => {
+        resetBtn.addEventListener('click', () => {{
           searchInput.value = ''; currentLegendFilter = null;
           document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
           brandSelect.innerHTML = ''; allBrands.forEach(o => brandSelect.add(new Option(o.text, o.val)));
-          catSelect.innerHTML = ''; fsCatSelect.innerHTML = ''; allCats.forEach(o => { catSelect.add(new Option(o.text, o.val)); fsCatSelect.add(new Option(o.text, o.val)); });
+          catSelect.innerHTML = ''; fsCatSelect.innerHTML = ''; allCats.forEach(o => {{ catSelect.add(new Option(o.text, o.val)); fsCatSelect.add(new Option(o.text, o.val)); }});
           baySelect.innerHTML = ''; allBays.forEach(o => baySelect.add(new Option(o.text, o.val)));
           levelSelect.innerHTML = ''; allLevels.forEach(o => levelSelect.add(new Option(o.text, o.val)));
           brandSelect.value = 'ALL'; catSelect.value = 'ALL'; fsCatSelect.value = 'ALL'; baySelect.value = 'ALL'; levelSelect.value = 'ALL';
           topNInput.value = 5;
           alternarModoVista(false);
           applyFilters();
-        });
+        }});
 
         // MODAL PRODUCTO
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         
-        document.querySelectorAll('.sku-item').forEach(card => {
-            card.addEventListener('click', (e) => {
+        document.querySelectorAll('.sku-item').forEach(card => {{
+            card.addEventListener('click', (e) => {{
                 e.stopPropagation();
                 document.getElementById('m-name').textContent = card.getAttribute('data-name');
                 document.getElementById('m-cod').textContent = card.getAttribute('data-cod');
@@ -1616,32 +1663,32 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 
                 const ventaStr = card.getAttribute('data-venta') || "0";
                 const ventaVal = parseFloat(ventaStr.replace(/,/g, '')) || 0;
-                document.getElementById('m-venta').textContent = ventaVal === -999 ? "SIN DATOS" : "S/ " + ventaVal.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+                document.getElementById('m-venta').textContent = ventaVal === -999 ? "SIN DATOS" : "S/ " + ventaVal.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}});
                 
                 const isTop = card.classList.contains('is-top');
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
                 modal.classList.add('active');
-            });
-        });
+            }});
+        }});
         closeBtn.addEventListener('click', () => modal.classList.remove('active'));
-        window.addEventListener('click', (e) => { if(e.target === modal) modal.classList.remove('active'); });
+        window.addEventListener('click', (e) => {{ if(e.target === modal) modal.classList.remove('active'); }});
 
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && modal.classList.contains('active')) {
+        document.addEventListener('keydown', (e) => {{
+            if (e.key === 'Escape' && modal.classList.contains('active')) {{
                 modal.classList.remove('active');
-            }
-        });
+            }}
+        }});
 
         // INICIALIZACIÓN
-        setTimeout(() => {
+        setTimeout(() => {{
           brandSelect.value = 'ALL';
           catSelect.value = 'ALL';
           fsCatSelect.value = 'ALL';
           baySelect.value = 'ALL';
           levelSelect.value = 'ALL';
           applyFilters();
-        }, 100);
+        }}, 100);
       </script>
     </body>
     </html>
@@ -1830,9 +1877,9 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_matriz, df_vta, hora_lectura, None
+        return df_matriz, hora_lectura, None
     except Exception as e:
-        return None, None, None, str(e)
+        return None, None, str(e)
 
 # --- HEADER SAAS UNIFICADO CON CRÉDITO DE AUTORÍA ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
@@ -1863,7 +1910,7 @@ with col_head3:
         header_time_placeholder = st.empty()
 
 with st.spinner("Sincronizando fuentes externas en la nube..."):
-    df_nube, df_vta_global, info_hora, error_nube = cargar_todas_las_fuentes()
+    df_nube, info_hora, error_nube = cargar_todas_las_fuentes()
 
 header_time_placeholder.markdown(f"""
     <div style="text-align: right; line-height: 1.3;">
@@ -1912,12 +1959,8 @@ if df_raw is not None and not df_raw.empty:
         with col_view2:
             st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para expandirlo a lo ancho.</i></div>", unsafe_allow_html=True)
             
-        # Altura adaptable al cuerpo más alto (sin scroll vertical interno)
-        num_niveles_max = df_base['Nivel_Ord'].nunique() if 'Nivel_Ord' in df_base.columns else 6
-        altura_calculada = max(1000, 360 + int(num_niveles_max) * 115)
-        
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma, es_oscuro=es_oscuro)
-        components.html(html_pasillo, height=altura_calculada, scrolling=False)
+        components.html(html_pasillo, height=840, scrolling=False)
             
     # =========================================================================
     # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO E INDEPENDIENTE) ---
@@ -1969,27 +2012,18 @@ if df_raw is not None and not df_raw.empty:
 
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
-        ventas_plano = df_dash_unicos['Venta_Num'].sum()
+        ventas_globales = df_dash_unicos['Venta_Num'].sum()
         margen_global = df_dash_unicos['Margen_Num'].sum()
-        margen_pct_global = (margen_global / ventas_plano) if ventas_plano > 0 else 0
-        skus_plano = len(df_dash_unicos)
-
-        if df_vta_global is not None and not df_vta_global.empty:
-            total_venta_maestra = df_vta_global['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
-            total_skus_maestros = len(df_vta_global['Material_Str'].drop_duplicates())
-        else:
-            total_venta_maestra = ventas_plano
-            total_skus_maestros = skus_plano
-
-        pct_venta_representada = (ventas_plano / total_venta_maestra * 100) if total_venta_maestra > 0 else 100.0
-        pct_skus_representados = (skus_plano / total_skus_maestros * 100) if total_skus_maestros > 0 else 100.0
+        margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
+        total_skus_activos = len(df_dash_unicos)
+        promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
         
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #3b82f6;">
-                    <div class="fin-kpi-title"><span>Ventas Planograma</span><span>💳</span></div>
-                    <div class="fin-kpi-val">S/ {ventas_plano:,.2f}</div>
-                    <div class="fin-kpi-subtitle"><b>{pct_venta_representada:.1f}%</b> de la venta total (S/ {total_venta_maestra:,.2f})</div>
+                    <div class="fin-kpi-title"><span>Ventas Brutas Filtradas</span><span>💳</span></div>
+                    <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
+                    <div class="fin-kpi-subtitle">Ticket Promedio/SKU: S/ {promedio_venta_sku:,.2f}</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #10b981;">
                     <div class="fin-kpi-title"><span>Margen Total Bruto</span><span>📈</span></div>
@@ -1999,12 +2033,12 @@ if df_raw is not None and not df_raw.empty:
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #8b5cf6;">
                     <div class="fin-kpi-title"><span>Margen Global (%)</span><span>📊</span></div>
                     <div class="fin-kpi-val" style="color: {t['accent_purple']};">{margen_pct_global*100:.1f}%</div>
-                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta Planograma</div>
+                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #fbbf24;">
-                    <div class="fin-kpi-title"><span>SKUs en Planograma</span><span>📦</span></div>
-                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{skus_plano}</div>
-                    <div class="fin-kpi-subtitle"><b>{pct_skus_representados:.1f}%</b> del surtido total ({total_skus_maestros} SKUs)</div>
+                    <div class="fin-kpi-title"><span>Surtido Activo</span><span>📦</span></div>
+                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{total_skus_activos}</div>
+                    <div class="fin-kpi-subtitle">SKUs Únicos Filtrados</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
