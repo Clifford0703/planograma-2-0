@@ -413,6 +413,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df['Cuerpo_Ord'] = pd.to_numeric(df['Cuerpo_Ord'], errors='coerce').fillna(1)
     df['Nivel_Num'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
 
+    # Ordenamiento numérico descendente por nivel (10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
     df = df.sort_values(
         by=['Cuerpo_Ord', 'Nivel_Num', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
         ascending=[True, False, False, True, True]
@@ -847,17 +848,35 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           min-height: 36px;
         }}
         
+        /* SOPORTE FULLSCREEN CON DESPLAZAMIENTO VERTICAL HABILITADO */
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
           background: {app_bg} !important; 
           width: 100vw !important; 
           height: 100vh !important; 
           padding: 0 !important; 
           border: none !important; 
-          overflow: hidden !important;
+          display: flex !important;
+          flex-direction: column !important;
+          overflow: hidden !important; 
         }}
         .aisle-wrapper:fullscreen .fullscreen-legend-bar, 
         .aisle-wrapper:-webkit-full-screen .fullscreen-legend-bar {{
           display: flex !important; 
+        }}
+        .aisle-wrapper:fullscreen .zoom-layer,
+        .aisle-wrapper:-webkit-full-screen .zoom-layer {{
+          flex: 1 1 auto !important;
+          min-height: 0 !important;
+          height: 100% !important;
+          overflow: hidden !important;
+        }}
+        .aisle-wrapper:fullscreen .aisle-container,
+        .aisle-wrapper:-webkit-full-screen .aisle-container {{
+          flex: 1 1 auto !important;
+          height: 100% !important;
+          overflow-y: auto !important;
+          overflow-x: auto !important;
+          padding-bottom: 70px !important;
         }}
 
         .nav-btn {{ 
@@ -901,7 +920,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           flex-direction: row; 
           gap: 16px; 
           background: {app_bg}; 
-          padding: 14px 45px; 
+          padding: 14px 45px 50px 45px; 
           overflow-x: auto; 
           overflow-y: visible; 
           scroll-behavior: smooth; 
@@ -938,7 +957,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           border-radius: 8px; 
           display: flex; 
           flex-direction: column; 
-          height: fit-content; 
+          height: auto; 
+          min-height: fit-content;
           padding-bottom: 12px; 
           box-sizing: border-box; 
           box-shadow: {t["card_shadow"]}; 
@@ -1065,7 +1085,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           border: 1.5px solid {t["accent"]} !important; 
           box-shadow: 0 25px 50px rgba(0,0,0,0.5) !important; 
           position: relative !important; 
-          z-index: 2147483647 !important;
+          z-index: 2147483647 !important; 
         }}
         .modal-close {{ position: absolute; top: 12px; right: 16px; font-size: 1.5rem; cursor: pointer; color: {text_secondary}; font-weight: 700; }}
         .modal-close:hover {{ color: {text_primary}; }}
@@ -1101,7 +1121,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               height: auto !important;
               min-height: fit-content !important;
               overflow-y: visible !important;
-              padding: 8px 6px !important; 
+              padding: 8px 6px 40px 6px !important; 
               touch-action: pan-x pan-y !important; 
               gap: 10px !important; 
             }}
@@ -1163,8 +1183,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'}; --bd: 1px solid {'#7c2d12' if es_oscuro else '#fdba74'};">Sin Stock</button>
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
-            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
@@ -1501,7 +1521,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchCat && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
@@ -1878,7 +1898,6 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        # Retorna exactamente 4 valores para desempaquetar correctamente
         return df_matriz, df_vta, hora_lectura, None
     except Exception as e:
         return None, None, None, str(e)
@@ -1938,7 +1957,6 @@ if df_raw is not None and not df_raw.empty:
     col_unid_bandeja = 'Total Unid en Bandeja' if 'Total Unid en Bandeja' in df_base.columns else ('Total_Unidades' if 'Total_Unidades' in df_base.columns else 'Stock')
     df_base['Unid_Bandeja_Num'] = df_base[col_unid_bandeja].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     
-    # Asegurar que COD REAL no sea nulo ni vacío
     df_unicos = df_base.drop_duplicates(subset=['COD REAL']).copy()
     df_unicos = df_unicos[df_unicos['COD REAL'].astype(str).str.strip() != ""]
     
@@ -1962,7 +1980,7 @@ if df_raw is not None and not df_raw.empty:
         with col_view2:
             st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para expandirlo a lo ancho.</i></div>", unsafe_allow_html=True)
             
-        # Cálculo dinámico basado en los niveles reales del DataFrame
+        # Altura calculada según los niveles reales
         bandeja_series = df_base.get('Bandeja', pd.Series(["1.1"]*len(df_base))).astype(str)
         niveles_extraidos = bandeja_series.str.extract(r'(\d+)\.(\d+)')[1]
         max_niveles_count = int(pd.to_numeric(niveles_extraidos, errors='coerce').fillna(6).max())
@@ -2199,7 +2217,6 @@ if df_raw is not None and not df_raw.empty:
             df_pie = df_pie[df_pie['Venta_Num'] > 0].sort_values(by='Venta_Num', ascending=False)
             ventas_dash_total = df_dash_unicos['Venta_Num'].sum()
             
-            # Fallback en caso de que la dimensión esté vacía
             if df_pie.empty:
                 df_pie = df_dash_unicos.groupby('Marca')['Venta_Num'].sum().reset_index().sort_values(by='Venta_Num', ascending=False)
                 vista_anillo = 'Marca'
@@ -2245,7 +2262,6 @@ if df_raw is not None and not df_raw.empty:
         )
 
         col_espacio_elegida = 'Caras_Num' if metrica_espacio == "Caras (Facings)" else 'Unid_Bandeja_Num'
-        
         dim_fs = 'Categoría' if len([c for c in df_dash_base['Categoría'].unique() if str(c) not in ['SIN DATOS', 'nan', '']]) > 1 else 'Marca'
 
         df_espacio_cat = df_dash_base.groupby(dim_fs).agg(
