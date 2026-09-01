@@ -300,6 +300,25 @@ st.markdown(f"""
             box-shadow: {t["card_shadow"]};
         }}
 
+        /* CONTENEDOR CON BARRA DE DESPLAZAMIENTO NATIVA TRADICIONAL */
+        .chart-scroll-wrapper {{
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 8px;
+        }}
+        .chart-scroll-wrapper::-webkit-scrollbar {{
+            height: 8px;
+        }}
+        .chart-scroll-wrapper::-webkit-scrollbar-track {{
+            background: {t["bg_app"]};
+            border-radius: 4px;
+        }}
+        .chart-scroll-wrapper::-webkit-scrollbar-thumb {{
+            background: {t["accent"]};
+            border-radius: 4px;
+        }}
+
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -1614,7 +1633,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           applyFilters();
         }});
 
-        // MODAL DE DETALLE ORIGINAL ROBUSTO CON BLOQUEO DE SCROLL DE FONDO
+        // MODAL DE DETALLE ORIGINAL CON BLOQUEO PERFECTO DE SCROLL
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         const modalImg = document.getElementById('m-img');
@@ -1960,7 +1979,7 @@ if df_raw is not None and not df_raw.empty:
         components.html(html_pasillo, height=altura_dinamica, scrolling=True)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO E INDEPENDIENTE) ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (ANCHO DE GRÁFICO AMPLIADO: 7.0 / 3.0) ---
     # =========================================================================
     with tab2:
         if "dash_orden" not in st.session_state:
@@ -2003,7 +2022,7 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todas":
+        if filtro_marca != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
@@ -2051,11 +2070,11 @@ if df_raw is not None and not df_raw.empty:
         
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
-        # --- NIVEL 2: GRÁFICOS OPERATIVOS (MÁXIMO 5 COLUMNAS VISIBLES CON SCROLL HORIZONTAL) ---
-        col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS (AMPLIADO A 7.0 / 3.0) ---
+        col_graf_izq, col_graf_der = st.columns([7.0, 3.0])
         
         with col_graf_izq:
-            h_c1, h_c2 = st.columns([5.2, 4.8])
+            h_c1, h_c2 = st.columns([5.5, 4.5])
             with h_c1:
                 st.markdown(f"""
                     <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px;">
@@ -2161,7 +2180,7 @@ if df_raw is not None and not df_raw.empty:
             )
 
             num_cols = len(ventas_cuerpo)
-            ancho_grafico = max(650, int(num_cols * 130))
+            ancho_grafico = max(650, int(num_cols * 125))
 
             fig.update_layout(
                 width=ancho_grafico,
