@@ -796,12 +796,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           right: 0; 
           background: {card_bg}; 
           border-bottom: 1px solid {t["border_subtle"]}; 
-          padding: 14px 18px; 
-          min-height: 64px;
+          padding: 16px 20px; 
+          min-height: 72px;
           z-index: 10000; 
           backdrop-filter: blur(12px); 
           flex-direction: column;
-          gap: 10px; 
+          gap: 12px; 
           box-sizing: border-box;
         }}
 
@@ -815,7 +815,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .fs-controls-group {{
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 10px;
         }}
 
         .fs-toggle-btn {{
@@ -823,8 +823,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           color: {t['accent']};
           border: 1px solid {t['accent']}44;
           font-weight: 800;
-          font-size: 0.82rem;
-          padding: 6px 14px;
+          font-size: 0.85rem;
+          padding: 8px 16px;
           border-radius: 6px;
           cursor: pointer;
           display: flex;
@@ -2010,7 +2010,7 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todas":
+        if filtro_marca != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
