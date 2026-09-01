@@ -1043,7 +1043,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
-        /* MODAL ROBUSTO ORIGINAL (CENTRALIZADO Y BLOQUEO DE FONDO) */
+        /* MODAL FIJO Y CENTRADO ORIGINAL CON BLOQUEO DE FONDO */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
@@ -1979,7 +1979,7 @@ if df_raw is not None and not df_raw.empty:
         components.html(html_pasillo, height=altura_dinamica, scrolling=True)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (ANCHO DE GRÁFICO AMPLIADO: 7.0 / 3.0) ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO E INDEPENDIENTE) ---
     # =========================================================================
     with tab2:
         if "dash_orden" not in st.session_state:
@@ -2022,7 +2022,7 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todos":
+        if filtro_marca != "Todas":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
@@ -2070,7 +2070,7 @@ if df_raw is not None and not df_raw.empty:
         
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
-        # --- NIVEL 2: GRÁFICOS OPERATIVOS (AMPLIADO A 7.0 / 3.0) ---
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS (ANCHO 7.0 / 3.0) ---
         col_graf_izq, col_graf_der = st.columns([7.0, 3.0])
         
         with col_graf_izq:
