@@ -99,7 +99,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON ANCHO FORZADO AL 100% Y ELIMINACIÓN DE BORDES LATERALES
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -116,10 +116,10 @@ st.markdown(f"""
         }}
         
         .block-container {{
-            padding-left: 0.4rem !important;
-            padding-right: 0.4rem !important;
-            padding-top: 0.8rem !important;
-            padding-bottom: 1rem !important;
+            padding-left: 1.2rem !important;
+            padding-right: 1.2rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1.5rem !important;
             max-width: 100% !important;
         }}
         
@@ -186,7 +186,6 @@ st.markdown(f"""
             color: {t["text_primary"]} !important;
             -webkit-text-fill-color: {t["text_primary"]} !important;
             font-weight: 700 !important;
-            opacity: 1 !important;
         }}
         
         /* SELECTBOXES */
@@ -766,7 +765,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden; 
         }}
 
-        /* BOTÓN FLOTANTE MODO VISTA */
+        /* BOTÓN FLOTANTE MODO VISTA (1 CUERPO VS MÚLTIPLE) */
         .btn-view-toggle-float {{
           position: absolute;
           top: 10px;
@@ -787,7 +786,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           transform: scale(1.04);
         }}
 
-        /* PANEL DESPLEGABLE EN FULLSCREEN CON MÁS ALTURA Y HOLGURA */
+        /* PANEL DESPLEGABLE EN FULLSCREEN */
         .fullscreen-legend-bar {{
           display: none; 
           position: sticky; 
@@ -796,12 +795,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           right: 0; 
           background: {card_bg}; 
           border-bottom: 1px solid {t["border_subtle"]}; 
-          padding: 14px 18px; 
-          min-height: 64px;
+          padding: 10px 16px; 
+          min-height: 52px;
           z-index: 10000; 
-          backdrop-filter: blur(12px); 
+          backdrop-filter: blur(10px); 
           flex-direction: column;
-          gap: 10px; 
+          gap: 8px; 
           box-sizing: border-box;
         }}
 
@@ -823,8 +822,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           color: {t['accent']};
           border: 1px solid {t['accent']}44;
           font-weight: 800;
-          font-size: 0.82rem;
-          padding: 6px 14px;
+          font-size: 0.78rem;
+          padding: 6px 12px;
           border-radius: 6px;
           cursor: pointer;
           display: flex;
@@ -836,10 +835,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           display: flex;
           flex-wrap: wrap;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
           width: 100%;
-          padding-top: 6px;
-          padding-bottom: 4px;
+          padding-top: 4px;
         }}
         .fs-collapsible-content.collapsed {{
           display: none !important;
@@ -855,12 +853,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           background: {input_bg}; 
           border: 1.5px solid {border_col}; 
           color: {text_primary}; 
-          padding: 6px 12px; 
+          padding: 5px 10px; 
           border-radius: 6px; 
-          font-size: 0.82rem; 
+          font-size: 0.80rem; 
           font-weight: 700; 
           outline: none; 
-          min-height: 36px;
+          min-height: 32px;
         }}
         
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
@@ -926,7 +924,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           align-items: flex-start;
         }}
 
-        /* MODO MÚLTIPLES CUERPOS (MÁXIMO 4 EN ESCRITORIO) */
+        /* MODO MÚLTIPLES CUERPOS (MÁXIMO 4 POR PANTALLA EN ESCRITORIO O DISTRIBUCIÓN EXPANDIDA) */
         .aisle-container.mode-multi .bay-column {{
           flex: 1 1 calc((100% - 48px) / 4) !important; 
           min-width: 280px !important; 
@@ -934,7 +932,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           scroll-snap-align: start;
         }}
 
-        /* MODO 1 CUERPO EXPANDIDO (SIN FILTRAR, DESLIZABLE) */
+        /* MODO 1 CUERPO EXPANDIDO (CADA CUERPO OCUPA EL 100% Y SE PUEDE DESLIZAR POR TODOS) */
         .aisle-container.mode-single {{
           scroll-snap-type: x mandatory !important;
         }}
@@ -1107,12 +1105,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               margin-bottom: 15px !important; 
             }}
             .nav-btn {{ display: none !important; }}
-            .btn-view-toggle-float {{ display: none !important; }}
             .aisle-container {{ padding: 8px 6px !important; touch-action: pan-x pan-y !important; gap: 10px !important; }}
             .kpi-container {{ display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }}
             .kpi-card {{ min-width: unset !important; }}
             .kpi-card:last-child {{ grid-column: 1 / -1 !important; }}
-            .aisle-container.mode-multi .bay-column {{ flex: 0 0 100% !important; width: 100% !important; max-width: 100% !important; }}
+            .aisle-container.mode-multi .bay-column {{ flex: 0 0 88vw !important; width: 88vw !important; max-width: 88vw !important; }}
             .shelf-products {{ min-height: 70px !important; }}
             .sku-card {{ min-width: 75px !important; }}
             .sku-images-wrapper img {{ height: 70px !important; max-width: 40px !important; }}
@@ -1173,8 +1170,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           
-          <!-- BOTÓN FLOTANTE MODO VISTA (VISIBLE EN ESCRITORIO) -->
-          <button id="btnViewToggle" class="btn-view-toggle-float" style="display: none;">🔲 Modo 1 Cuerpo</button>
+          <!-- BOTÓN FLOTANTE PARA ALTERNAR ENTRE 1 CUERPO Y VISTA MÚLTIPLE -->
+          <button id="btnViewToggle" class="btn-view-toggle-float">🔳 Ver Múltiples Cuerpos</button>
 
           <div id="productModal" class="modal-overlay">
             <div class="modal-content" id="modalContent">
@@ -1198,7 +1195,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <div class="fs-header-row">
               <div class="fs-controls-group">
                 <button id="fsToggleBtn" class="fs-toggle-btn">📍 Leyenda y Filtros ▾</button>
-                <button id="fsToggleViewBtn" class="fs-toggle-btn" style="background: {t['accent']}33;">🔲 1 Cuerpo</button>
+                <button id="fsToggleViewBtn" class="fs-toggle-btn" style="background: {t['accent']}33;">🔳 Múltiples Cuerpos</button>
               </div>
               <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 5px 12px; font-weight: 800;">✕ Salir Pantalla Completa</button>
             </div>
@@ -1290,21 +1287,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         btnViewToggle.addEventListener('click', () => alternarModoVista(false));
         fsToggleViewBtn.addEventListener('click', () => alternarModoVista());
 
-        // CLIC EN EL TÍTULO DEL CUERPO PARA EXPANDIRLO AL 100% (SIN FILTRAR DEMÁS)
+        // CLIC EN EL ENCABEZADO DEL CUERPO PARA EXPANDIRLO AL 100% SIN FILTRAR LOS DEMÁS
         document.querySelectorAll('.bay-title').forEach(titleElem => {{
           titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
             if (bayElem) {{
               alternarModoVista(true);
-              window.scrollTo({{ top: 0, behavior: 'smooth' }});
               setTimeout(() => {{
-                bayElem.scrollIntoView({{ behavior: 'smooth', inline: 'center', block: 'start' }});
-              }}, 120);
+                bayElem.scrollIntoView({{ behavior: 'smooth', inline: 'center', block: 'nearest' }});
+              }}, 100);
             }}
           }});
         }});
 
-        // TOGGLE LEYENDA EN FULLSCREEN
+        // TOGGLE PARA DESPLEGAR/OCULTAR LEYENDA EN PANTALLA COMPLETA
         fsToggleBtn.addEventListener('click', () => {{
           const isCollapsed = fsCollapsible.classList.toggle('collapsed');
           fsToggleBtn.textContent = isCollapsed ? '📍 Leyenda y Filtros ▸' : '📍 Leyenda y Filtros ▾';
@@ -1318,14 +1314,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               startY = e.touches[0].clientY - posY;
             }}
             const now = new Date().getTime();
+            // DOBLE TOQUE: ALTERNA ENTRE 1 CUERPO Y VISTA MÚLTIPLE SIN CERRAR FULLSCREEN
             if (now - lastTap < 320 && now - lastTap > 0) {{
               const clickedBay = e.target.closest('.bay-column');
               if (!isSingleMode && clickedBay) {{
                 alternarModoVista(true);
-                window.scrollTo({{ top: 0, behavior: 'smooth' }});
                 setTimeout(() => {{
-                  clickedBay.scrollIntoView({{ behavior: 'smooth', inline: 'center', block: 'start' }});
-                }}, 120);
+                  clickedBay.scrollIntoView({{ behavior: 'smooth', inline: 'center' }});
+                }}, 100);
               }} else {{
                 alternarModoVista(false);
               }}
@@ -1349,6 +1345,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             const currentDist = getDistance(e.touches);
             const factor = currentDist / initialDist;
             
+            // PELLIZCO PARA ALEJAR (ZOOM OUT): REGRESA A LA VISTA MÚLTIPLE
             if (factor < 0.88 && isSingleMode) {{
               alternarModoVista(false);
               isTouching = false;
@@ -1601,7 +1598,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             window.print();
         }});
 
-        # LEYENDA
+        // LEYENDA
         document.querySelectorAll('.legend-chip').forEach(chip => {{
             chip.addEventListener('click', () => {{
                 const filter = chip.getAttribute('data-filter');
@@ -1647,7 +1644,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           applyFilters();
         }});
 
-        # MODAL PRODUCTO
+        // MODAL PRODUCTO
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         
@@ -1684,13 +1681,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             }}
         }});
 
-        # INICIALIZACIÓN
+        // INICIALIZACIÓN
         setTimeout(() => {{
           brandSelect.value = 'ALL';
           catSelect.value = 'ALL';
           fsCatSelect.value = 'ALL';
           baySelect.value = 'ALL';
           levelSelect.value = 'ALL';
+          btnViewToggle.style.display = 'none';
           applyFilters();
         }}, 100);
       </script>
