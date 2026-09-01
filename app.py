@@ -116,10 +116,10 @@ st.markdown(f"""
         }}
         
         .block-container {{
-            padding-left: 0.4rem !important;
-            padding-right: 0.4rem !important;
-            padding-top: 0.8rem !important;
-            padding-bottom: 1rem !important;
+            padding-left: 1.2rem !important;
+            padding-right: 1.2rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1.5rem !important;
             max-width: 100% !important;
         }}
         
@@ -186,7 +186,6 @@ st.markdown(f"""
             color: {t["text_primary"]} !important;
             -webkit-text-fill-color: {t["text_primary"]} !important;
             font-weight: 700 !important;
-            opacity: 1 !important;
         }}
         
         /* SELECTBOXES */
@@ -787,7 +786,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           transform: scale(1.04);
         }}
 
-        /* PANEL DESPLEGABLE EN FULLSCREEN CON MAYOR ALTURA Y HOLGURA */
+        /* PANEL DESPLEGABLE EN FULLSCREEN */
         .fullscreen-legend-bar {{
           display: none; 
           position: sticky; 
@@ -796,14 +795,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           right: 0; 
           background: {card_bg}; 
           border-bottom: 1px solid {t["border_subtle"]}; 
-          padding: 16px 22px; 
-          min-height: 72px;
+          padding: 10px 16px; 
+          min-height: 52px;
           z-index: 10000; 
-          backdrop-filter: blur(12px); 
+          backdrop-filter: blur(10px); 
           flex-direction: column;
-          gap: 12px; 
+          gap: 8px; 
           box-sizing: border-box;
-          box-shadow: {t["card_shadow"]};
         }}
 
         .fs-header-row {{
@@ -816,16 +814,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .fs-controls-group {{
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
         }}
 
         .fs-toggle-btn {{
           background: {t['accent']}1a;
           color: {t['accent']};
-          border: 1.5px solid {t['accent']}44;
+          border: 1px solid {t['accent']}44;
           font-weight: 800;
-          font-size: 0.85rem;
-          padding: 8px 16px;
+          font-size: 0.78rem;
+          padding: 6px 12px;
           border-radius: 6px;
           cursor: pointer;
           display: flex;
@@ -837,9 +835,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           display: flex;
           flex-wrap: wrap;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
           width: 100%;
-          padding-top: 6px;
+          padding-top: 4px;
         }}
         .fs-collapsible-content.collapsed {{
           display: none !important;
@@ -848,19 +846,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .fs-cat-wrapper {{
           display: flex; 
           align-items: center; 
-          gap: 10px; 
+          gap: 8px; 
           margin-left: auto; 
         }}
         .fs-cat-select {{
           background: {input_bg}; 
           border: 1.5px solid {border_col}; 
           color: {text_primary}; 
-          padding: 6px 12px; 
+          padding: 5px 10px; 
           border-radius: 6px; 
-          font-size: 0.85rem; 
+          font-size: 0.80rem; 
           font-weight: 700; 
           outline: none; 
-          min-height: 38px;
+          min-height: 32px;
         }}
         
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
@@ -1107,7 +1105,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               margin-bottom: 15px !important; 
             }}
             .nav-btn {{ display: none !important; }}
-            .btn-view-toggle-float {{ display: none !important; }}
             .aisle-container {{ padding: 8px 6px !important; touch-action: pan-x pan-y !important; gap: 10px !important; }}
             .kpi-container {{ display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }}
             .kpi-card {{ min-width: unset !important; }}
@@ -1173,8 +1170,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           
-          <!-- BOTÓN FLOTANTE MODO VISTA -->
-          <button id="btnViewToggle" class="btn-view-toggle-float">🔲 Modo 1 Cuerpo</button>
+          <!-- BOTÓN FLOTANTE PARA ALTERNAR ENTRE 1 CUERPO Y VISTA MÚLTIPLE -->
+          <button id="btnViewToggle" class="btn-view-toggle-float">🔳 Ver Múltiples Cuerpos</button>
 
           <div id="productModal" class="modal-overlay">
             <div class="modal-content" id="modalContent">
@@ -1198,9 +1195,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <div class="fs-header-row">
               <div class="fs-controls-group">
                 <button id="fsToggleBtn" class="fs-toggle-btn">📍 Leyenda y Filtros ▾</button>
-                <button id="fsToggleViewBtn" class="fs-toggle-btn" style="background: {t['accent']}33;">🔲 1 Cuerpo</button>
+                <button id="fsToggleViewBtn" class="fs-toggle-btn" style="background: {t['accent']}33;">🔳 Múltiples Cuerpos</button>
               </div>
-              <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 6px 14px; font-weight: 800;">✕ Salir Pantalla Completa</button>
+              <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 5px 12px; font-weight: 800;">✕ Salir Pantalla Completa</button>
             </div>
             
             <div class="fs-collapsible-content" id="fsCollapsible">
@@ -1214,7 +1211,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               </div>
               
               <div class="fs-cat-wrapper">
-                <span style="font-size: 0.82rem; font-weight: 800; color: {text_secondary};">Categoría:</span>
+                <span style="font-size: 0.78rem; font-weight: 800; color: {text_secondary};">Categoría:</span>
                 <select id="fsCatSelect" class="fs-cat-select">
                   <option value="ALL">Todas las Categorías</option>
                   {options_categorias}
@@ -1274,11 +1271,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             container.classList.remove('mode-multi');
             container.classList.add('mode-single');
             btnViewToggle.textContent = '🔳 Ver Múltiples Cuerpos';
+            btnViewToggle.style.display = 'block';
             fsToggleViewBtn.textContent = '🔳 Múltiples Cuerpos';
           }} else {{
             container.classList.remove('mode-single');
             container.classList.add('mode-multi');
             btnViewToggle.textContent = '🔲 Modo 1 Cuerpo';
+            btnViewToggle.style.display = 'none';
             fsToggleViewBtn.textContent = '🔲 1 Cuerpo';
           }}
           scale = 1; posX = 0; posY = 0; updateZoom();
@@ -1288,14 +1287,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         btnViewToggle.addEventListener('click', () => alternarModoVista(false));
         fsToggleViewBtn.addEventListener('click', () => alternarModoVista());
 
-        // CLIC EN EL TÍTULO DEL CUERPO PARA EXPANDIRLO Y CENTRARLO PERFECTAMENTE (BLOCK: CENTER)
+        // CLIC EN EL ENCABEZADO DEL CUERPO PARA EXPANDIRLO AL 100% SIN FILTRAR LOS DEMÁS
         document.querySelectorAll('.bay-title').forEach(titleElem => {{
           titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
             if (bayElem) {{
               alternarModoVista(true);
               setTimeout(() => {{
-                bayElem.scrollIntoView({{ behavior: 'smooth', inline: 'center', block: 'center' }});
+                bayElem.scrollIntoView({{ behavior: 'smooth', inline: 'center', block: 'nearest' }});
               }}, 100);
             }}
           }});
@@ -1315,12 +1314,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               startY = e.touches[0].clientY - posY;
             }}
             const now = new Date().getTime();
+            // DOBLE TOQUE: ALTERNA ENTRE 1 CUERPO Y VISTA MÚLTIPLE SIN CERRAR FULLSCREEN
             if (now - lastTap < 320 && now - lastTap > 0) {{
               const clickedBay = e.target.closest('.bay-column');
               if (!isSingleMode && clickedBay) {{
                 alternarModoVista(true);
                 setTimeout(() => {{
-                  clickedBay.scrollIntoView({{ behavior: 'smooth', inline: 'center', block: 'center' }});
+                  clickedBay.scrollIntoView({{ behavior: 'smooth', inline: 'center' }});
                 }}, 100);
               }} else {{
                 alternarModoVista(false);
@@ -1345,6 +1345,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             const currentDist = getDistance(e.touches);
             const factor = currentDist / initialDist;
             
+            // PELLIZCO PARA ALEJAR (ZOOM OUT): REGRESA A LA VISTA MÚLTIPLE
             if (factor < 0.88 && isSingleMode) {{
               alternarModoVista(false);
               isTouching = false;
@@ -1597,7 +1598,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             window.print();
         }});
 
-        # LEYENDA
+        // LEYENDA
         document.querySelectorAll('.legend-chip').forEach(chip => {{
             chip.addEventListener('click', () => {{
                 const filter = chip.getAttribute('data-filter');
@@ -1643,7 +1644,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           applyFilters();
         }});
 
-        # MODAL PRODUCTO
+        // MODAL PRODUCTO
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         
@@ -1680,13 +1681,14 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             }}
         }});
 
-        # INICIALIZACIÓN
+        // INICIALIZACIÓN
         setTimeout(() => {{
           brandSelect.value = 'ALL';
           catSelect.value = 'ALL';
           fsCatSelect.value = 'ALL';
           baySelect.value = 'ALL';
           levelSelect.value = 'ALL';
+          btnViewToggle.style.display = 'none';
           applyFilters();
         }}, 100);
       </script>
@@ -1877,9 +1879,9 @@ def cargar_todas_las_fuentes():
             df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_matriz, hora_lectura, None
+        return df_matriz, df_vta, hora_lectura, None
     except Exception as e:
-        return None, None, str(e)
+        return None, None, None, str(e)
 
 # --- HEADER SAAS UNIFICADO CON CRÉDITO DE AUTORÍA ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
@@ -1910,7 +1912,7 @@ with col_head3:
         header_time_placeholder = st.empty()
 
 with st.spinner("Sincronizando fuentes externas en la nube..."):
-    df_nube, info_hora, error_nube = cargar_todas_las_fuentes()
+    df_nube, df_vta_global, info_hora, error_nube = cargar_todas_las_fuentes()
 
 header_time_placeholder.markdown(f"""
     <div style="text-align: right; line-height: 1.3;">
@@ -1960,7 +1962,7 @@ if df_raw is not None and not df_raw.empty:
             st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para expandirlo o usa el botón superior para alternar vistas.</i></div>", unsafe_allow_html=True)
             
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma, es_oscuro=es_oscuro)
-        components.html(html_pasillo, height=840, scrolling=False)
+        components.html(html_pasillo, height=960, scrolling=True)
             
     # =========================================================================
     # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO E INDEPENDIENTE) ---
@@ -2012,18 +2014,27 @@ if df_raw is not None and not df_raw.empty:
 
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
-        ventas_globales = df_dash_unicos['Venta_Num'].sum()
+        ventas_plano = df_dash_unicos['Venta_Num'].sum()
         margen_global = df_dash_unicos['Margen_Num'].sum()
-        margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
-        total_skus_activos = len(df_dash_unicos)
-        promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
+        margen_pct_global = (margen_global / ventas_plano) if ventas_plano > 0 else 0
+        skus_plano = len(df_dash_unicos)
+
+        if df_vta_global is not None and not df_vta_global.empty:
+            total_venta_maestra = df_vta_global['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
+            total_skus_maestros = len(df_vta_global['Material_Str'].drop_duplicates())
+        else:
+            total_venta_maestra = ventas_plano
+            total_skus_maestros = skus_plano
+
+        pct_venta_representada = (ventas_plano / total_venta_maestra * 100) if total_venta_maestra > 0 else 100.0
+        pct_skus_representados = (skus_plano / total_skus_maestros * 100) if total_skus_maestros > 0 else 100.0
         
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #3b82f6;">
-                    <div class="fin-kpi-title"><span>Ventas Brutas Filtradas</span><span>💳</span></div>
-                    <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
-                    <div class="fin-kpi-subtitle">Ticket Promedio/SKU: S/ {promedio_venta_sku:,.2f}</div>
+                    <div class="fin-kpi-title"><span>Ventas Planograma</span><span>💳</span></div>
+                    <div class="fin-kpi-val">S/ {ventas_plano:,.2f}</div>
+                    <div class="fin-kpi-subtitle"><b>{pct_venta_representada:.1f}%</b> de la venta total (S/ {total_venta_maestra:,.2f})</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #10b981;">
                     <div class="fin-kpi-title"><span>Margen Total Bruto</span><span>📈</span></div>
@@ -2033,12 +2044,12 @@ if df_raw is not None and not df_raw.empty:
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #8b5cf6;">
                     <div class="fin-kpi-title"><span>Margen Global (%)</span><span>📊</span></div>
                     <div class="fin-kpi-val" style="color: {t['accent_purple']};">{margen_pct_global*100:.1f}%</div>
-                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta</div>
+                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta Planograma</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #fbbf24;">
-                    <div class="fin-kpi-title"><span>Surtido Activo</span><span>📦</span></div>
-                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{total_skus_activos}</div>
-                    <div class="fin-kpi-subtitle">SKUs Únicos Filtrados</div>
+                    <div class="fin-kpi-title"><span>SKUs en Planograma</span><span>📦</span></div>
+                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{skus_plano}</div>
+                    <div class="fin-kpi-subtitle"><b>{pct_skus_representados:.1f}%</b> del surtido total ({total_skus_maestros} SKUs)</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
