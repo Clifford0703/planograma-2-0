@@ -99,7 +99,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE Y BLOQUEO DE SCROLL GLOBAL CUANDO EL MODAL ESTÁ ACTIVO
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -109,6 +109,11 @@ st.markdown(f"""
             background: {t["bg_app"]} !important;
             color: {t["text_primary"]} !important;
             font-family: 'Inter', sans-serif !important;
+        }}
+        
+        body.modal-active {{
+            overflow: hidden !important;
+            height: 100vh !important;
         }}
         
         header[data-testid="stHeader"] {{
@@ -174,20 +179,6 @@ st.markdown(f"""
             font-weight: 900 !important;
         }}
         
-        /* OPCIONES DE RADIO */
-        [data-testid="stRadio"],
-        [data-testid="stRadio"] *,
-        [data-testid="stRadio"] label,
-        [data-testid="stRadio"] p,
-        [data-testid="stRadio"] span,
-        [data-testid="stRadio"] div,
-        [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p,
-        label[data-baseweb="radio"] * {{
-            color: {t["text_primary"]} !important;
-            -webkit-text-fill-color: {t["text_primary"]} !important;
-            font-weight: 700 !important;
-        }}
-        
         /* SELECTBOXES */
         [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
             background-color: {t["input_bg"]} !important;
@@ -209,11 +200,8 @@ st.markdown(f"""
         [data-testid="stSelectbox"] svg {{
             fill: {t["text_secondary"]} !important;
         }}
-        
+
         /* BOTONES STREAMLIT */
-        .stButton {{
-            position: relative;
-        }}
         .stButton > button {{
             background-color: {t["btn_bg"]} !important;
             background: {t["btn_bg"]} !important;
@@ -311,25 +299,7 @@ st.markdown(f"""
             margin-bottom: 12px;
             box-shadow: {t["card_shadow"]};
         }}
-        
-        .dash-card-header {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            padding-bottom: 6px;
-            border-bottom: 1px solid {t["border_subtle"]};
-        }}
-        
-        .dash-card-title {{
-            font-size: 0.85rem;
-            font-weight: 800;
-            color: {t["text_primary"]};
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }}
-        
+
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -413,7 +383,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (PASILLO Y LATERAL) ---
+# --- GENERADOR DEL PLANOGRAMA ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -427,7 +397,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df['Lateral_Val'] = df[lateral_col].astype(str).str.strip().str.upper() if lateral_col else "A"
 
     bandeja_str = df.get('Bandeja', pd.Series(["1.1"]*len(df))).astype(str)
-    df[['Cuerpo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')
+    df[['Cuerpo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0:2]
     df['Cuerpo_Ord'] = pd.to_numeric(df['Cuerpo_Ord'], errors='coerce').fillna(1)
     df['Nivel_Num'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
 
@@ -495,20 +465,21 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                         catjer_val = str(it.get("Categoría", "SIN DATOS")).replace('"', '&quot;')
                         ga_val = str(it.get("Grupo de Artículo", "SIN DATOS")).replace('"', '&quot;')
                         
+                        link_foto = str(it.get("Links de fotos", "")).strip()
+                        if link_foto in ['nan', '', 'None', 'SIN DATOS', 'NaN']:
+                            link_foto_final = ""
+                        else:
+                            link_foto_final = link_foto.replace("http://", "https://")
+                        
                         part_fmt = format_pct(part_val)
                         stock_fmt = f"{stock_val:.2f}" if stock_val != -999.0 else "SIN DATOS"
                         cob_fmt = f"{cob_val:.2f}" if cob_val != -999.0 else "SIN DATOS"
                         estilo_cobertura = "color: #ef4444; font-weight: 800;" if cob_val != -999.0 and cob_val >= 30 else ""
                         
                         if es_realograma:
-                            link_foto = str(it.get("Links de fotos", ""))
-                            if link_foto in ['nan', '', 'None', 'SIN DATOS']:
-                                link_foto = "https://via.placeholder.com/60x150.png/1e293b/94a3b8?text=Sin+Foto"
-                            else:
-                                link_foto = link_foto.replace("http://", "https://")
-                            
+                            foto_render = link_foto_final if link_foto_final else "https://via.placeholder.com/60x150.png/1e293b/94a3b8?text=Sin+Foto"
                             clase_alerta, cat_leyenda = obtener_alerta_css(estado, stock_val)
-                            img_tags = "".join([f'<img src="{link_foto}" alt="{marca}">' for _ in range(caras)])
+                            img_tags = "".join([f'<img src="{foto_render}" alt="{marca}">' for _ in range(caras)])
                             
                             html_interno = f"""
                               <div class="top-badge"></div>
@@ -546,6 +517,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                              data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_val}" data-part="{part_fmt}" 
                              data-cod="{cod_real}" data-cat="{cat_leyenda}" 
                              data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
+                             data-foto="{link_foto_final}"
                              title="Detalles: {nombre}">
                           {html_interno}
                         </div>
@@ -626,7 +598,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .main-container {{ 
           padding: 4px 6px; 
           height: auto; 
-          min-height: 100vh;
+          min-height: 100vh; 
           display: flex; 
           flex-direction: column; 
           box-sizing: border-box; 
@@ -780,8 +752,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           width: 100%; 
           position: relative; 
           flex: 1; 
-          height: auto;
-          min-height: fit-content;
+          height: auto; 
+          min-height: fit-content; 
           background: {card_bg}; 
           border-radius: 10px; 
           border: 1px solid {t["border_subtle"]}; 
@@ -1052,12 +1024,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
+        /* MODAL ROBUSTO ORIGINAL (CENTRALIZADO Y BLOQUEO DE FONDO) */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
-          width: 100% !important; 
-          height: 100% !important; 
-          background: rgba(0,0,0,0.75) !important; 
+          width: 100vw !important; 
+          height: 100vh !important; 
+          background: rgba(0,0,0,0.78) !important; 
           z-index: 2147483647 !important; 
           opacity: 0; 
           pointer-events: none; 
@@ -1067,8 +1040,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           justify-content: center !important; 
           padding: 16px !important; 
           backdrop-filter: blur(6px); 
+          overflow-y: auto !important;
         }}
         .modal-overlay.active {{ opacity: 1 !important; pointer-events: auto !important; }}
+        
         .modal-content {{ 
           background: {card_bg} !important; 
           color: {text_primary} !important; 
@@ -1079,13 +1054,45 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           max-height: 85vh !important; 
           overflow-y: auto !important; 
           border: 1.5px solid {t["accent"]} !important; 
-          box-shadow: 0 25px 50px rgba(0,0,0,0.5) !important; 
+          box-shadow: 0 25px 50px rgba(0,0,0,0.6) !important; 
           position: relative !important; 
+          margin: auto !important;
           z-index: 2147483647 !important; 
         }}
         .modal-close {{ position: absolute; top: 12px; right: 16px; font-size: 1.5rem; cursor: pointer; color: {text_secondary}; font-weight: 700; }}
         .modal-close:hover {{ color: {text_primary}; }}
-        .m-row {{ border-bottom: 1px solid {t["border_subtle"]}; padding: 8px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
+        
+        .modal-img-container {{
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin-bottom: 14px;
+          background: {t["bg_surface"]};
+          border: 1px solid {t["border_subtle"]};
+          border-radius: 8px;
+          padding: 10px;
+          min-height: 120px;
+        }}
+        .modal-img-container img {{
+          max-height: 140px;
+          max-width: 100%;
+          object-fit: contain;
+        }}
+        .modal-img-placeholder {{
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          color: {t["text_muted"]};
+          font-size: 0.78rem;
+          font-weight: 700;
+        }}
+        .modal-img-placeholder span {{
+          font-size: 2.2rem;
+        }}
+        
+        .m-row {{ border-bottom: 1px solid {t["border_subtle"]}; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
         .m-label {{ font-weight: 600; color: {text_secondary}; }}
         .m-val {{ font-weight: 700; text-align: right; max-width: 65%; font-feature-settings: "tnum"; }}
 
@@ -1154,7 +1161,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
             <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
@@ -1163,9 +1170,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           
           <button id="btnViewToggle" class="btn-view-toggle-float">🔲 Modo 1 Cuerpo</button>
 
+          <!-- MODAL DE DETALLE DEL PRODUCTO -->
           <div id="productModal" class="modal-overlay">
             <div class="modal-content" id="modalContent">
               <span class="modal-close">&times;</span>
+              
+              <!-- FOTO / PLACEHOLDER DEL PRODUCTO -->
+              <div class="modal-img-container" id="m-img-container">
+                <img id="m-img" src="" alt="Foto Producto" style="display: none;">
+                <div id="m-placeholder" class="modal-img-placeholder">
+                  <span>📷</span>
+                  <div>Sin imagen disponible</div>
+                </div>
+              </div>
+
               <h3 id="m-name" style="margin-top: 0; font-size: 1.05rem; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; line-height: 1.3;">Producto</h3>
               <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod" style="font-family: monospace;"></span></div>
               <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean" style="font-family: monospace;"></span></div>
@@ -1596,12 +1614,27 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           applyFilters();
         }});
 
+        // MODAL DE DETALLE ORIGINAL ROBUSTO CON BLOQUEO DE SCROLL DE FONDO
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
+        const modalImg = document.getElementById('m-img');
+        const modalPlaceholder = document.getElementById('m-placeholder');
         
         document.querySelectorAll('.sku-item').forEach(card => {{
             card.addEventListener('click', (e) => {{
                 e.stopPropagation();
+                
+                const fotoUrl = card.getAttribute('data-foto') || '';
+                if (fotoUrl && fotoUrl.trim() !== '') {{
+                    modalImg.src = fotoUrl;
+                    modalImg.style.display = 'block';
+                    modalPlaceholder.style.display = 'none';
+                }} else {{
+                    modalImg.src = '';
+                    modalImg.style.display = 'none';
+                    modalPlaceholder.style.display = 'flex';
+                }}
+                
                 document.getElementById('m-name').textContent = card.getAttribute('data-name');
                 document.getElementById('m-cod').textContent = card.getAttribute('data-cod');
                 document.getElementById('m-ean').textContent = card.getAttribute('data-ean');
@@ -1621,14 +1654,21 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
                 modal.classList.add('active');
+                document.body.classList.add('modal-active');
             }});
         }});
-        closeBtn.addEventListener('click', () => modal.classList.remove('active'));
-        window.addEventListener('click', (e) => {{ if(e.target === modal) modal.classList.remove('active'); }});
+        
+        function closeModal() {{
+            modal.classList.remove('active');
+            document.body.classList.remove('modal-active');
+        }}
+
+        closeBtn.addEventListener('click', closeModal);
+        window.addEventListener('click', (e) => {{ if(e.target === modal) closeModal(); }});
 
         document.addEventListener('keydown', (e) => {{
             if (e.key === 'Escape' && modal.classList.contains('active')) {{
-                modal.classList.remove('active');
+                closeModal();
             }}
         }});
 
@@ -2011,7 +2051,7 @@ if df_raw is not None and not df_raw.empty:
         
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
-        # --- NIVEL 2: GRÁFICOS OPERATIVOS (JERARQUÍA ESTRICTA CON RANGO DE 7 COLUMNAS Y SLIDER) ---
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS (MÁXIMO 5 COLUMNAS VISIBLES CON SCROLL HORIZONTAL) ---
         col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
@@ -2052,7 +2092,7 @@ if df_raw is not None and not df_raw.empty:
             df_sku_cuerpo = df_dash_base.drop_duplicates(subset=['COD REAL', 'Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num']).copy()
             
             cat_por_bloque = df_sku_cuerpo.groupby(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num'])['Categoría'].agg(
-                lambda x: max(set([str(i) for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]) > 0 else "Sin Categoría"
+                lambda x: max(set([str(i) for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]) > 0 else "General"
             ).to_dict()
             
             ventas_cuerpo = df_sku_cuerpo.groupby(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num']).agg(
@@ -2060,28 +2100,35 @@ if df_raw is not None and not df_raw.empty:
                 Margen_Total=('Margen_Num', 'sum'),
                 SKUs_Total=('COD REAL', 'count')
             ).reset_index()
-            
-            def crear_etiqueta_simple(row):
-                p = row['Pasillo_Key']
-                l = row['Lateral_Key']
-                c = int(row['Cuerpo_Num'])
-                return f"P{p} [{l}] • C{c}"
 
-            ventas_cuerpo['Cuerpo_Label_Simple'] = ventas_cuerpo.apply(crear_etiqueta_simple, axis=1)
-            ventas_cuerpo['Categoria_Full'] = ventas_cuerpo.apply(lambda row: cat_por_bloque.get((row['Pasillo_Key'], row['Lateral_Key'], row['Cuerpo_Num']), "General"), axis=1)
-            ventas_cuerpo['Margen_Pct'] = ventas_cuerpo.apply(
-                lambda row: row['Margen_Total'] / row['Venta_Total'] if row['Venta_Total'] > 0 else 0, 
-                axis=1
-            )
-            
+            if not ventas_cuerpo.empty:
+                ventas_cuerpo['Cuerpo_Label_Simple'] = [
+                    f"P{row['Pasillo_Key']} [{row['Lateral_Key']}] • C{int(row['Cuerpo_Num'])}" 
+                    for _, row in ventas_cuerpo.iterrows()
+                ]
+                ventas_cuerpo['Categoria_Full'] = [
+                    cat_por_bloque.get((row['Pasillo_Key'], row['Lateral_Key'], row['Cuerpo_Num']), "General") 
+                    for _, row in ventas_cuerpo.iterrows()
+                ]
+                ventas_cuerpo['Margen_Pct'] = [
+                    row['Margen_Total'] / row['Venta_Total'] if row['Venta_Total'] > 0 else 0 
+                    for _, row in ventas_cuerpo.iterrows()
+                ]
+            else:
+                ventas_cuerpo['Cuerpo_Label_Simple'] = []
+                ventas_cuerpo['Categoria_Full'] = []
+                ventas_cuerpo['Margen_Pct'] = []
+
             orden_activo = st.session_state.dash_orden
-            if orden_activo == "Mayor Venta": ventas_cuerpo = ventas_cuerpo.sort_values('Venta_Total', ascending=False)
-            elif orden_activo == "Mayor Margen": ventas_cuerpo = ventas_cuerpo.sort_values('Margen_Pct', ascending=False)
-            else: ventas_cuerpo = ventas_cuerpo.sort_values(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num'])
+            if orden_activo == "Mayor Venta": 
+                ventas_cuerpo = ventas_cuerpo.sort_values('Venta_Total', ascending=False)
+            elif orden_activo == "Mayor Margen": 
+                ventas_cuerpo = ventas_cuerpo.sort_values('Margen_Pct', ascending=False)
+            else: 
+                ventas_cuerpo = ventas_cuerpo.sort_values(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num'])
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             
-            # Barras de Ventas con Tooltip ancho que evita recortes (como "Café y Complementos")
             fig.add_trace(
                 go.Bar(
                     x=ventas_cuerpo['Cuerpo_Label_Simple'], 
@@ -2091,10 +2138,10 @@ if df_raw is not None and not df_raw.empty:
                     textposition='inside',
                     insidetextanchor='middle',
                     textangle=0,
-                    textfont=dict(color='#ffffff', size=9, family='Inter', weight='bold'),
+                    textfont=dict(color='#ffffff', size=10, family='Inter', weight='bold'),
                     marker=dict(color='#2563eb', line=dict(color='#1d4ed8', width=1.5)),
                     hovertemplate="<b>Pasillo %{customdata[0]} [%{customdata[1]}] - Cuerpo %{customdata[2]}</b><br>Categoría: <b>%{customdata[4]}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata[3]}<extra></extra>",
-                    customdata=ventas_cuerpo[['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num', 'SKUs_Total', 'Categoria_Full']]
+                    customdata=ventas_cuerpo[['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num', 'SKUs_Total', 'Categoria_Full']] if not ventas_cuerpo.empty else []
                 ), secondary_y=False
             )
 
@@ -2113,33 +2160,34 @@ if df_raw is not None and not df_raw.empty:
                 ), secondary_y=True
             )
 
+            num_cols = len(ventas_cuerpo)
+            ancho_grafico = max(650, int(num_cols * 130))
+
             fig.update_layout(
+                width=ancho_grafico,
                 paper_bgcolor='rgba(0,0,0,0)', 
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
-                hoverlabel=dict(bgcolor=t["bg_surface"], font_size=12, font_family="Inter"), # Tooltip ancho y claro que no corta texto
+                hoverlabel=dict(bgcolor=t["bg_surface"], font_size=12, font_family="Inter"),
                 legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
-                margin=dict(t=30, b=50, l=10, r=10),
+                margin=dict(t=30, b=30, l=10, r=10),
                 xaxis=dict(
                     showgrid=False, 
                     color=t["plotly_text"], 
                     tickfont=dict(size=10, weight='bold', color=t["plotly_text"]),
-                    tickangle=0,
-                    range=[-0.5, 6.5],  # Muestra exactamente las primeras 7 columnas por defecto
-                    autorange=False,
-                    rangeslider=dict(
-                        visible=True, 
-                        thickness=0.04,  # Barra desplazadora delgada inferior
-                        bgcolor=t["bg_surface"]
-                    )
+                    tickangle=0
                 ),
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["plotly_text"], zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color=t["accent_green"], zeroline=False)
             )
             
-            fig.update_xaxes(fixedrange=False)
+            fig.update_xaxes(fixedrange=True)
             fig.update_yaxes(fixedrange=True)
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
+            st.markdown('<div class="chart-scroll-wrapper">', unsafe_allow_html=True)
+            st.plotly_chart(fig, use_container_width=False, config={'displayModeBar': False, 'scrollZoom': False})
+            st.markdown('</div>', unsafe_allow_html=True)
+
             st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
             
         with col_graf_der:
