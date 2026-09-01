@@ -123,7 +123,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* PESTAÑAS (TABS) */
+        /* PESTAÑAS (TABS) - VISIBILIDAD FORZADA */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
             background-color: {t["tab_container_bg"]} !important;
@@ -481,7 +481,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (MODAL INTEGRADO EN AISLE-WRAPPER) ---
+# --- GENERADOR DEL PLANOGRAMA (RESPONSIVE EN MÓVIL Y MODAL SEGURO EN FULLSCREEN) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -1031,7 +1031,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
-        /* MODAL ENCAPSULADO DIRECTAMENTE EN EL FULLSCREEN CON Z-INDEX MÁXIMO */
+        /* MODAL ENCAPSULADO CON Z-INDEX MÁXIMO GLOBAL */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
@@ -1069,7 +1069,25 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .m-label {{ font-weight: 600; color: {text_secondary}; }}
         .m-val {{ font-weight: 700; text-align: right; max-width: 65%; font-feature-settings: "tnum"; }}
 
+        /* --- RESPONSIVIDAD PARA CELULAR (DESPLAZAMIENTO FLUIDO COMPLETO) --- */
         @media (max-width: 768px) {{
+            body, html {{ 
+              height: auto !important; 
+              overflow-y: auto !important; 
+              overflow-x: hidden !important; 
+            }}
+            .main-container {{ 
+              height: auto !important; 
+              min-height: 100vh !important; 
+              overflow-y: visible !important; 
+              padding-bottom: 25px !important;
+            }}
+            .aisle-wrapper {{ 
+              height: 75vh !important; 
+              min-height: 520px !important; 
+              flex: none !important; 
+              margin-bottom: 15px !important;
+            }}
             .nav-btn {{ display: none !important; }}
             .aisle-container {{ padding: 8px 4px !important; touch-action: pan-x pan-y !important; }}
             .kpi-container {{ display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }}
@@ -1133,10 +1151,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           </div>
         </div>
 
-        <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO DIRECTAMENTE EN EL FULLSCREEN -->
+        <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           
-          <!-- MODAL DENTRO DE AISLE-WRAPPER PARA QUE NUNCA QUEDE POR DETRÁS EN FULLSCREEN -->
           <div id="productModal" class="modal-overlay">
             <div class="modal-content" id="modalContent">
               <span class="modal-close">&times;</span>
@@ -1416,9 +1433,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchCat && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
-             if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
+             if(matchSearch && matchBrand && matchCat && matchLevel) availableLevels.add(level);
 
              if(passesStandard) {{
                  setTot.add(cod);
@@ -1596,7 +1613,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         closeBtn.addEventListener('click', () => modal.classList.remove('active'));
         window.addEventListener('click', (e) => {{ if(e.target === modal) modal.classList.remove('active'); }});
 
-        // CERRAR MODAL CON TECLA ESCAPE
         document.addEventListener('keydown', (e) => {{
             if (e.key === 'Escape' && modal.classList.contains('active')) {{
                 modal.classList.remove('active');
@@ -1752,7 +1768,7 @@ def cargar_todas_las_fuentes():
             
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- APLICACIÓN DE CRUCES SECUENCIALES ---
+        # --- APLICACIÓN DE CRUCES SECUENCIALES ORIGINALES ---
         if not df_cob.empty:
             df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
             df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
@@ -1884,7 +1900,7 @@ if df_raw is not None and not df_raw.empty:
             st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Pellizca para Zoom o haz <b>doble toque</b> para auto-encajar el cuerpo.</i></div>", unsafe_allow_html=True)
             
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma, es_oscuro=es_oscuro)
-        components.html(html_pasillo, height=840, scrolling=False)
+        components.html(html_pasillo, height=960, scrolling=True)
             
     # =========================================================================
     # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO E INDEPENDIENTE) ---
@@ -1936,13 +1952,11 @@ if df_raw is not None and not df_raw.empty:
 
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
-        # 1. Ventas y SKUs en el Planograma (Filtrados)
         ventas_plano = df_dash_unicos['Venta_Num'].sum()
         margen_global = df_dash_unicos['Margen_Num'].sum()
         margen_pct_global = (margen_global / ventas_plano) if ventas_plano > 0 else 0
         skus_plano = len(df_dash_unicos)
 
-        # 2. Total General de Ventas y SKUs (desde factVentas sin restricción de plano)
         if df_vta_global is not None and not df_vta_global.empty:
             total_venta_maestra = df_vta_global['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
             total_skus_maestros = len(df_vta_global['Material_Str'].drop_duplicates())
