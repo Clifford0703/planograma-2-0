@@ -481,7 +481,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (CON DISTRIBUCIÓN EXPANDIDA space-between) ---
+# --- GENERADOR DEL PLANOGRAMA ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -1609,7 +1609,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- CARGA INTEGRADA DE FUENTES Y CRUCE DE FOTOS ---
+# --- CARGA INTEGRADA DE FUENTES Y CRUCE CON URL DE JERARQUÍA OFICIAL ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -1652,7 +1652,7 @@ def cargar_todas_las_fuentes():
 
         df_matriz['COD_REAL_Str'] = df_matriz['COD REAL'].astype(str).apply(clean_sku)
 
-        # 2. Coberturas y Stock (TCOBERT)
+        # 2. Coberturas y Stock (TCOBERT -> Material <-> Cob./días)
         df_cob_raw = leer_tabla_por_ancla(url_coberturas, "Material", sheet_target=0, skiprows_fallback=3)
         if "Material" not in df_cob_raw.columns:
             df_cob_raw = pd.read_excel(url_coberturas, sheet_name=0, skiprows=3)
@@ -1676,15 +1676,12 @@ def cargar_todas_las_fuentes():
             df_cob['Cobertura'] = df_cob_raw[col_cob].apply(safe_float) if col_cob else -999.0
             df_cob = df_cob[df_cob['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 3. Ventas y Margen (factVentas) - FILTRADO ESTRICTO: SIN GUIÓN "-"
+        # 3. Ventas y Margen (factVentas)
         df_vta_raw = leer_tabla_por_ancla(url_ventas, "Material", sheet_target=0, skiprows_fallback=2)
         df_vta = pd.DataFrame()
         col_mat_vta = 'Material' if 'Material' in df_vta_raw.columns else ('COD REAL' if 'COD REAL' in df_vta_raw.columns else None)
         if col_mat_vta:
             df_vta['Material_Str'] = df_vta_raw[col_mat_vta].astype(str).apply(clean_sku)
-            # REQUISITO: Excluir los materiales que contengan el carácter "-"
-            df_vta = df_vta[~df_vta['Material_Str'].str.contains('-')].copy()
-
             col_v = 'Monto Venta Neta' if 'Monto Venta Neta' in df_vta_raw.columns else 'Venta'
             col_m = 'Monto Margen' if 'Monto Margen' in df_vta_raw.columns else 'Margen'
             col_p = '% PART' if '% PART' in df_vta_raw.columns else '% Part'
@@ -1694,7 +1691,7 @@ def cargar_todas_las_fuentes():
             df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p in df_vta_raw.columns else -999.0
             df_vta = df_vta[df_vta['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 4. Código de Barras (dimCodbarras)
+        # 4. Código de Barras (dimCodbarras -> CBARRAS / Material -> Grupo de A como G.A.)
         df_bar_raw = leer_tabla_por_ancla(url_barras, "Material", sheet_target=0, skiprows_fallback=2)
         df_bar = pd.DataFrame()
         col_mat_bar = 'Material' if 'Material' in df_bar_raw.columns else ('COD REAL' if 'COD REAL' in df_bar_raw.columns else None)
@@ -1708,7 +1705,7 @@ def cargar_todas_las_fuentes():
             df_bar['G.A.'] = df_bar_raw[col_ga_orig].astype(str).apply(clean_sku) if col_ga_orig else 'SIN DATOS'
             df_bar = df_bar[df_bar['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 5. Links de Fotos
+        # 5. Links de Fotos (Links de fotos 03.09 -> SKUReferenceCode)
         df_fotos_raw = leer_tabla_por_ancla(url_fotos, "SKUReferenceCode", sheet_target=0, skiprows_fallback=0)
         df_fotos = pd.DataFrame()
         if not df_fotos_raw.empty:
@@ -1721,7 +1718,7 @@ def cargar_todas_las_fuentes():
                 df_fotos['Links de fotos'] = df_fotos_raw[col_link_foto].astype(str).str.strip()
                 df_fotos = df_fotos[df_fotos['Sku_Foto_Str'] != ""].drop_duplicates(subset=['Sku_Foto_Str'])
 
-        # 6. Nueva Jerarquía Comercial SAP ('NuevaJqGA')
+        # 6. Nueva Jerarquía Comercial SAP (Hoja: 'NuevaJqGA' -> Columna K: CodGA, D: Depto, F: Sección, H: Categoría)
         try:
             df_sap_raw = pd.read_excel(url_jerarquia, sheet_name='NuevaJqGA', skiprows=2)
         except Exception:
@@ -1746,38 +1743,22 @@ def cargar_todas_las_fuentes():
             
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- CONSTRUCCIÓN DEL CATÁLOGO BASE DE SKUS ÚNICOS (FACTVENTAS SIN GUIONES + FACTPLANO) ---
-        if not df_vta.empty:
-            # Lista de materiales limpios de ventas sin guion
-            materiales_vta_validos = df_vta[['Material_Str']].drop_duplicates()
-            # Anexar con COD REAL de la matriz de planos
-            planos_skus = df_matriz[['COD_REAL_Str']].drop_duplicates().rename(columns={'COD_REAL_Str': 'Material_Str'})
-            
-            # Combinación de ambos catálogos sin duplicados
-            df_catalogo_base = pd.concat([materiales_vta_validos, planos_skus]).drop_duplicates(subset=['Material_Str'])
-        else:
-            df_catalogo_base = df_matriz[['COD_REAL_Str']].drop_duplicates().rename(columns={'COD_REAL_Str': 'Material_Str'})
-
-        # Cruzar el catálogo base con Coberturas, Ventas y Matriz de Planos
-        df_maestro = df_catalogo_base.merge(df_matriz, left_on='Material_Str', right_on='COD_REAL_Str', how='left')
-        
+        # --- APLICACIÓN DE CRUCES SECUENCIALES ORIGINALES ---
         if not df_cob.empty:
-            df_maestro = df_maestro.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], on='Material_Str', how='left')
+            df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
+            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+
         if not df_vta.empty:
-            df_maestro = df_maestro.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], on='Material_Str', how='left')
+            df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
+            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+
         if not df_bar.empty:
-            df_maestro = df_maestro.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], on='Material_Str', how='left')
+            df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
+            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+
         if not df_fotos.empty:
-            df_maestro = df_maestro.merge(df_fotos[['Sku_Foto_Str', 'Links de fotos']], left_on='Material_Str', right_on='Sku_Foto_Str', how='left')
-            df_maestro.drop(columns=['Sku_Foto_Str'], errors='ignore', inplace=True)
-
-        # Asignar COD REAL oficial si proviene de ventas puras
-        if 'COD REAL' in df_maestro.columns:
-            df_maestro['COD REAL'] = df_maestro['COD REAL'].fillna(df_maestro['Material_Str'])
-        else:
-            df_maestro['COD REAL'] = df_maestro['Material_Str']
-
-        df_matriz = df_maestro.copy()
+            df_matriz = df_matriz.merge(df_fotos[['Sku_Foto_Str', 'Links de fotos']], left_on='COD_REAL_Str', right_on='Sku_Foto_Str', how='left')
+            df_matriz.drop(columns=['Sku_Foto_Str'], inplace=True, errors='ignore')
 
         if 'G.A.' in df_matriz.columns:
             df_matriz['G.A._Str'] = df_matriz['G.A.'].astype(str).apply(clean_sku)
@@ -1800,17 +1781,20 @@ def cargar_todas_las_fuentes():
 
             df_matriz.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
 
-        # Asignación estricta de valores por defecto (Si no hay datos -> SIN DATOS / -999.0)
+        # Rellenar nulos
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
             df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
         for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS')]:
             df_matriz[col] = df_matriz[col].fillna(val_def).astype(str).str.strip() if col in df_matriz.columns else val_def
 
+        if 'Bandeja' in df_matriz.columns and 'EAN' in df_matriz.columns:
+            df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
+
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_matriz, hora_lectura, None
+        return df_matriz, df_vta, hora_lectura, None
     except Exception as e:
-        return None, None, str(e)
+        return None, None, None, str(e)
 
 # --- HEADER SAAS UNIFICADO CON CRÉDITO DE AUTORÍA ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
@@ -1841,7 +1825,7 @@ with col_head3:
         header_time_placeholder = st.empty()
 
 with st.spinner("Sincronizando fuentes externas en la nube..."):
-    df_nube, info_hora, error_nube = cargar_todas_las_fuentes()
+    df_nube, df_vta_global, info_hora, error_nube = cargar_todas_las_fuentes()
 
 header_time_placeholder.markdown(f"""
     <div style="text-align: right; line-height: 1.3;">
@@ -1943,18 +1927,29 @@ if df_raw is not None and not df_raw.empty:
 
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
-        ventas_globales = df_dash_unicos['Venta_Num'].sum()
+        # 1. Ventas y SKUs en el Planograma (Filtrados)
+        ventas_plano = df_dash_unicos['Venta_Num'].sum()
         margen_global = df_dash_unicos['Margen_Num'].sum()
-        margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
-        total_skus_activos = len(df_dash_unicos)
-        promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
+        margen_pct_global = (margen_global / ventas_plano) if ventas_plano > 0 else 0
+        skus_plano = len(df_dash_unicos)
+
+        # 2. Total General de Ventas y SKUs (desde factVentas sin restricción de plano)
+        if df_vta_global is not None and not df_vta_global.empty:
+            total_venta_maestra = df_vta_global['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
+            total_skus_maestros = len(df_vta_global['Material_Str'].drop_duplicates())
+        else:
+            total_venta_maestra = ventas_plano
+            total_skus_maestros = skus_plano
+
+        pct_venta_representada = (ventas_plano / total_venta_maestra * 100) if total_venta_maestra > 0 else 100.0
+        pct_skus_representados = (skus_plano / total_skus_maestros * 100) if total_skus_maestros > 0 else 100.0
         
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #3b82f6;">
-                    <div class="fin-kpi-title"><span>Ventas Brutas Filtradas</span><span>💳</span></div>
-                    <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
-                    <div class="fin-kpi-subtitle">Ticket Promedio/SKU: S/ {promedio_venta_sku:,.2f}</div>
+                    <div class="fin-kpi-title"><span>Ventas Planograma</span><span>💳</span></div>
+                    <div class="fin-kpi-val">S/ {ventas_plano:,.2f}</div>
+                    <div class="fin-kpi-subtitle"><b>{pct_venta_representada:.1f}%</b> de la venta total (S/ {total_venta_maestra:,.2f})</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #10b981;">
                     <div class="fin-kpi-title"><span>Margen Total Bruto</span><span>📈</span></div>
@@ -1964,12 +1959,12 @@ if df_raw is not None and not df_raw.empty:
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #8b5cf6;">
                     <div class="fin-kpi-title"><span>Margen Global (%)</span><span>📊</span></div>
                     <div class="fin-kpi-val" style="color: {t['accent_purple']};">{margen_pct_global*100:.1f}%</div>
-                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta</div>
+                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta Planograma</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #fbbf24;">
-                    <div class="fin-kpi-title"><span>Surtido Activo</span><span>📦</span></div>
-                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{total_skus_activos}</div>
-                    <div class="fin-kpi-subtitle">SKUs Únicos Filtrados</div>
+                    <div class="fin-kpi-title"><span>SKUs en Planograma</span><span>📦</span></div>
+                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{skus_plano}</div>
+                    <div class="fin-kpi-subtitle"><b>{pct_skus_representados:.1f}%</b> del surtido total ({total_skus_maestros} SKUs)</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -2092,6 +2087,7 @@ if df_raw is not None and not df_raw.empty:
                 </div>
             """, unsafe_allow_html=True)
             
+            # Restringido estrictamente a Categoría, Grupo de Artículo y Marca
             dims_mix = ["Categoría", "Grupo de Artículo", "Marca"]
             if st.session_state.dash_analizar not in dims_mix:
                 st.session_state.dash_analizar = "Categoría"
