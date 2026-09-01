@@ -99,7 +99,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON ANCHO FORZADO AL 100% Y ELIMINACIÓN DE BORDES LATERALES
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE EN PESTAÑAS Y WIDGETS
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -126,7 +126,7 @@ st.markdown(f"""
         /* PESTAÑAS (TABS) */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
-            background-color: {t["bg_card"]} !important;
+            background-color: {t["tab_container_bg"]} !important;
             padding: 6px !important;
             border-radius: 8px !important;
             border: 1.5px solid {t["border_subtle"]} !important;
@@ -134,41 +134,58 @@ st.markdown(f"""
         }}
         
         .stTabs [data-baseweb="tab"] {{
-            height: 38px !important;
+            height: 40px !important;
             padding: 0 20px !important;
             border-radius: 6px !important;
             font-weight: 800 !important;
-            font-size: 0.86rem !important;
+            font-size: 0.88rem !important;
             background-color: {t["tab_inactive_bg"]} !important;
-            color: {t["tab_inactive_text"]} !important;
-            border: 1px solid {t["border_subtle"]} !important;
+            border: 1.5px solid {t["tab_inactive_border"]} !important;
             opacity: 1 !important;
+            transition: all 0.2s ease !important;
         }}
         
+        .stTabs [data-baseweb="tab"],
+        .stTabs [data-baseweb="tab"] *,
         .stTabs [data-baseweb="tab"] p,
         .stTabs [data-baseweb="tab"] span,
         .stTabs [data-baseweb="tab"] div,
-        .stTabs [data-baseweb="tab"] * {{
+        .stTabs [data-baseweb="tab"] [data-testid="stMarkdownContainer"] p {{
             color: {t["tab_inactive_text"]} !important;
             -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
             font-weight: 800 !important;
-            opacity: 1 !important;
         }}
         
-        .stTabs [aria-selected="true"] {{
+        .stTabs [aria-selected="true"],
+        .stTabs [data-baseweb="tab"][aria-selected="true"] {{
             background-color: {t["accent"]} !important;
             background: {t["accent"]} !important;
-            color: #ffffff !important;
             border-color: {t["accent"]} !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
         }}
         
+        .stTabs [aria-selected="true"] *,
         .stTabs [aria-selected="true"] p,
         .stTabs [aria-selected="true"] span,
         .stTabs [aria-selected="true"] div,
-        .stTabs [aria-selected="true"] * {{
+        .stTabs [aria-selected="true"] [data-testid="stMarkdownContainer"] p {{
             color: #ffffff !important;
             -webkit-text-fill-color: #ffffff !important;
             font-weight: 900 !important;
+        }}
+        
+        /* OPCIONES DE RADIO */
+        [data-testid="stRadio"],
+        [data-testid="stRadio"] *,
+        [data-testid="stRadio"] label,
+        [data-testid="stRadio"] p,
+        [data-testid="stRadio"] span,
+        [data-testid="stRadio"] div,
+        [data-testid="stRadio"] [data-testid="stMarkdownContainer"] p,
+        label[data-baseweb="radio"] * {{
+            color: {t["text_primary"]} !important;
+            -webkit-text-fill-color: {t["text_primary"]} !important;
+            font-weight: 700 !important;
         }}
         
         /* SELECTBOXES */
@@ -313,12 +330,6 @@ st.markdown(f"""
             gap: 6px;
         }}
         
-        .stSelectbox label, .stRadio label {{
-            color: {t["text_primary"]} !important;
-            font-weight: 800 !important;
-            font-size: 0.80rem !important;
-        }}
-
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -412,17 +423,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     bandeja_str = df.get('Bandeja', pd.Series(["1.1"]*len(df))).astype(str)
     df[['Cuerpo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')
     df['Cuerpo_Ord'] = pd.to_numeric(df['Cuerpo_Ord'], errors='coerce').fillna(1)
-    df['Nivel_Ord'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
+    df['Nivel_Num'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
 
+    # Ordenamiento estrictamente numérico descendente por nivel (10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
     df = df.sort_values(
-        by=['Cuerpo_Ord', 'Nivel_Ord', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
+        by=['Cuerpo_Ord', 'Nivel_Num', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
         ascending=[True, False, False, True, True]
     )
 
     cuerpos = {}
     todas_marcas = sorted(list(df["Marca"].dropna().unique())) if "Marca" in df.columns else []
     todas_categorias = sorted([c for c in df["Categoría"].dropna().unique() if c not in ['SIN DATOS', 'S/C', 'nan', '']]) if "Categoría" in df.columns else []
-    todos_niveles = sorted(list(df["Nivel_Ord"].dropna().unique()), reverse=True)
+    
+    todos_niveles = sorted(list(df["Nivel_Num"].dropna().unique()), reverse=True)
 
     for _, r in df.iterrows():
         b_str = str(r.get("Bandeja", "1.1")).strip()
@@ -434,7 +447,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     html_cuerpos = ""
     for cuerpo_nombre, niveles_dict in sorted(cuerpos.items()):
         cuerpo_num = cuerpo_nombre.replace("Cuerpo ", "").strip()
-        niveles_ordenados = sorted(niveles_dict.keys(), reverse=True)
+        # Ordenar claves numéricamente por nivel de manera descendente
+        niveles_ordenados = sorted(niveles_dict.keys(), key=lambda x: int(str(x).split('.')[-1]) if str(x).replace('.','').isdigit() else 1, reverse=True)
         html_niveles = ""
         
         todos_items_cuerpo = [it for sublist in niveles_dict.values() for it in sublist]
@@ -444,7 +458,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         for b_nombre in niveles_ordenados:
             items = niveles_dict[b_nombre]
             total_caras = sum([int(it.get("Caras", 1)) if str(it.get("Caras", 1)).isdigit() else 1 for it in items])
-            nivel_num = b_nombre.split(".")[-1] if "." in b_nombre else "1"
+            nivel_num = str(b_nombre).split(".")[-1] if "." in str(b_nombre) else str(b_nombre)
 
             cards_html = ""
             for it in items:
@@ -1287,7 +1301,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         btnViewToggle.addEventListener('click', () => alternarModoVista(false));
         fsToggleViewBtn.addEventListener('click', () => alternarModoVista());
 
-        // CLIC EN EL TÍTULO DEL CUERPO: AJUSTE HORIZONTAL DIRECTO
+        // CLIC EN EL ENCABEZADO DEL CUERPO: AJUSTE HORIZONTAL DIRECTO SIN SALTO VERTICAL
         document.querySelectorAll('.bay-title').forEach(titleElem => {{
           titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
@@ -1301,7 +1315,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           }});
         }});
 
-        // TOGGLE LEYENDA EN FULLSCREEN
+        // TOGGLE PARA DESPLEGAR/OCULTAR LEYENDA EN PANTALLA COMPLETA
         fsToggleBtn.addEventListener('click', () => {{
           const isCollapsed = fsCollapsible.classList.toggle('collapsed');
           fsToggleBtn.textContent = isCollapsed ? '📍 Leyenda y Filtros ▸' : '📍 Leyenda y Filtros ▾';
@@ -1960,8 +1974,14 @@ if df_raw is not None and not df_raw.empty:
         with col_view2:
             st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para expandirlo a lo ancho.</i></div>", unsafe_allow_html=True)
             
+        # Cálculo dinámico de la altura del componente según el número máximo de niveles presentes
+        bandeja_series = df_base.get('Bandeja', pd.Series(["1.1"]*len(df_base))).astype(str)
+        niveles_extraidos = bandeja_series.str.extract(r'(\d+)\.(\d+)')[1]
+        max_niveles_count = pd.to_numeric(niveles_extraidos, errors='coerce').fillna(6).max()
+        altura_dinamica = int(max(950, 220 + max_niveles_count * 135))
+
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma, es_oscuro=es_oscuro)
-        components.html(html_pasillo, height=840, scrolling=False)
+        components.html(html_pasillo, height=altura_dinamica, scrolling=True)
             
     # =========================================================================
     # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO E INDEPENDIENTE) ---
@@ -2007,7 +2027,7 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todas":
+        if filtro_marca != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
@@ -2408,7 +2428,7 @@ if df_raw is not None and not df_raw.empty:
             )
             st.markdown("</div>", unsafe_allow_html=True)
             
-        st.dataframe(df_rep[cols_to_show], use_container_width=True, hide_index=True)
+        st.dataframe(df_rep[cols_to_show], use_keyword=False, use_container_width=True, hide_index=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     # =========================================================================
