@@ -787,7 +787,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           transform: scale(1.04);
         }}
 
-        /* PANEL DESPLEGABLE EN FULLSCREEN CON MAYOR ALTURA Y HOLGURA */
+        /* PANEL DESPLEGABLE EN FULLSCREEN CON MÁS ALTURA Y HOLGURA */
         .fullscreen-legend-bar {{
           display: none; 
           position: sticky; 
@@ -796,14 +796,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           right: 0; 
           background: {card_bg}; 
           border-bottom: 1px solid {t["border_subtle"]}; 
-          padding: 14px 20px; 
+          padding: 14px 18px; 
           min-height: 64px;
           z-index: 10000; 
           backdrop-filter: blur(12px); 
           flex-direction: column;
-          gap: 12px; 
+          gap: 10px; 
           box-sizing: border-box;
-          box-shadow: 0 4px 15px rgba(0,0,0,0.25);
         }}
 
         .fs-header-row {{
@@ -816,16 +815,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .fs-controls-group {{
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
         }}
 
         .fs-toggle-btn {{
           background: {t['accent']}1a;
           color: {t['accent']};
-          border: 1.5px solid {t['accent']}44;
+          border: 1px solid {t['accent']}44;
           font-weight: 800;
           font-size: 0.82rem;
-          padding: 7px 14px;
+          padding: 6px 14px;
           border-radius: 6px;
           cursor: pointer;
           display: flex;
@@ -839,7 +838,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           align-items: center;
           gap: 12px;
           width: 100%;
-          padding-top: 4px;
+          padding-top: 6px;
+          padding-bottom: 4px;
         }}
         .fs-collapsible-content.collapsed {{
           display: none !important;
@@ -848,7 +848,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .fs-cat-wrapper {{
           display: flex; 
           align-items: center; 
-          gap: 10px; 
+          gap: 8px; 
           margin-left: auto; 
         }}
         .fs-cat-select {{
@@ -857,7 +857,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           color: {text_primary}; 
           padding: 6px 12px; 
           border-radius: 6px; 
-          font-size: 0.85rem; 
+          font-size: 0.82rem; 
           font-weight: 700; 
           outline: none; 
           min-height: 36px;
@@ -934,7 +934,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           scroll-snap-align: start;
         }}
 
-        /* MODO 1 CUERPO EXPANDIDO */
+        /* MODO 1 CUERPO EXPANDIDO (SIN FILTRAR, DESLIZABLE) */
         .aisle-container.mode-single {{
           scroll-snap-type: x mandatory !important;
         }}
@@ -1173,8 +1173,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           
-          <!-- BOTÓN FLOTANTE MODO VISTA -->
-          <button id="btnViewToggle" class="btn-view-toggle-float">🔲 Modo 1 Cuerpo</button>
+          <!-- BOTÓN FLOTANTE MODO VISTA (VISIBLE EN ESCRITORIO) -->
+          <button id="btnViewToggle" class="btn-view-toggle-float" style="display: none;">🔲 Modo 1 Cuerpo</button>
 
           <div id="productModal" class="modal-overlay">
             <div class="modal-content" id="modalContent">
@@ -1200,7 +1200,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 <button id="fsToggleBtn" class="fs-toggle-btn">📍 Leyenda y Filtros ▾</button>
                 <button id="fsToggleViewBtn" class="fs-toggle-btn" style="background: {t['accent']}33;">🔲 1 Cuerpo</button>
               </div>
-              <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 6px 14px; font-weight: 800;">✕ Salir Pantalla Completa</button>
+              <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 5px 12px; font-weight: 800;">✕ Salir Pantalla Completa</button>
             </div>
             
             <div class="fs-collapsible-content" id="fsCollapsible">
@@ -1214,7 +1214,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               </div>
               
               <div class="fs-cat-wrapper">
-                <span style="font-size: 0.82rem; font-weight: 800; color: {text_secondary};">Categoría:</span>
+                <span style="font-size: 0.78rem; font-weight: 800; color: {text_secondary};">Categoría:</span>
                 <select id="fsCatSelect" class="fs-cat-select">
                   <option value="ALL">Todas las Categorías</option>
                   {options_categorias}
@@ -1274,11 +1274,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             container.classList.remove('mode-multi');
             container.classList.add('mode-single');
             btnViewToggle.textContent = '🔳 Ver Múltiples Cuerpos';
+            btnViewToggle.style.display = 'block';
             fsToggleViewBtn.textContent = '🔳 Múltiples Cuerpos';
           }} else {{
             container.classList.remove('mode-single');
             container.classList.add('mode-multi');
             btnViewToggle.textContent = '🔲 Modo 1 Cuerpo';
+            btnViewToggle.style.display = 'none';
             fsToggleViewBtn.textContent = '🔲 1 Cuerpo';
           }}
           scale = 1; posX = 0; posY = 0; updateZoom();
@@ -1288,15 +1290,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         btnViewToggle.addEventListener('click', () => alternarModoVista(false));
         fsToggleViewBtn.addEventListener('click', () => alternarModoVista());
 
-        // CLIC EN EL TÍTULO DEL CUERPO PARA EXPANDIR Y CENTRAR PERFECTAMENTE
+        // CLIC EN EL TÍTULO DEL CUERPO PARA EXPANDIRLO AL 100% (SIN FILTRAR DEMÁS)
         document.querySelectorAll('.bay-title').forEach(titleElem => {{
           titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
             if (bayElem) {{
               alternarModoVista(true);
+              window.scrollTo({{ top: 0, behavior: 'smooth' }});
               setTimeout(() => {{
-                bayElem.scrollIntoView({{ behavior: 'smooth', inline: 'center', block: 'center' }});
-              }}, 100);
+                bayElem.scrollIntoView({{ behavior: 'smooth', inline: 'center', block: 'start' }});
+              }}, 120);
             }}
           }});
         }});
@@ -1319,9 +1322,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               const clickedBay = e.target.closest('.bay-column');
               if (!isSingleMode && clickedBay) {{
                 alternarModoVista(true);
+                window.scrollTo({{ top: 0, behavior: 'smooth' }});
                 setTimeout(() => {{
-                  clickedBay.scrollIntoView({{ behavior: 'smooth', inline: 'center', block: 'center' }});
-                }}, 100);
+                  clickedBay.scrollIntoView({{ behavior: 'smooth', inline: 'center', block: 'start' }});
+                }}, 120);
               }} else {{
                 alternarModoVista(false);
               }}
@@ -1501,7 +1505,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
              if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
-             if(matchSearch && matchBrand && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchCat && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
              if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
              if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
