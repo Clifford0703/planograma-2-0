@@ -99,7 +99,7 @@ theme_vars = {
 }
 t = theme_vars[st.session_state.tema_actual]
 
-# INYECCIÓN CSS CON MÁXIMO CONTRASTE Y BLOQUEO DE SCROLL GLOBAL CUANDO EL MODAL ESTÁ ACTIVO
+# INYECCIÓN CSS CON MÁXIMO CONTRASTE
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -267,7 +267,7 @@ st.markdown(f"""
         .fin-kpi-title {{
             font-size: 0.68rem;
             font-weight: 800;
-            color: {t["text_secondary"]};
+            color: {text_secondary};
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 4px;
@@ -300,7 +300,6 @@ st.markdown(f"""
             box-shadow: {t["card_shadow"]};
         }}
 
-        /* CONTENEDOR CON BARRA DE DESPLAZAMIENTO NATIVA TRADICIONAL */
         .chart-scroll-wrapper {{
             width: 100%;
             overflow-x: auto;
@@ -564,7 +563,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
                 html_cuerpos += f"""
                 <div class="bay-column" data-module="{cuerpo_num}">
-                  <div class="bay-title" title="Haz clic para ajustar a lo ancho">
+                  <div class="bay-title" title="Haz clic para ver a pantalla completa">
                     <span class="bay-main-title">{cuerpo_nombre.upper()} 🔍</span>
                     {subtitulo_cat}
                   </div>
@@ -777,37 +776,39 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           border-radius: 10px; 
           border: 1px solid {t["border_subtle"]}; 
           padding: 0; 
-          overflow: visible; 
+          overflow: hidden; 
         }}
 
-        .btn-view-toggle-float {{
+        /* BOTÓN FLOTANTE PARA SALIR DEL MODO INDIVIDUAL */
+        .btn-return-all {{
+          display: none;
           position: absolute;
           top: 10px;
           left: 14px;
           z-index: 500;
-          background: {t['accent']};
+          background: #3b82f6;
           color: #ffffff;
           border: none;
           border-radius: 6px;
-          padding: 6px 14px;
+          padding: 7px 16px;
           font-weight: 800;
-          font-size: 0.76rem;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+          font-size: 0.78rem;
+          box-shadow: 0 4px 14px rgba(0,0,0,0.35);
           cursor: pointer;
           transition: transform 0.2s ease;
         }}
-        .btn-view-toggle-float:hover {{ transform: scale(1.04); }}
+        .btn-return-all:hover {{ transform: scale(1.04); background: #2563eb; }}
 
         .fullscreen-legend-bar {{
           display: none; 
           background: {card_bg}; 
           border-bottom: 1px solid {t["border_subtle"]}; 
-          padding: 14px 20px; 
-          min-height: 64px;
+          padding: 12px 18px; 
+          min-height: 54px;
           z-index: 10000; 
           backdrop-filter: blur(12px); 
           flex-direction: column;
-          gap: 10px; 
+          gap: 8px; 
           box-sizing: border-box;
           flex-shrink: 0 !important;
         }}
@@ -819,27 +820,27 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           color: {t['accent']};
           border: 1.5px solid {t['accent']}44;
           font-weight: 800;
-          font-size: 0.82rem;
-          padding: 7px 14px;
+          font-size: 0.80rem;
+          padding: 6px 12px;
           border-radius: 6px;
           cursor: pointer;
           display: flex;
           align-items: center;
           gap: 6px;
         }}
-        .fs-collapsible-content {{ display: flex; flex-wrap: wrap; align-items: center; gap: 12px; width: 100%; padding-top: 4px; }}
+        .fs-collapsible-content {{ display: flex; flex-wrap: wrap; align-items: center; gap: 10px; width: 100%; padding-top: 4px; }}
         .fs-collapsible-content.collapsed {{ display: none !important; }}
-        .fs-cat-wrapper {{ display: flex; align-items: center; gap: 10px; margin-left: auto; }}
+        .fs-cat-wrapper {{ display: flex; align-items: center; gap: 8px; margin-left: auto; }}
         .fs-cat-select {{
           background: {input_bg}; 
           border: 1.5px solid {border_col}; 
           color: {text_primary}; 
-          padding: 6px 12px; 
+          padding: 5px 10px; 
           border-radius: 6px; 
-          font-size: 0.85rem; 
+          font-size: 0.80rem; 
           font-weight: 700; 
           outline: none; 
-          min-height: 36px;
+          min-height: 32px;
         }}
         
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
@@ -869,7 +870,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           min-height: 100% !important;
           overflow-y: visible !important;
           overflow-x: visible !important;
-          padding-bottom: 100px !important;
+          padding-bottom: 80px !important;
         }}
 
         .nav-btn {{ 
@@ -926,6 +927,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow-x: auto; 
           overflow-y: visible; 
           scroll-behavior: smooth; 
+          scroll-snap-type: x mandatory;
           width: 100%; 
           height: auto; 
           min-height: fit-content;
@@ -933,17 +935,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           align-items: flex-start;
         }}
 
+        /* MODO MÚLTIPLES CUERPOS: HASTA 4 EN ESCRITORIO CON ANCLAJE AL INICIO */
         .aisle-container.mode-multi .bay-column {{
-          flex: 1 1 calc((100% - 48px) / 4) !important; 
+          flex: 0 0 calc((100% - 48px) / 4) !important; 
           min-width: 280px !important; 
           max-width: calc((100% - 48px) / 4) !important;
-          scroll-snap-align: start;
+          scroll-snap-align: start !important;
         }}
 
-        .aisle-container.mode-single {{
-          scroll-snap-type: x mandatory !important;
-        }}
+        /* MODO 1 CUERPO: OCUPA EL 100% EXACTO DEL ANCHO */
         .aisle-container.mode-single .bay-column {{
+          display: none !important;
+        }}
+        .aisle-container.mode-single .bay-column.active-focused {{
+          display: flex !important;
           flex: 0 0 100% !important;
           width: 100% !important;
           min-width: 100% !important;
@@ -961,7 +966,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           padding-bottom: 12px; 
           box-sizing: border-box; 
           box-shadow: {t["card_shadow"]}; 
-          transition: all 0.25s ease;
+          transition: all 0.2s ease;
         }}
         .bay-column.hidden {{ display: none !important; }}
         
@@ -1043,7 +1048,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
-        /* MODAL FIJO Y CENTRADO ORIGINAL CON BLOQUEO DE FONDO */
+        /* MODAL DE DETALLE */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
@@ -1107,9 +1112,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           font-size: 0.78rem;
           font-weight: 700;
         }}
-        .modal-img-placeholder span {{
-          font-size: 2.2rem;
-        }}
+        .modal-img-placeholder span {{ font-size: 2.2rem; }}
         
         .m-row {{ border-bottom: 1px solid {t["border_subtle"]}; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
         .m-label {{ font-weight: 600; color: {text_secondary}; }}
@@ -1122,7 +1125,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             .zoom-layer {{ height: auto !important; min-height: fit-content !important; }}
             .aisle-container {{ height: auto !important; min-height: fit-content !important; overflow-y: visible !important; padding: 8px 6px 40px 6px !important; touch-action: pan-x pan-y !important; gap: 10px !important; }}
             .nav-btn {{ display: none !important; }}
-            .btn-view-toggle-float {{ display: none !important; }}
             .kpi-container {{ display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }}
             .kpi-card {{ min-width: unset !important; }}
             .kpi-card:last-child {{ grid-column: 1 / -1 !important; }}
@@ -1180,21 +1182,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
             <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
         <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           
-          <button id="btnViewToggle" class="btn-view-toggle-float">🔲 Modo 1 Cuerpo</button>
+          <button id="btnReturnAll" class="btn-return-all">← Ver Todos los Cuerpos</button>
 
           <!-- MODAL DE DETALLE DEL PRODUCTO -->
           <div id="productModal" class="modal-overlay">
             <div class="modal-content" id="modalContent">
               <span class="modal-close">&times;</span>
               
-              <!-- FOTO / PLACEHOLDER DEL PRODUCTO -->
               <div class="modal-img-container" id="m-img-container">
                 <img id="m-img" src="" alt="Foto Producto" style="display: none;">
                 <div id="m-placeholder" class="modal-img-placeholder">
@@ -1222,7 +1223,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <div class="fs-header-row">
               <div class="fs-controls-group">
                 <button id="fsToggleBtn" class="fs-toggle-btn">📍 Leyenda y Filtros ▾</button>
-                <button id="fsToggleViewBtn" class="fs-toggle-btn" style="background: {t['accent']}33;">🔲 1 Cuerpo</button>
               </div>
               <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 6px 14px; font-weight: 800;">✕ Salir Pantalla Completa</button>
             </div>
@@ -1265,8 +1265,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         const exitFsBtn = document.getElementById('exitFsBtn');
         const fsToggleBtn = document.getElementById('fsToggleBtn');
         const fsCollapsible = document.getElementById('fsCollapsible');
-        const btnViewToggle = document.getElementById('btnViewToggle');
-        const fsToggleViewBtn = document.getElementById('fsToggleViewBtn');
+        const btnReturnAll = document.getElementById('btnReturnAll');
         
         let scale = 1, minScale = 0.4, maxScale = 3.5;
         let posX = 0, posY = 0;
@@ -1274,7 +1273,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         let initialDist = 0;
         let isTouching = false;
         let lastTap = 0;
-        let isSingleMode = false;
+        let focusedBayId = null;
 
         function getActiveContainer() {{
           const activeSec = document.querySelector('.pasillo-section.active');
@@ -1289,44 +1288,65 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
         }}
 
-        function alternarModoVista(targetSingle = null) {{
-          if (targetSingle !== null) {{
-            isSingleMode = targetSingle;
-          }} else {{
-            isSingleMode = !isSingleMode;
-          }}
-
+        // ENFOCA UN CUERPO INDIVIDUAL AL 100% DEL ANCHO REAL
+        function enfocarCuerpoIndividual(bayId) {{
           const container = getActiveContainer();
-          if (container) {{
-            if (isSingleMode) {{
-              container.classList.remove('mode-multi');
-              container.classList.add('mode-single');
-              btnViewToggle.textContent = '🔳 Ver Múltiples Cuerpos';
-              fsToggleViewBtn.textContent = '🔳 Múltiples Cuerpos';
+          if (!container) return;
+
+          focusedBayId = String(bayId);
+          container.classList.remove('mode-multi');
+          container.classList.add('mode-single');
+
+          container.querySelectorAll('.bay-column').forEach(col => {{
+            if (col.getAttribute('data-module') === focusedBayId) {{
+              col.classList.add('active-focused');
             }} else {{
-              container.classList.remove('mode-single');
-              container.classList.add('mode-multi');
-              btnViewToggle.textContent = '🔲 Modo 1 Cuerpo';
-              fsToggleViewBtn.textContent = '🔲 1 Cuerpo';
+              col.classList.remove('active-focused');
             }}
-          }}
+          }});
+
+          btnReturnAll.style.display = 'block';
           scale = 1; posX = 0; posY = 0; updateZoom();
-          setTimeout(updateScrollButtons, 300);
+          requestAnimationFrame(() => {{
+            container.scrollLeft = 0;
+            container.scrollTop = 0;
+          }});
+          setTimeout(updateScrollButtons, 100);
         }}
 
-        btnViewToggle.addEventListener('click', () => alternarModoVista(false));
-        fsToggleViewBtn.addEventListener('click', () => alternarModoVista());
+        // REGRESA A LA VISTA PANORÁMICA DE MÚLTIPLES CUERPOS
+        function regresarAVistaGeneral() {{
+          const container = getActiveContainer();
+          if (!container) return;
 
+          focusedBayId = null;
+          container.classList.remove('mode-single');
+          container.classList.add('mode-multi');
+
+          container.querySelectorAll('.bay-column').forEach(col => {{
+            col.classList.remove('active-focused');
+          }});
+
+          btnReturnAll.style.display = 'none';
+          scale = 1; posX = 0; posY = 0; updateZoom();
+          requestAnimationFrame(() => {{
+            container.scrollLeft = 0;
+            container.scrollTop = 0;
+          }});
+          setTimeout(updateScrollButtons, 100);
+        }}
+
+        btnReturnAll.addEventListener('click', regresarAVistaGeneral);
+
+        // CLIC EN EL TÍTULO DEL CUERPO PARA ENFOCARLO AL 100%
         document.querySelectorAll('.bay-title').forEach(titleElem => {{
           titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
-            const container = getActiveContainer();
-            if (bayElem && container) {{
-              alternarModoVista(true);
-              setTimeout(() => {{
-                container.scrollTop = 0;
-                container.scrollTo({{ left: bayElem.offsetLeft - 14, behavior: 'smooth' }});
-              }}, 60);
+            if (bayElem) {{
+              const bayId = bayElem.getAttribute('data-module');
+              if (!focusedBayId) {{
+                enfocarCuerpoIndividual(bayId);
+              }}
             }}
           }});
         }});
@@ -1344,17 +1364,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               startY = e.touches[0].clientY - posY;
             }}
             const now = new Date().getTime();
+            // DOBLE TOQUE: ENFOCA EL CUERPO AL 100% O REGRESA A LA VISTA GENERAL
             if (now - lastTap < 320 && now - lastTap > 0) {{
               const clickedBay = e.target.closest('.bay-column');
-              const container = getActiveContainer();
-              if (!isSingleMode && clickedBay && container) {{
-                alternarModoVista(true);
-                setTimeout(() => {{
-                  container.scrollTop = 0;
-                  container.scrollTo({{ left: clickedBay.offsetLeft - 14, behavior: 'smooth' }});
-                }}, 60);
+              if (clickedBay && !focusedBayId) {{
+                enfocarCuerpoIndividual(clickedBay.getAttribute('data-module'));
               }} else {{
-                alternarModoVista(false);
+                regresarAVistaGeneral();
               }}
             }}
             lastTap = now;
@@ -1376,8 +1392,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             const currentDist = getDistance(e.touches);
             const factor = currentDist / initialDist;
             
-            if (factor < 0.88 && isSingleMode) {{
-              alternarModoVista(false);
+            // GESTO PELLIZCO PARA ALEJAR: REGRESA A LA VISTA DE VARIOS CUERPOS
+            if (factor < 0.88 && focusedBayId) {{
+              regresarAVistaGeneral();
               isTouching = false;
               return;
             }}
@@ -1393,27 +1410,54 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         function updateScrollButtons() {{
           const container = getActiveContainer();
           if (!container) return;
+
           requestAnimationFrame(() => {{
-            const maxScroll = container.scrollWidth - container.clientWidth;
-            btnPrev.disabled = container.scrollLeft <= 10;
-            btnNext.disabled = container.scrollLeft >= maxScroll - 10;
+            if (focusedBayId) {{
+              const allBays = Array.from(container.querySelectorAll('.bay-column')).map(b => b.getAttribute('data-module'));
+              const curIdx = allBays.indexOf(focusedBayId);
+              btnPrev.disabled = (curIdx <= 0);
+              btnNext.disabled = (curIdx >= allBays.length - 1);
+            }} else {{
+              const maxScroll = container.scrollWidth - container.clientWidth;
+              btnPrev.disabled = container.scrollLeft <= 10;
+              btnNext.disabled = container.scrollLeft >= maxScroll - 10;
+            }}
           }});
         }}
 
+        // NAVEGACIÓN SECUENCIAL SIN CORTES
         btnPrev.addEventListener('click', () => {{
           const container = getActiveContainer();
           if (!container) return;
-          const scrollStep = isSingleMode ? container.clientWidth : (container.clientWidth * 0.75);
-          container.scrollBy({{ left: -scrollStep, behavior: 'smooth' }});
-          setTimeout(updateScrollButtons, 350);
+
+          if (focusedBayId) {{
+            const allBays = Array.from(container.querySelectorAll('.bay-column')).map(b => b.getAttribute('data-module'));
+            const curIdx = allBays.indexOf(focusedBayId);
+            if (curIdx > 0) {{
+              enfocarCuerpoIndividual(allBays[curIdx - 1]);
+            }}
+          }} else {{
+            const bayWidth = container.querySelector('.bay-column')?.offsetWidth || (container.clientWidth * 0.75);
+            container.scrollBy({{ left: -(bayWidth + 16), behavior: 'smooth' }});
+            setTimeout(updateScrollButtons, 350);
+          }}
         }});
         
         btnNext.addEventListener('click', () => {{
           const container = getActiveContainer();
           if (!container) return;
-          const scrollStep = isSingleMode ? container.clientWidth : (container.clientWidth * 0.75);
-          container.scrollBy({{ left: scrollStep, behavior: 'smooth' }});
-          setTimeout(updateScrollButtons, 350);
+
+          if (focusedBayId) {{
+            const allBays = Array.from(container.querySelectorAll('.bay-column')).map(b => b.getAttribute('data-module'));
+            const curIdx = allBays.indexOf(focusedBayId);
+            if (curIdx < allBays.length - 1) {{
+              enfocarCuerpoIndividual(allBays[curIdx + 1]);
+            }}
+          }} else {{
+            const bayWidth = container.querySelector('.bay-column')?.offsetWidth || (container.clientWidth * 0.75);
+            container.scrollBy({{ left: (bayWidth + 16), behavior: 'smooth' }});
+            setTimeout(updateScrollButtons, 350);
+          }}
         }});
 
         fullscreenBtn.addEventListener('click', () => {{
@@ -1435,9 +1479,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         document.addEventListener('fullscreenchange', () => {{
           if (!document.fullscreenElement) {{
             fullscreenBtn.textContent = "⛶ Pantalla Completa";
-            alternarModoVista(false);
+            regresarAVistaGeneral();
           }}
           scale = 1; posX = 0; posY = 0; updateZoom();
+          const container = getActiveContainer();
+          if (container) {{
+            requestAnimationFrame(() => {{
+              container.scrollLeft = 0;
+              container.scrollTop = 0;
+            }});
+          }}
         }});
 
         const searchInput = document.getElementById('searchInput');
@@ -1618,8 +1669,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         brandSelect.addEventListener('change', applyFilters);
         catSelect.addEventListener('change', () => {{ fsCatSelect.value = catSelect.value; applyFilters(); }});
         fsCatSelect.addEventListener('change', () => {{ catSelect.value = fsCatSelect.value; applyFilters(); }});
-        pasilloSelect.addEventListener('change', applyFilters);
-        lateralSelect.addEventListener('change', applyFilters);
+        
+        pasilloSelect.addEventListener('change', () => {{
+          regresarAVistaGeneral();
+          applyFilters();
+        }});
+        lateralSelect.addEventListener('change', () => {{
+          regresarAVistaGeneral();
+          applyFilters();
+        }});
+
         topNInput.addEventListener('input', applyFilters);
         
         resetBtn.addEventListener('click', () => {{
@@ -1629,11 +1688,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           catSelect.innerHTML = ''; fsCatSelect.innerHTML = ''; allCats.forEach(o => {{ catSelect.add(new Option(o.text, o.val)); fsCatSelect.add(new Option(o.text, o.val)); }});
           brandSelect.value = 'ALL'; catSelect.value = 'ALL'; fsCatSelect.value = 'ALL';
           topNInput.value = 5;
-          alternarModoVista(false);
-          applyFilters();
+          regresarAVistaGeneral();
         }});
 
-        // MODAL DE DETALLE ORIGINAL CON BLOQUEO PERFECTO DE SCROLL
+        // MODAL DE DETALLE
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         const modalImg = document.getElementById('m-img');
@@ -2070,7 +2128,7 @@ if df_raw is not None and not df_raw.empty:
         
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
-        # --- NIVEL 2: GRÁFICOS OPERATIVOS (ANCHO 7.0 / 3.0) ---
+        # --- NIVEL 2: GRÁFICOS OPERATIVOS ---
         col_graf_izq, col_graf_der = st.columns([7.0, 3.0])
         
         with col_graf_izq:
