@@ -267,7 +267,7 @@ st.markdown(f"""
         .fin-kpi-title {{
             font-size: 0.68rem;
             font-weight: 800;
-            color: {text_secondary};
+            color: {text_secondary := t["text_secondary"]};
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 4px;
@@ -779,7 +779,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden; 
         }}
 
-        /* BOTÓN FLOTANTE PARA REGRESAR A VISTA MULTIPLE */
+        /* BOTÓN FLOTANTE PARA SALIR DEL MODO CUERPO INDIVIDUAL */
         .btn-return-all {{
           display: none;
           position: absolute;
@@ -1021,12 +1021,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .fleje-ean {{ font-weight: 600; font-family: monospace; }}
         .fleje-caras {{ font-weight: 800; color: #3b82f6; }}
         
-        .alerta-bloqueado .sku-images-wrapper img {{ filter: grayscale(100%) opacity(0.4); }}
-        .alerta-sinstock .sku-images-wrapper img {{ filter: drop-shadow(0 0 8px #ef4444); }}
-        .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
-        .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
-        
-        /* BLOQUES DE PRODUCTOS */
         .sku-card {{ 
           border-radius: 6px; 
           padding: 6px; 
@@ -1192,7 +1186,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
             <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
@@ -2161,7 +2155,7 @@ if df_raw is not None and not df_raw.empty:
             ).reset_index()
 
             if not ventas_cuerpo.empty:
-                # ETIQUETA EN DOS LÍNEAS COMBINADA: PASILLO Y LATERAL ARRIBA, CUERPO DEBAJO
+                # ETIQUETA EN DOS LÍNEAS COMBINADA
                 ventas_cuerpo['Cuerpo_Label_Combined'] = [
                     f"P{row['Pasillo_Key']} [{row['Lateral_Key']}]<br><b>C{int(row['Cuerpo_Num'])}</b>" 
                     for _, row in ventas_cuerpo.iterrows()
