@@ -780,25 +780,26 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden; 
         }}
 
-        /* BOTÓN FLOTANTE PARA SALIR DEL MODO CUERPO INDIVIDUAL */
+        /* BOTÓN CENTRADO HORIZONTALMENTE PARA NO TAPAR TÍTULOS */
         .btn-return-all {{
           display: none;
           position: absolute;
-          top: 12px;
-          left: 14px;
+          top: 10px;
+          left: 50%;
+          transform: translateX(-50%);
           z-index: 500;
           background: #3b82f6;
           color: #ffffff;
           border: none;
           border-radius: 6px;
-          padding: 7px 16px;
+          padding: 7px 18px;
           font-weight: 800;
-          font-size: 0.78rem;
-          box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+          font-size: 0.80rem;
+          box-shadow: 0 4px 14px rgba(0,0,0,0.4);
           cursor: pointer;
-          transition: transform 0.2s ease;
+          transition: transform 0.2s ease, background 0.2s ease;
         }}
-        .btn-return-all:hover {{ transform: scale(1.04); background: #2563eb; }}
+        .btn-return-all:hover {{ transform: translateX(-50%) scale(1.04); background: #2563eb; }}
 
         .fullscreen-legend-bar {{
           display: none; 
@@ -1187,7 +1188,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
             <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
@@ -1417,7 +1418,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             const bayWidth = container.clientWidth;
             container.scrollBy({{ left: -bayWidth, behavior: 'smooth' }});
           }} else {{
-            const bayWidth = container.querySelector('.bay-column')?.offsetWidth || (container.clientWidth * 0.75);
+            const bayWidth = container.querySelector('.bay-column:not(.hidden)')?.offsetWidth || (container.clientWidth * 0.75);
             container.scrollBy({{ left: -(bayWidth + 16), behavior: 'smooth' }});
           }}
           setTimeout(updateScrollButtons, 350);
@@ -1431,7 +1432,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             const bayWidth = container.clientWidth;
             container.scrollBy({{ left: bayWidth, behavior: 'smooth' }});
           }} else {{
-            const bayWidth = container.querySelector('.bay-column')?.offsetWidth || (container.clientWidth * 0.75);
+            const bayWidth = container.querySelector('.bay-column:not(.hidden)')?.offsetWidth || (container.clientWidth * 0.75);
             container.scrollBy({{ left: (bayWidth + 16), behavior: 'smooth' }});
           }}
           setTimeout(updateScrollButtons, 350);
@@ -1606,6 +1607,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           document.getElementById('t-ok').textContent = setOk.size;
           document.getElementById('t-cob').textContent = setCob.size;
           document.getElementById('t-top').textContent = setTop.size;
+
+          // FILTRADO ESTRICTO DE CUERPOS: SE OCULTAN CUERPOS SIN PRODUCTOS COINCIDENTES
+          const activeContainer = getActiveContainer();
+          if (activeContainer) {{
+            activeContainer.querySelectorAll('.bay-column').forEach(bay => {{
+              let hasMatch = false;
+              if (currentLegendFilter) {{
+                hasMatch = bay.querySelectorAll('.sku-item.highlighted').length > 0;
+              }} else {{
+                hasMatch = bay.querySelectorAll('.sku-item:not(.dimmed)').length > 0;
+              }}
+              bay.classList.toggle('hidden', !hasMatch);
+            }});
+          }}
 
           if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
           if (selectedCat !== 'ALL' && !availableCats.has(selectedCat)) selectedCat = 'ALL';
@@ -2156,6 +2171,7 @@ if df_raw is not None and not df_raw.empty:
             ).reset_index()
 
             if not ventas_cuerpo.empty:
+                # ETIQUETA EN DOS LÍNEAS COMBINADA
                 ventas_cuerpo['Cuerpo_Label_Combined'] = [
                     f"P{row['Pasillo_Key']} [{row['Lateral_Key']}]<br><b>C{int(row['Cuerpo_Num'])}</b>" 
                     for _, row in ventas_cuerpo.iterrows()
