@@ -98,6 +98,9 @@ theme_vars = {
     }
 }
 t = theme_vars[st.session_state.tema_actual]
+text_secondary = t["text_secondary"]
+text_primary = t["text_primary"]
+text_muted = t["text_muted"]
 
 # INYECCIÓN CSS CON MÁXIMO CONTRASTE
 st.markdown(f"""
@@ -107,7 +110,7 @@ st.markdown(f"""
         html, body, .stApp, [data-testid="stAppViewContainer"], .main, section.main, [data-testid="stHeader"] {{
             background-color: {t["bg_app"]} !important;
             background: {t["bg_app"]} !important;
-            color: {t["text_primary"]} !important;
+            color: {text_primary} !important;
             font-family: 'Inter', sans-serif !important;
         }}
         
@@ -198,7 +201,7 @@ st.markdown(f"""
         }}
 
         [data-testid="stSelectbox"] svg {{
-            fill: {t["text_secondary"]} !important;
+            fill: {text_secondary} !important;
         }}
 
         /* BOTONES STREAMLIT */
@@ -267,7 +270,7 @@ st.markdown(f"""
         .fin-kpi-title {{
             font-size: 0.68rem;
             font-weight: 800;
-            color: {text_secondary := t["text_secondary"]};
+            color: {text_secondary};
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 4px;
@@ -279,7 +282,7 @@ st.markdown(f"""
         .fin-kpi-val {{
             font-size: 1.85rem;
             font-weight: 900;
-            color: {t["text_primary"]};
+            color: {text_primary};
             line-height: 1.1;
             font-feature-settings: "tnum";
             margin-bottom: 4px;
@@ -288,7 +291,7 @@ st.markdown(f"""
         .fin-kpi-subtitle {{
             font-size: 0.72rem;
             font-weight: 600;
-            color: {t["text_muted"]};
+            color: {text_muted};
         }}
         
         .dash-card {{
@@ -589,8 +592,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     app_bg = t["bg_app"]
     card_bg = t["bg_card"]
     border_col = t["input_border"]
-    text_primary = t["text_primary"]
-    text_secondary = t["text_secondary"]
     input_bg = t["input_bg"]
 
     return f"""
@@ -1112,7 +1113,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           flex-direction: column;
           align-items: center;
           gap: 6px;
-          color: {t["text_muted"]};
+          color: {text_muted};
           font-size: 0.78rem;
           font-weight: 700;
         }}
@@ -1932,7 +1933,7 @@ col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
 with col_head1:
     st.markdown(f"""
         <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; color: {t['text_primary']};">
+            <div style="font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; color: {text_primary};">
                 🏪 Planograma <span style="color: {t['accent']}; font-weight: 800;">2.0</span>
             </div>
             <span style="background: {t['accent']}1a; color: {t['accent']}; font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; border: 1px solid {t['accent']}33;">ENTERPRISE</span>
@@ -1959,8 +1960,8 @@ with st.spinner("Sincronizando fuentes externas en la nube..."):
 
 header_time_placeholder.markdown(f"""
     <div style="text-align: right; line-height: 1.3;">
-        <div style="font-size: 0.78rem; font-weight: 800; color: {t['text_primary']};">Desarrollado por <b>Alfredo H.M.</b></div>
-        <div style="font-size: 0.68rem; color: {t['text_muted']};">{info_hora if info_hora else 'En línea'}</div>
+        <div style="font-size: 0.78rem; font-weight: 800; color: {text_primary};">Desarrollado por <b>Alfredo H.M.</b></div>
+        <div style="font-size: 0.68rem; color: {text_muted};">{info_hora if info_hora else 'En línea'}</div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -2002,7 +2003,7 @@ if df_raw is not None and not df_raw.empty:
             )
             es_realograma = ("Realograma" in modo_vista)
         with col_view2:
-            st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para enfocarlo al 100% de la pantalla.</i></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {text_muted}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para enfocarlo al 100% de la pantalla.</i></div>", unsafe_allow_html=True)
             
         bandeja_series = df_base.get('Bandeja', pd.Series(["1.1"]*len(df_base))).astype(str)
         niveles_extraidos = bandeja_series.str.extract(r'(\d+)\.(\d+)')[1]
@@ -2021,7 +2022,7 @@ if df_raw is not None and not df_raw.empty:
         if "dash_analizar" not in st.session_state:
             st.session_state.dash_analizar = "Categoría"
 
-        st.markdown(f"<div style='font-size: 0.85rem; font-weight: 800; color: {t['text_secondary']}; margin-bottom: 8px; text-transform: uppercase;'>🎯 Filtros Operativos del Dashboard Analítico</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size: 0.85rem; font-weight: 800; color: {text_secondary}; margin-bottom: 8px; text-transform: uppercase;'>🎯 Filtros Operativos del Dashboard Analítico</div>", unsafe_allow_html=True)
         
         col_f1, col_f2, col_f3, col_f4, col_f5 = st.columns(5)
         
@@ -2111,8 +2112,8 @@ if df_raw is not None and not df_raw.empty:
             h_c1, h_c2 = st.columns([5.5, 4.5])
             with h_c1:
                 st.markdown(f"""
-                    <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px;">
-                        📈 Rendimiento por Pasillo / Lateral / Cuerpo <span style="font-size: 0.68rem; color: {t['text_secondary']}; font-weight: 700;">(VENTAS vs MARGEN)</span>
+                    <div style="font-size: 0.88rem; font-weight: 800; color: {text_primary}; padding-top: 6px;">
+                        📈 Rendimiento por Pasillo / Lateral / Cuerpo <span style="font-size: 0.68rem; color: {text_secondary}; font-weight: 700;">(VENTAS vs MARGEN)</span>
                     </div>
                 """, unsafe_allow_html=True)
             with h_c2:
@@ -2155,7 +2156,6 @@ if df_raw is not None and not df_raw.empty:
             ).reset_index()
 
             if not ventas_cuerpo.empty:
-                # ETIQUETA EN DOS LÍNEAS COMBINADA
                 ventas_cuerpo['Cuerpo_Label_Combined'] = [
                     f"P{row['Pasillo_Key']} [{row['Lateral_Key']}]<br><b>C{int(row['Cuerpo_Num'])}</b>" 
                     for _, row in ventas_cuerpo.iterrows()
@@ -2242,12 +2242,12 @@ if df_raw is not None and not df_raw.empty:
             st.plotly_chart(fig, use_container_width=False, config={'displayModeBar': False, 'scrollZoom': False})
             st.markdown('</div>', unsafe_allow_html=True)
 
-            st.markdown(f"<div style='font-size:0.72rem; color:{t['text_muted']}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='font-size:0.72rem; color:{text_muted}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
             
         with col_graf_der:
             st.markdown(f"""
-                <div style="font-size: 0.88rem; font-weight: 800; color: {t['text_primary']}; padding-top: 6px; margin-bottom: 6px;">
-                    🍩 Mix de Venta <span style="font-size: 0.68rem; color: {t['text_secondary']}; font-weight: 700;">({st.session_state.dash_analizar.upper()})</span>
+                <div style="font-size: 0.88rem; font-weight: 800; color: {text_primary}; padding-top: 6px; margin-bottom: 6px;">
+                    🍩 Mix de Venta <span style="font-size: 0.68rem; color: {text_secondary}; font-weight: 700;">({st.session_state.dash_analizar.upper()})</span>
                 </div>
             """, unsafe_allow_html=True)
             
@@ -2292,7 +2292,7 @@ if df_raw is not None and not df_raw.empty:
                 paper_bgcolor='rgba(0,0,0,0)',
                 plot_bgcolor='rgba(0,0,0,0)',
                 margin=dict(t=10, b=10, l=10, r=10),
-                annotations=[dict(text=f'<b>S/ {ventas_dash_total/1000:,.1f}K</b><br><span style="font-size:8px; color:{t["text_muted"]}">TOTAL</span>', x=0.5, y=0.5, font_size=15, showarrow=False, font_color=t["text_primary"])]
+                annotations=[dict(text=f'<b>S/ {ventas_dash_total/1000:,.1f}K</b><br><span style="font-size:8px; color:{text_muted}">TOTAL</span>', x=0.5, y=0.5, font_size=15, showarrow=False, font_color=text_primary)]
             )
             fig_pie.update_traces(hovertemplate="<b>%{label}</b><br>Ventas: S/ %{value:,.2f}<br>Participación: %{percent}<extra></extra>")
             
@@ -2304,7 +2304,7 @@ if df_raw is not None and not df_raw.empty:
             <div class="dash-card">
                 <div class="dash-card-header">
                     <span class="dash-card-title">⚖️ Fair Share: Espacio Físico vs Rendimiento y Margen</span>
-                    <span style="font-size: 0.70rem; font-weight: 800; color: {t['text_secondary']};">ANÁLISIS POR CATEGORÍA</span>
+                    <span style="font-size: 0.70rem; font-weight: 800; color: {text_secondary};">ANÁLISIS POR CATEGORÍA</span>
                 </div>
         """, unsafe_allow_html=True)
         
@@ -2441,7 +2441,7 @@ if df_raw is not None and not df_raw.empty:
             <div class="dash-card">
                 <div class="dash-card-header">
                     <span class="dash-card-title">📋 Detalle Operativo por SKU Único</span>
-                    <span style="font-size: 0.70rem; font-weight: 800; color: {t['text_secondary']};">AUDITORÍA COMPLETA</span>
+                    <span style="font-size: 0.70rem; font-weight: 800; color: {text_secondary};">AUDITORÍA COMPLETA</span>
                 </div>
         """, unsafe_allow_html=True)
         
@@ -2513,7 +2513,7 @@ if df_raw is not None and not df_raw.empty:
             <div class="dash-card">
                 <div class="dash-card-header">
                     <span class="dash-card-title">⚠️ Auditoría de Errores y Filas sin Coincidencia en DATOST</span>
-                    <span style="font-size: 0.70rem; font-weight: 800; color: {t['text_secondary']};">CONTROL DE INTEGRIDAD</span>
+                    <span style="font-size: 0.70rem; font-weight: 800; color: {text_secondary};">CONTROL DE INTEGRIDAD</span>
                 </div>
         """, unsafe_allow_html=True)
 
@@ -2534,7 +2534,7 @@ if df_raw is not None and not df_raw.empty:
             delta=f"{total_filas_errores / len(df_base) * 100:.1f}% del total" if len(df_base) > 0 else "0%"
         )
 
-        st.markdown(f"<div style='font-size: 0.82rem; color: {t['text_muted']}; margin: 10px 0;'>A continuación se muestran los registros de la tabla <b>DATOST</b> que no hallaron correspondencia exacta en las tablas auxiliares (Coberturas, Ventas o Jerarquía SAP):</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size: 0.82rem; color: {text_muted}; margin: 10px 0;'>A continuación se muestran los registros de la tabla <b>DATOST</b> que no hallaron correspondencia exacta en las tablas auxiliares (Coberturas, Ventas o Jerarquía SAP):</div>", unsafe_allow_html=True)
 
         if total_filas_errores > 0:
             cols_error_show = [c for c in ['COD REAL', 'EAN', 'Descripción', 'Bandeja', 'Marca', 'Stock', 'Cobertura', 'Venta', 'Estado', 'Departamento', 'G.A.'] if c in df_errores.columns]
