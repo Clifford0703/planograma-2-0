@@ -399,7 +399,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA (ESTRUCTURA ORIGINAL RÁPIDA) ---
+# --- GENERADOR DEL PASILLO INTERACTIVO ORIGINAL (RÁPIDO Y FLUIDO) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -465,21 +465,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 catjer_val = str(it.get("Categoría", "SIN DATOS")).replace('"', '&quot;')
                 ga_val = str(it.get("Grupo de Artículo", "SIN DATOS")).replace('"', '&quot;')
                 
-                link_foto = str(it.get("Links de fotos", "")).strip()
-                if link_foto in ['nan', '', 'None', 'SIN DATOS', 'NaN']:
-                    link_foto_final = ""
-                else:
-                    link_foto_final = link_foto.replace("http://", "https://")
-                
                 part_fmt = format_pct(part_val)
                 stock_fmt = f"{stock_val:.2f}" if stock_val != -999.0 else "SIN DATOS"
                 cob_fmt = f"{cob_val:.2f}" if cob_val != -999.0 else "SIN DATOS"
                 estilo_cobertura = "color: #ef4444; font-weight: 800;" if cob_val != -999.0 and cob_val >= 30 else ""
                 
                 if es_realograma:
-                    foto_render = link_foto_final if link_foto_final else "https://via.placeholder.com/60x150.png/1e293b/94a3b8?text=Sin+Foto"
+                    link_foto = str(it.get("Links de fotos", ""))
+                    if link_foto in ['nan', '', 'None', 'SIN DATOS']:
+                        link_foto = "https://via.placeholder.com/60x150.png/1e293b/94a3b8?text=Sin+Foto"
+                    else:
+                        link_foto = link_foto.replace("http://", "https://")
+                    
                     clase_alerta, cat_leyenda = obtener_alerta_css(estado, stock_val)
-                    img_tags = "".join([f'<img src="{foto_render}" alt="{marca}">' for _ in range(caras)])
+                    img_tags = "".join([f'<img src="{link_foto}" alt="{marca}">' for _ in range(caras)])
                     
                     html_interno = f"""
                       <div class="top-badge"></div>
@@ -517,7 +516,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                      data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_val}" data-part="{part_fmt}" 
                      data-cod="{cod_real}" data-cat="{cat_leyenda}" 
                      data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
-                     data-foto="{link_foto_final}"
                      title="Detalles: {nombre}">
                   {html_interno}
                 </div>
@@ -561,8 +559,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     options_niveles = "".join([f'<option value="{int(lvl)}">Nivel {int(lvl)}</option>' for lvl in todos_niveles])
 
     app_bg = t["bg_app"]
+    surface_bg = t["bg_surface"]
     card_bg = t["bg_card"]
     border_col = t["input_border"]
+    text_primary = t["text_primary"]
+    text_secondary = t["text_secondary"]
     input_bg = t["input_bg"]
 
     return f"""
@@ -938,13 +939,13 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
-        /* MODAL DE DETALLE SEGURO CON Z-INDEX MÁXIMO */
+        /* MODAL DE DETALLE SEGURO */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
           width: 100vw !important; 
           height: 100vh !important; 
-          background: rgba(0,0,0,0.78) !important; 
+          background: rgba(0,0,0,0.75) !important; 
           z-index: 2147483647 !important; 
           opacity: 0; 
           pointer-events: none; 
@@ -954,10 +955,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           justify-content: center !important; 
           padding: 16px !important; 
           backdrop-filter: blur(6px); 
-          overflow-y: auto !important;
         }}
         .modal-overlay.active {{ opacity: 1 !important; pointer-events: auto !important; }}
-        
         .modal-content {{ 
           background: {card_bg} !important; 
           color: {text_primary} !important; 
@@ -968,43 +967,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           max-height: 85vh !important; 
           overflow-y: auto !important; 
           border: 1.5px solid {t["accent"]} !important; 
-          box-shadow: 0 25px 50px rgba(0,0,0,0.6) !important; 
+          box-shadow: 0 20px 40px rgba(0,0,0,0.4) !important; 
           position: relative !important; 
-          margin: auto !important;
-          z-index: 2147483647 !important; 
         }}
         .modal-close {{ position: absolute; top: 12px; right: 16px; font-size: 1.5rem; cursor: pointer; color: {text_secondary}; font-weight: 700; }}
         .modal-close:hover {{ color: {text_primary}; }}
-        
-        .modal-img-container {{
-          width: 100%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          margin-bottom: 14px;
-          background: {t["bg_surface"]};
-          border: 1px solid {t["border_subtle"]};
-          border-radius: 8px;
-          padding: 10px;
-          min-height: 120px;
-        }}
-        .modal-img-container img {{
-          max-height: 140px;
-          max-width: 100%;
-          object-fit: contain;
-        }}
-        .modal-img-placeholder {{
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 6px;
-          color: {text_muted};
-          font-size: 0.78rem;
-          font-weight: 700;
-        }}
-        .modal-img-placeholder span {{ font-size: 2.2rem; }}
-        
-        .m-row {{ border-bottom: 1px solid {t["border_subtle"]}; padding: 7px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
+        .m-row {{ border-bottom: 1px solid {t["border_subtle"]}; padding: 8px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
         .m-label {{ font-weight: 600; color: {text_secondary}; }}
         .m-val {{ font-weight: 700; text-align: right; max-width: 65%; font-feature-settings: "tnum"; }}
 
@@ -1024,19 +992,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     <body>
       <div class="main-container" id="mainContainer">
 
-        <!-- MODAL DE DETALLE -->
         <div id="productModal" class="modal-overlay">
           <div class="modal-content" id="modalContent">
             <span class="modal-close">&times;</span>
-            
-            <div class="modal-img-container" id="m-img-container">
-              <img id="m-img" src="" alt="Foto Producto" style="display: none;">
-              <div id="m-placeholder" class="modal-img-placeholder">
-                <span>📷</span>
-                <div>Sin imagen disponible</div>
-              </div>
-            </div>
-
             <h3 id="m-name" style="margin-top: 0; font-size: 1.05rem; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; line-height: 1.3;">Producto</h3>
             <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod" style="font-family: monospace;"></span></div>
             <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean" style="font-family: monospace;"></span></div>
@@ -1100,7 +1058,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           </div>
         </div>
 
-        <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
+        <!-- CONTENEDOR CON SCROLL -->
         <div class="aisle-wrapper" id="aisleWrapper">
           <div class="fullscreen-legend-bar">
             <span style="font-size: 0.80rem; font-weight: 800; color: {text_secondary};">📍 LEYENDA:</span>
@@ -1516,24 +1474,9 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         # MODAL PRODUCTO
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
-        const modalImg = document.getElementById('m-img');
-        const modalPlaceholder = document.getElementById('m-placeholder');
         
         document.querySelectorAll('.sku-item').forEach(card => {{
-            card.addEventListener('click', (e) => {{
-                e.stopPropagation();
-                
-                const fotoUrl = card.getAttribute('data-foto') || '';
-                if (fotoUrl && fotoUrl.trim() !== '') {{
-                    modalImg.src = fotoUrl;
-                    modalImg.style.display = 'block';
-                    modalPlaceholder.style.display = 'none';
-                }} else {{
-                    modalImg.src = '';
-                    modalImg.style.display = 'none';
-                    modalPlaceholder.style.display = 'flex';
-                }}
-                
+            card.addEventListener('click', () => {{
                 document.getElementById('m-name').textContent = card.getAttribute('data-name');
                 document.getElementById('m-cod').textContent = card.getAttribute('data-cod');
                 document.getElementById('m-ean').textContent = card.getAttribute('data-ean');
@@ -1553,38 +1496,27 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                 document.getElementById('m-top').textContent = isTop ? '⭐ SÍ (Top Ventas)' : 'NO';
                 
                 modal.classList.add('active');
-                document.body.classList.add('modal-active');
             }});
         }});
-        
-        function closeModal() {{
-            modal.classList.remove('active');
-            document.body.classList.remove('modal-active');
-        }}
-
-        closeBtn.addEventListener('click', closeModal);
-        window.addEventListener('click', (e) => {{ if(e.target === modal) closeModal(); }});
-
-        document.addEventListener('keydown', (e) => {{
-            if (e.key === 'Escape' && modal.classList.contains('active')) {{
-                closeModal();
-            }}
-        }});
+        closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+        window.addEventListener('click', (e) => {{ if(e.target === modal) modal.classList.remove('active'); }});
 
         setTimeout(() => {{
-          brandSelect.value = 'ALL';
-          catSelect.value = 'ALL';
-          fsCatSelect.value = 'ALL';
-          baySelect.value = 'ALL';
-          levelSelect.value = 'ALL';
           applyFilters();
+          if (window.innerWidth <= 768) {{
+            if (baySelect.value === 'ALL') {{
+              const firstVisible = document.querySelector('.bay-column:not(.hidden)');
+              if (firstVisible) baySelect.value = firstVisible.getAttribute('data-module');
+            }}
+            applyFilters();
+          }}
         }}, 100);
       </script>
     </body>
     </html>
     """
 
-# --- CARGA INTEGRADA DE FUENTES Y CRUCE DE FOTOS ---
+# --- CARGA INTEGRADA DE FUENTES Y CRUCE EXACTO REQUERIDO ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -1619,7 +1551,7 @@ def cargar_todas_las_fuentes():
                 df.columns = [str(c).strip() for c in df.columns]
                 return df
 
-        # 1. Matriz de Planos (DATOST -> COD REAL)
+        # 1. Matriz de Planos (factPlano -> COD REAL)
         df_matriz = leer_tabla_por_ancla(url_planos, "COD REAL", sheet_target=0, skiprows_fallback=3)
         if "COD REAL" not in df_matriz.columns:
             df_matriz = pd.read_excel(url_planos, sheet_name=0, skiprows=2)
@@ -1651,12 +1583,15 @@ def cargar_todas_las_fuentes():
             df_cob['Cobertura'] = df_cob_raw[col_cob].apply(safe_float) if col_cob else -999.0
             df_cob = df_cob[df_cob['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 3. Ventas y Margen
+        # 3. Ventas y Margen (factVentas) - LIMPIEZA ESTRICTA: SIN GUIONES "-"
         df_vta_raw = leer_tabla_por_ancla(url_ventas, "Material", sheet_target=0, skiprows_fallback=2)
         df_vta = pd.DataFrame()
         col_mat_vta = 'Material' if 'Material' in df_vta_raw.columns else ('COD REAL' if 'COD REAL' in df_vta_raw.columns else None)
         if col_mat_vta:
             df_vta['Material_Str'] = df_vta_raw[col_mat_vta].astype(str).apply(clean_sku)
+            # REQUISITO: Excluir todos los códigos que contengan "-"
+            df_vta = df_vta[~df_vta['Material_Str'].str.contains('-')].copy()
+
             col_v = 'Monto Venta Neta' if 'Monto Venta Neta' in df_vta_raw.columns else 'Venta'
             col_m = 'Monto Margen' if 'Monto Margen' in df_vta_raw.columns else 'Margen'
             col_p = '% PART' if '% PART' in df_vta_raw.columns else '% Part'
@@ -1666,13 +1601,15 @@ def cargar_todas_las_fuentes():
             df_vta['% Part'] = df_vta_raw[col_p].apply(safe_float) if col_p in df_vta_raw.columns else -999.0
             df_vta = df_vta[df_vta['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 4. Código de Barras
+        # 4. Código de Barras (dimCodbarras)
         df_bar_raw = leer_tabla_por_ancla(url_barras, "Material", sheet_target=0, skiprows_fallback=2)
         df_bar = pd.DataFrame()
         col_mat_bar = 'Material' if 'Material' in df_bar_raw.columns else ('COD REAL' if 'COD REAL' in df_bar_raw.columns else None)
         if col_mat_bar:
             df_bar['Material_Str'] = df_bar_raw[col_mat_bar].astype(str).apply(clean_sku)
             df_bar['EAN_Master'] = df_bar_raw['Código EAN/UPC'].astype(str).apply(clean_sku) if 'Código EAN/UPC' in df_bar_raw.columns else ""
+            df_bar['Descripción'] = df_bar_raw['Texto breve de material'].astype(str).str.strip() if 'Texto breve de material' in df_bar_raw.columns else "SIN DATOS"
+            
             bar_map = {str(c).strip().lower(): c for c in df_bar_raw.columns}
             col_ga_orig = bar_map.get('grupo de a', bar_map.get('grupo de artículo', None))
             df_bar['G.A.'] = df_bar_raw[col_ga_orig].astype(str).apply(clean_sku) if col_ga_orig else 'SIN DATOS'
@@ -1714,50 +1651,56 @@ def cargar_todas_las_fuentes():
             df_sap['Grupo de Artículo'] = df_sap_raw[col_n_ga].fillna('SIN DATOS').astype(str).str.strip()
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- CONSTRUCCIÓN DE LA TABLA ÚNICA DE SKU SEGÚN TUS REQUISITOS ---
+        # --- CONSTRUCCIÓN DE LA TABLA DE SKU ÚNICO (FACTVENTAS SIN GUIONES ANEXADO CON FACTPLANO) ---
         if not df_vta.empty:
-            materiales_vta_validos = df_vta[['Material_Str']].copy()
-            # Excluir materiales que contengan guion '-'
-            materiales_vta_validos = materiales_vta_validos[~materiales_vta_validos['Material_Str'].str.contains('-')]
-            materiales_vta_validos = materiales_vta_validos.rename(columns={'Material_Str': 'Material_Unico'})
+            mat_vta_base = df_vta[['Material_Str']].drop_duplicates().rename(columns={'Material_Str': 'Material_Unico'})
         else:
-            materiales_vta_validos = pd.DataFrame(columns=['Material_Unico'])
+            mat_vta_base = pd.DataFrame(columns=['Material_Unico'])
 
-        planos_skus = df_matriz[['COD_REAL_Str']].drop_duplicates().rename(columns={'COD_REAL_Str': 'Material_Unico'})
+        mat_plano_base = df_matriz[['COD_REAL_Str']].drop_duplicates().rename(columns={'COD_REAL_Str': 'Material_Unico'})
         
-        # Anexar factVentas (sin guiones) con COD REAL de factPlano y quitar duplicados
-        df_catalogo_base = pd.concat([materiales_vta_validos, planos_skus]).drop_duplicates(subset=['Material_Unico'])
-        df_catalogo_base = df_catalogo_base[df_catalogo_base['Material_Unico'] != ""]
+        # Anexar factVentas con factPlano y quitar duplicados
+        df_catalogo_base = pd.concat([mat_vta_base, mat_plano_base]).drop_duplicates(subset=['Material_Unico'])
+        df_catalogo_base = df_catalogo_base[df_catalogo_base['Material_Unico'] != ""].copy()
 
-        # Cruce con factPlano para ubicar la Bandeja / Ubicación
-        df_maestro = df_catalogo_base.merge(df_matriz, left_on='Material_Unico', right_on='COD_REAL_Str', how='left')
+        # Generar formato de ubicación exacta a partir de factPlano (ej. C1 (N7))
+        def formatear_bandeja_limpia(val):
+            val_str = str(val).strip()
+            if '.' in val_str:
+                p = val_str.split('.')
+                return f"C{p[0]} (N{p[1]})"
+            return f"Cuerpo {val_str}"
 
-        # Cruces con coberturas, ventas, barras y fotos mediante 'Material'
-        if not df_cob.empty:
-            df_maestro = df_maestro.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='Material_Unico', right_on='Material_Str', how='left')
-            df_maestro.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+        df_matriz['Ubicacion_Fmt'] = df_matriz['Bandeja'].apply(formatear_bandeja_limpia)
+        mapa_ubicaciones = df_matriz.groupby('COD_REAL_Str')['Ubicacion_Fmt'].apply(
+            lambda x: ", ".join(sorted(list(set(x.dropna()))))
+        ).to_dict()
 
-        if not df_vta.empty:
-            df_maestro = df_maestro.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='Material_Unico', right_on='Material_Str', how='left')
-            df_maestro.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+        # Iniciar cruces para la tabla de SKU Único
+        df_sku_unico = df_catalogo_base.copy()
+        df_sku_unico['COD REAL'] = df_sku_unico['Material_Unico']
 
         if not df_bar.empty:
-            df_maestro = df_maestro.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='Material_Unico', right_on='Material_Str', how='left')
-            df_maestro.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+            df_sku_unico = df_sku_unico.merge(df_bar[['Material_Str', 'Descripción', 'EAN_Master', 'G.A.']], left_on='Material_Unico', right_on='Material_Str', how='left')
+            df_sku_unico.rename(columns={'EAN_Master': 'EAN'}, inplace=True)
+            df_sku_unico.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        if not df_fotos.empty:
-            df_maestro = df_maestro.merge(df_fotos[['Sku_Foto_Str', 'Links de fotos']], left_on='Material_Unico', right_on='Sku_Foto_Str', how='left')
-            df_maestro.drop(columns=['Sku_Foto_Str'], inplace=True, errors='ignore')
+        if not df_vta.empty:
+            df_sku_unico = df_sku_unico.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen']], left_on='Material_Unico', right_on='Material_Str', how='left')
+            df_sku_unico.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        df_maestro['COD REAL'] = df_maestro['Material_Unico']
+        if not df_cob.empty:
+            df_sku_unico = df_sku_unico.merge(df_cob[['Material_Str', 'Stock', 'Cobertura']], left_on='Material_Unico', right_on='Material_Str', how='left')
+            df_sku_unico.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        if 'G.A.' in df_maestro.columns:
-            df_maestro['G.A._Str'] = df_maestro['G.A.'].astype(str).apply(clean_sku)
+        # Jerarquía SAP mediante Grupo de A
+        if 'G.A.' in df_sku_unico.columns:
+            df_sku_unico['G.A._Str'] = df_sku_unico['G.A.'].astype(str).apply(clean_sku)
         else:
-            df_maestro['G.A._Str'] = ""
+            df_sku_unico['G.A._Str'] = ""
 
         if not df_sap.empty:
-            df_maestro = df_maestro.merge(
+            df_sku_unico = df_sku_unico.merge(
                 df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], 
                 left_on='G.A._Str', 
                 right_on='CodGA_Str', 
@@ -1766,23 +1709,25 @@ def cargar_todas_las_fuentes():
             )
             for col_target in ['Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']:
                 col_sap_name = f"{col_target}_sap"
-                if col_sap_name in df_maestro.columns:
-                    df_maestro[col_target] = df_maestro[col_sap_name].replace(['SIN DATOS', 'nan', 'None', '', 'NaN'], pd.NA).fillna(df_maestro[col_target])
-                    df_maestro.drop(columns=[col_sap_name], inplace=True, errors='ignore')
+                if col_sap_name in df_sku_unico.columns:
+                    df_sku_unico[col_target] = df_sku_unico[col_sap_name].replace(['SIN DATOS', 'nan', 'None', '', 'NaN'], pd.NA).fillna(df_sku_unico[col_target])
+                    df_sku_unico.drop(columns=[col_sap_name], inplace=True, errors='ignore')
+            df_sku_unico.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
 
-            df_maestro.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
+        # Asignar ubicación
+        df_sku_unico['Ubicación(es)'] = df_sku_unico['Material_Unico'].map(mapa_ubicaciones)
 
-        # Asignación estricta de valores por defecto (Si no hay datos -> SIN DATOS / -999.0)
-        for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
-            df_maestro[col] = df_maestro[col].fillna(val_def) if col in df_maestro.columns else val_def
+        # Rellenar nulos de forma estricta (-999.0 para números y "SIN DATOS" para textos)
+        for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0)]:
+            df_sku_unico[col] = df_sku_unico[col].fillna(val_def) if col in df_sku_unico.columns else val_def
 
-        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS'), ('Descripción', 'SIN DATOS'), ('EAN', 'SIN DATOS')]:
-            df_maestro[col] = df_maestro[col].fillna(val_def).astype(str).str.strip() if col in df_maestro.columns else val_def
+        for col, val_def in [('Descripción', 'SIN DATOS'), ('EAN', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('Ubicación(es)', pd.NA)]:
+            df_sku_unico[col] = df_sku_unico[col].fillna(val_def).astype(str).str.strip() if col in df_sku_unico.columns else val_def
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_maestro, hora_lectura, None
+        return df_matriz, df_sku_unico, hora_lectura, None
     except Exception as e:
-        return None, None, str(e)
+        return None, None, None, str(e)
 
 # --- HEADER SAAS UNIFICADO CON CRÉDITO DE AUTORÍA ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
@@ -1813,7 +1758,7 @@ with col_head3:
         header_time_placeholder = st.empty()
 
 with st.spinner("Sincronizando fuentes externas en la nube..."):
-    df_nube, info_hora, error_nube = cargar_todas_las_fuentes()
+    df_nube, df_sku_unico_global, info_hora, error_nube = cargar_todas_las_fuentes()
 
 header_time_placeholder.markdown(f"""
     <div style="text-align: right; line-height: 1.3;">
@@ -1860,22 +1805,17 @@ if df_raw is not None and not df_raw.empty:
             )
             es_realograma = ("Realograma" in modo_vista)
         with col_view2:
-            st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {text_muted}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para enfocarlo al 100% de la pantalla.</i></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {text_muted}; margin-top: 5px;'>👆 <i>Pellizca para Zoom o haz <b>doble toque</b> para auto-encajar el cuerpo.</i></div>", unsafe_allow_html=True)
             
-        bandeja_series = df_base.get('Bandeja', pd.Series(["1.1"]*len(df_base))).astype(str)
-        niveles_extraidos = bandeja_series.str.extract(r'(\d+)\.(\d+)')[1]
-        max_niveles_count = int(pd.to_numeric(niveles_extraidos, errors='coerce').fillna(6).max())
-        altura_dinamica = max(950, 240 + max_niveles_count * 140)
-
         html_pasillo = generar_html_pasillo_interactivo(df_base, es_realograma=es_realograma, es_oscuro=es_oscuro)
-        components.html(html_pasillo, height=altura_dinamica, scrolling=True)
+        components.html(html_pasillo, height=840, scrolling=False)
             
     # =========================================================================
-    # --- PESTAÑA 2: DASHBOARD ANALÍTICO (AISLADO E INDEPENDIENTE) ---
+    # --- PESTAÑA 2: DASHBOARD ANALÍTICO ---
     # =========================================================================
     with tab2:
         if "dash_orden" not in st.session_state:
-            st.session_state.dash_orden = "Secuencial"
+            st.session_state.dash_orden = "Secuencial (Cuerpo 1..N)"
         if "dash_analizar" not in st.session_state:
             st.session_state.dash_analizar = "Categoría"
 
@@ -1914,33 +1854,24 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todos":
+        if filtro_marca != "Todas":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
-        ventas_plano = df_dash_unicos['Venta_Num'].sum()
+        ventas_globales = df_dash_unicos['Venta_Num'].sum()
         margen_global = df_dash_unicos['Margen_Num'].sum()
-        margen_pct_global = (margen_global / ventas_plano) if ventas_plano > 0 else 0
-        skus_plano = len(df_dash_unicos)
-
-        if df_vta_global is not None and not df_vta_global.empty:
-            total_venta_maestra = df_vta_global['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
-            total_skus_maestros = len(df_vta_global['Material_Str'].drop_duplicates())
-        else:
-            total_venta_maestra = ventas_plano
-            total_skus_maestros = skus_plano
-
-        pct_venta_representada = (ventas_plano / total_venta_maestra * 100) if total_venta_maestra > 0 else 100.0
-        pct_skus_representados = (skus_plano / total_skus_maestros * 100) if total_skus_maestros > 0 else 100.0
+        margen_pct_global = (margen_global / ventas_globales) if ventas_globales > 0 else 0
+        total_skus_activos = len(df_dash_unicos)
+        promedio_venta_sku = (ventas_globales / total_skus_activos) if total_skus_activos > 0 else 0
         
         st.markdown(f"""
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #3b82f6;">
-                    <div class="fin-kpi-title"><span>Ventas Planograma</span><span>💳</span></div>
-                    <div class="fin-kpi-val">S/ {ventas_plano:,.2f}</div>
-                    <div class="fin-kpi-subtitle"><b>{pct_venta_representada:.1f}%</b> de la venta total (S/ {total_venta_maestra:,.2f})</div>
+                    <div class="fin-kpi-title"><span>Ventas Brutas Filtradas</span><span>💳</span></div>
+                    <div class="fin-kpi-val">S/ {ventas_globales:,.2f}</div>
+                    <div class="fin-kpi-subtitle">Ticket Promedio/SKU: S/ {promedio_venta_sku:,.2f}</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #10b981;">
                     <div class="fin-kpi-title"><span>Margen Total Bruto</span><span>📈</span></div>
@@ -1950,12 +1881,12 @@ if df_raw is not None and not df_raw.empty:
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #8b5cf6;">
                     <div class="fin-kpi-title"><span>Margen Global (%)</span><span>📊</span></div>
                     <div class="fin-kpi-val" style="color: {t['accent_purple']};">{margen_pct_global*100:.1f}%</div>
-                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta Planograma</div>
+                    <div class="fin-kpi-subtitle">Rentabilidad sobre Venta</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #fbbf24;">
-                    <div class="fin-kpi-title"><span>SKUs en Planograma</span><span>📦</span></div>
-                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{skus_plano}</div>
-                    <div class="fin-kpi-subtitle"><b>{pct_skus_representados:.1f}%</b> del surtido total ({total_skus_maestros} SKUs)</div>
+                    <div class="fin-kpi-title"><span>Surtido Activo</span><span>📦</span></div>
+                    <div class="fin-kpi-val" style="color: {t['accent_amber']};">{total_skus_activos}</div>
+                    <div class="fin-kpi-subtitle">SKUs Únicos Filtrados</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
@@ -1963,142 +1894,112 @@ if df_raw is not None and not df_raw.empty:
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
 
         # --- NIVEL 2: GRÁFICOS OPERATIVOS ---
-        col_graf_izq, col_graf_der = st.columns([7.0, 3.0])
+        col_graf_izq, col_graf_der = st.columns([6.2, 3.8])
         
         with col_graf_izq:
-            h_c1, h_c2 = st.columns([5.5, 4.5])
+            h_c1, h_c2 = st.columns([6.5, 3.5])
             with h_c1:
                 st.markdown(f"""
                     <div style="font-size: 0.88rem; font-weight: 800; color: {text_primary}; padding-top: 6px;">
-                        📈 Rendimiento por Pasillo / Lateral / Cuerpo <span style="font-size: 0.68rem; color: {text_secondary}; font-weight: 700;">(VENTAS vs MARGEN)</span>
+                        📈 Rendimiento Comercial por Cuerpo <span style="font-size: 0.68rem; color: {text_secondary}; font-weight: 700;">(VENTAS vs MARGEN)</span>
                     </div>
                 """, unsafe_allow_html=True)
             with h_c2:
                 b_s, b_v, b_m = st.columns(3)
                 with b_s:
-                    if st.button("🔢", key="btn_ord_seq", help="Orden Secuencial", use_container_width=True):
-                        st.session_state.dash_orden = "Secuencial"
+                    if st.button("🔢", key="btn_ord_seq", help="Secuencial", use_container_width=True):
+                        st.session_state.dash_orden = "Secuencial (Cuerpo 1..N)"
                         st.rerun()
                 with b_v:
                     if st.button("💰", key="btn_ord_ven", help="Mayor a Menor Venta", use_container_width=True):
-                        st.session_state.dash_orden = "Mayor Venta"
+                        st.session_state.dash_orden = "Mayor a Menor Venta"
                         st.rerun()
                 with b_m:
                     if st.button("📈", key="btn_ord_mar", help="Mayor Margen (%)", use_container_width=True):
-                        st.session_state.dash_orden = "Mayor Margen"
+                        st.session_state.dash_orden = "Mayor Margen (%)"
                         st.rerun()
 
             st.markdown(f'<div class="dash-card" style="margin-top: 4px;">', unsafe_allow_html=True)
             
-            p_col = 'PASILLO' if 'PASILLO' in df_dash_base.columns else 'Pasillo'
-            l_col = 'LATERAL' if 'LATERAL' in df_dash_base.columns else 'Lateral'
-            
-            df_dash_base['Pasillo_Key'] = df_dash_base[p_col].astype(str).str.strip().str.upper() if p_col else "1"
-            df_dash_base['Lateral_Key'] = df_dash_base[l_col].astype(str).str.strip().str.upper() if l_col else "A"
-            
             bandeja_str = df_dash_base.get('Bandeja', pd.Series(["1.1"]*len(df_dash_base))).astype(str)
-            df_dash_base['Cuerpo_Num'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
-            df_dash_base['Cuerpo_Num'] = pd.to_numeric(df_dash_base['Cuerpo_Num'], errors='coerce').fillna(1)
+            df_dash_base['Cuerpo_Ord'] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0]
+            df_dash_base['Cuerpo_Ord'] = pd.to_numeric(df_dash_base['Cuerpo_Ord'], errors='coerce').fillna(1)
             
-            df_sku_cuerpo = df_dash_base.drop_duplicates(subset=['COD REAL', 'Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num']).copy()
+            df_sku_cuerpo = df_dash_base.drop_duplicates(subset=['COD REAL', 'Cuerpo_Ord']).copy()
             
-            cat_por_bloque = df_sku_cuerpo.groupby(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num'])['Categoría'].agg(
-                lambda x: max(set([str(i) for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]) > 0 else "General"
+            cat_por_cuerpo = df_sku_cuerpo.groupby('Cuerpo_Ord')['Categoría'].agg(
+                lambda x: max(set([str(i) for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]), key=[str(i) for i in x].count) if len([i for i in x if str(i) not in ['SIN DATOS', 'S/C', 'nan', '']]) > 0 else ""
             ).to_dict()
             
-            ventas_cuerpo = df_sku_cuerpo.groupby(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num']).agg(
+            ventas_cuerpo = df_sku_cuerpo.groupby('Cuerpo_Ord').agg(
                 Venta_Total=('Venta_Num', 'sum'),
                 Margen_Total=('Margen_Num', 'sum'),
                 SKUs_Total=('COD REAL', 'count')
             ).reset_index()
+            
+            def crear_etiqueta_eje(c_num):
+                cat_nombre = cat_por_cuerpo.get(c_num, "")
+                if cat_nombre and len(cat_nombre) > 14:
+                    cat_nombre = cat_nombre[:12] + ".."
+                return f"Cuerpo {int(c_num)}<br><sub>{cat_nombre}</sub>" if cat_nombre else f"Cuerpo {int(c_num)}"
 
-            if not ventas_cuerpo.empty:
-                ventas_cuerpo['Cuerpo_Label_Combined'] = [
-                    f"P{row['Pasillo_Key']} [{row['Lateral_Key']}]<br><b>C{int(row['Cuerpo_Num'])}</b>" 
-                    for _, row in ventas_cuerpo.iterrows()
-                ]
-                ventas_cuerpo['Categoria_Full'] = [
-                    cat_por_bloque.get((row['Pasillo_Key'], row['Lateral_Key'], row['Cuerpo_Num']), "General") 
-                    for _, row in ventas_cuerpo.iterrows()
-                ]
-                ventas_cuerpo['Margen_Pct'] = [
-                    row['Margen_Total'] / row['Venta_Total'] if row['Venta_Total'] > 0 else 0 
-                    for _, row in ventas_cuerpo.iterrows()
-                ]
-            else:
-                ventas_cuerpo['Cuerpo_Label_Combined'] = []
-                ventas_cuerpo['Categoria_Full'] = []
-                ventas_cuerpo['Margen_Pct'] = []
-
+            ventas_cuerpo['Cuerpo_Label'] = ventas_cuerpo['Cuerpo_Ord'].apply(crear_etiqueta_eje)
+            ventas_cuerpo['Margen_Pct'] = ventas_cuerpo.apply(
+                lambda row: row['Margen_Total'] / row['Venta_Total'] if row['Venta_Total'] > 0 else 0, 
+                axis=1
+            )
+            
             orden_activo = st.session_state.dash_orden
-            if orden_activo == "Mayor Venta": 
-                ventas_cuerpo = ventas_cuerpo.sort_values('Venta_Total', ascending=False)
-            elif orden_activo == "Mayor Margen": 
-                ventas_cuerpo = ventas_cuerpo.sort_values('Margen_Pct', ascending=False)
-            else: 
-                ventas_cuerpo = ventas_cuerpo.sort_values(['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num'])
+            if orden_activo == "Mayor a Menor Venta": ventas_cuerpo = ventas_cuerpo.sort_values('Venta_Total', ascending=False)
+            elif orden_activo == "Mayor Margen (%)": ventas_cuerpo = ventas_cuerpo.sort_values('Margen_Pct', ascending=False)
+            else: ventas_cuerpo = ventas_cuerpo.sort_values('Cuerpo_Ord')
 
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             
             fig.add_trace(
                 go.Bar(
-                    x=ventas_cuerpo['Cuerpo_Label_Combined'], 
+                    x=ventas_cuerpo['Cuerpo_Label'], 
                     y=ventas_cuerpo['Venta_Total'],
                     name="Ventas Totales (S/)",
                     text=ventas_cuerpo['Venta_Total'].apply(lambda x: f"S/ {x/1000:,.1f}K" if x >= 1000 else f"S/ {x:,.0f}"),
                     textposition='inside',
                     insidetextanchor='middle',
-                    textangle=0,
-                    textfont=dict(color='#ffffff', size=10, family='Inter', weight='bold'),
+                    textfont=dict(color='#ffffff', size=11, family='Inter', weight='bold'),
                     marker=dict(color='#2563eb', line=dict(color='#1d4ed8', width=1.5)),
-                    hovertemplate="<b>Pasillo %{customdata[0]} [%{customdata[1]}] - Cuerpo %{customdata[2]}</b><br>Categoría: <b>%{customdata[4]}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata[3]}<extra></extra>",
-                    customdata=ventas_cuerpo[['Pasillo_Key', 'Lateral_Key', 'Cuerpo_Num', 'SKUs_Total', 'Categoria_Full']] if not ventas_cuerpo.empty else []
+                    hovertemplate="<b>%{x}</b><br>Ventas: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata}<extra></extra>",
+                    customdata=ventas_cuerpo['SKUs_Total']
                 ), secondary_y=False
             )
 
             fig.add_trace(
                 go.Scatter(
-                    x=ventas_cuerpo['Cuerpo_Label_Combined'], 
+                    x=ventas_cuerpo['Cuerpo_Label'], 
                     y=ventas_cuerpo['Margen_Pct'],
                     name="Margen %",
                     mode="lines+markers+text",
                     text=ventas_cuerpo['Margen_Pct'].apply(lambda x: f"{x*100:,.1f}%"),
                     textposition='top center',
-                    textfont=dict(color=t["accent_green"], size=10, family='Inter', weight='bold'),
-                    marker=dict(color=t["accent_green"], size=8, symbol='circle', line=dict(color=t["bg_card"], width=2)),
-                    line=dict(color=t["accent_green"], width=2.5, shape='spline'),
-                    hovertemplate="Margen: %{text}<extra></extra>"
+                    textfont=dict(color=t["accent_green"], size=11, family='Inter', weight='bold'),
+                    marker=dict(color=t["accent_green"], size=9, symbol='circle', line=dict(color=t["bg_card"], width=2)),
+                    line=dict(color=t["accent_green"], width=3, shape='spline'),
+                    hovertemplate="<b>%{x}</b><br>Margen: %{text}<extra></extra>"
                 ), secondary_y=True
             )
 
-            num_cols = len(ventas_cuerpo)
-            ancho_grafico = max(650, int(num_cols * 140))
-
             fig.update_layout(
-                width=ancho_grafico,
                 paper_bgcolor='rgba(0,0,0,0)', 
                 plot_bgcolor='rgba(0,0,0,0)',
                 hovermode="x unified",
-                hoverlabel=dict(bgcolor=t["bg_surface"], font_size=12, font_family="Inter"),
-                legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
-                margin=dict(t=30, b=40, l=10, r=10),
-                xaxis=dict(
-                    showgrid=False, 
-                    color=t["plotly_text"], 
-                    tickfont=dict(size=10, weight='bold', color=t["plotly_text"]),
-                    tickangle=0
-                ),
+                legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
+                margin=dict(t=10, b=10, l=10, r=10),
+                xaxis=dict(showgrid=False, color=t["plotly_text"], tickfont=dict(size=10, weight='bold', color=t["plotly_text"])),
                 yaxis=dict(title="Ventas (S/)", showgrid=True, gridcolor=t["grid_color"], color=t["plotly_text"], zeroline=False),
                 yaxis2=dict(title="Margen (%)", showgrid=False, color=t["accent_green"], zeroline=False)
             )
             
             fig.update_xaxes(fixedrange=True)
             fig.update_yaxes(fixedrange=True)
-
-            st.markdown('<div class="chart-scroll-wrapper">', unsafe_allow_html=True)
-            st.plotly_chart(fig, use_container_width=False, config={'displayModeBar': False, 'scrollZoom': False})
-            st.markdown('</div>', unsafe_allow_html=True)
-
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
             st.markdown(f"<div style='font-size:0.72rem; color:{text_muted}; text-align:right; margin-top:2px;'>Orden activo: <b>{orden_activo}</b></div></div>", unsafe_allow_html=True)
             
         with col_graf_der:
@@ -2128,10 +2029,6 @@ if df_raw is not None and not df_raw.empty:
             df_pie = df_pie[df_pie['Venta_Num'] > 0].sort_values(by='Venta_Num', ascending=False)
             ventas_dash_total = df_dash_unicos['Venta_Num'].sum()
             
-            if df_pie.empty:
-                df_pie = df_dash_unicos.groupby('Marca')['Venta_Num'].sum().reset_index().sort_values(by='Venta_Num', ascending=False)
-                vista_anillo = 'Marca'
-                
             fig_pie = go.Figure(data=[go.Pie(
                 labels=df_pie[vista_anillo], 
                 values=df_pie['Venta_Num'], 
@@ -2173,20 +2070,19 @@ if df_raw is not None and not df_raw.empty:
         )
 
         col_espacio_elegida = 'Caras_Num' if metrica_espacio == "Caras (Facings)" else 'Unid_Bandeja_Num'
-        dim_fs = 'Categoría' if len([c for c in df_dash_base['Categoría'].unique() if str(c) not in ['SIN DATOS', 'nan', '']]) > 1 else 'Marca'
-
-        df_espacio_cat = df_dash_base.groupby(dim_fs).agg(
+        
+        df_espacio_cat = df_dash_base.groupby('Categoría').agg(
             Espacio_Total=(col_espacio_elegida, 'sum')
         ).reset_index()
 
-        df_unicos_cat = df_dash_base.drop_duplicates(subset=['COD REAL', dim_fs]).copy()
-        df_fin_cat = df_unicos_cat.groupby(dim_fs).agg(
+        df_unicos_cat = df_dash_base.drop_duplicates(subset=['COD REAL', 'Categoría']).copy()
+        df_fin_cat = df_unicos_cat.groupby('Categoría').agg(
             Ventas_Total=('Venta_Num', 'sum'),
             Margen_Total=('Margen_Num', 'sum')
         ).reset_index()
 
-        df_fs = pd.merge(df_espacio_cat, df_fin_cat, on=dim_fs, how='outer').fillna(0)
-        df_fs = df_fs[~df_fs[dim_fs].isin(['SIN DATOS', 'S/D', 'S/C', 'S/S', 'S/G', 'nan', ''])].copy()
+        df_fs = pd.merge(df_espacio_cat, df_fin_cat, on='Categoría', how='outer').fillna(0)
+        df_fs = df_fs[~df_fs['Categoría'].isin(['SIN DATOS', 'S/D', 'S/C', 'S/S', 'S/G', 'nan', ''])].copy()
         
         total_espacio_sum = df_fs['Espacio_Total'].sum()
         total_ventas_sum = df_fs['Ventas_Total'].sum()
@@ -2204,7 +2100,7 @@ if df_raw is not None and not df_raw.empty:
             fig_fs = go.Figure()
             
             fig_fs.add_trace(go.Bar(
-                x=df_fs[dim_fs],
+                x=df_fs['Categoría'],
                 y=df_fs['Pct_Espacio'],
                 name=f"% Espacio ({'Caras' if metrica_espacio == 'Caras (Facings)' else 'Unid. Bandeja'})",
                 text=df_fs['Pct_Espacio'].apply(lambda x: f"{x*100:.1f}%"),
@@ -2217,7 +2113,7 @@ if df_raw is not None and not df_raw.empty:
             ))
             
             fig_fs.add_trace(go.Bar(
-                x=df_fs[dim_fs],
+                x=df_fs['Categoría'],
                 y=df_fs['Pct_Ventas'],
                 name="% Ventas (Monto S/)",
                 text=df_fs['Pct_Ventas'].apply(lambda x: f"{x*100:.1f}%"),
@@ -2230,7 +2126,7 @@ if df_raw is not None and not df_raw.empty:
             ))
 
             fig_fs.add_trace(go.Bar(
-                x=df_fs[dim_fs],
+                x=df_fs['Categoría'],
                 y=df_fs['Pct_Margen'],
                 name="% Margen (Ganancia S/)",
                 text=df_fs['Pct_Margen'].apply(lambda x: f"{x*100:.1f}%"),
@@ -2266,7 +2162,7 @@ if df_raw is not None and not df_raw.empty:
                     top_sub = subdimensionados.sort_values(by='Brecha_Margen', ascending=False).iloc[0]
                     st.markdown(f"""
                         <div class="insight-box" style="background-color: {t['insight_green_bg']}; border-left: 4px solid #10b981; color: {t['insight_green_text']};">
-                            <b>🚀 Categoría Altamente Rentable:</b> La categoría <b>{top_sub[dim_fs]}</b> aporta el <b>{top_sub['Pct_Margen']*100:.1f}%</b> del margen total y el <b>{top_sub['Pct_Ventas']*100:.1f}%</b> de la venta, pero solo ocupa el <b>{top_sub['Pct_Espacio']*100:.1f}%</b> del espacio físico. Su alta rentabilidad justifica asignarle mayor cantidad de caras.
+                            <b>🚀 Categoría Altamente Rentable:</b> La categoría <b>{top_sub['Categoría']}</b> aporta el <b>{top_sub['Pct_Margen']*100:.1f}%</b> del margen total y el <b>{top_sub['Pct_Ventas']*100:.1f}%</b> de la venta, pero solo ocupa el <b>{top_sub['Pct_Espacio']*100:.1f}%</b> del espacio físico. Su alta rentabilidad justifica asignarle mayor cantidad de caras.
                         </div>
                     """, unsafe_allow_html=True)
                 else:
@@ -2281,7 +2177,7 @@ if df_raw is not None and not df_raw.empty:
                     top_sobre = sobredimensionados.sort_values(by='Brecha_Share', ascending=True).iloc[0]
                     st.markdown(f"""
                         <div class="insight-box" style="background-color: {t['insight_amber_bg']}; border-left: 4px solid #f59e0b; color: {t['insight_amber_text']};">
-                            <b>⚠️ Alerta de Espacio Ocioso/Bajo Margen:</b> La categoría <b>{top_sobre[dim_fs]}</b> consume el <b>{top_sobre['Pct_Espacio']*100:.1f}%</b> de la repisa pero solo aporta el <b>{top_sobre['Pct_Ventas']*100:.1f}%</b> de las ventas y el <b>{top_sobre['Pct_Margen']*100:.1f}%</b> del margen. Se sugiere evaluar reducción de facings.
+                            <b>⚠️ Alerta de Espacio Ocioso/Bajo Margen:</b> La categoría <b>{top_sobre['Categoría']}</b> consume el <b>{top_sobre['Pct_Espacio']*100:.1f}%</b> de la repisa pero solo aporta el <b>{top_sobre['Pct_Ventas']*100:.1f}%</b> de las ventas y el <b>{top_sobre['Pct_Margen']*100:.1f}%</b> del margen. Se sugiere evaluar reducción de facings.
                         </div>
                     """, unsafe_allow_html=True)
                 else:
@@ -2293,7 +2189,7 @@ if df_raw is not None and not df_raw.empty:
             
             st.markdown("</div>", unsafe_allow_html=True)
 
-        # --- NIVEL 4: REPORTE OPERATIVO DETALLADO ---
+        # --- NIVEL 4: REPORTE OPERATIVO DETALLADO (CON EL NUEVO FILTRO) ---
         st.markdown(f"""
             <div class="dash-card">
                 <div class="dash-card-header">
@@ -2315,37 +2211,23 @@ if df_raw is not None and not df_raw.empty:
         
         with col_dl:
             buffer = io.BytesIO()
-            df_agrupado = df_base.copy()
-            def formatear_ubicacion(val):
-                val_str = str(val).strip()
-                if '.' in val_str:
-                    partes = val_str.split('.')
-                    return f"C{partes[0]} (N{partes[1]})"
-                return f"Cuerpo {val_str}"
-            df_agrupado['Ubic_Txt'] = df_agrupado['Bandeja'].apply(formatear_ubicacion)
-            ubicaciones_map = df_agrupado.groupby('COD REAL')['Ubic_Txt'].apply(
-                lambda x: ", ".join(sorted(list(set(x.dropna()))))
-            ).to_dict()
-
-            df_rep = df_dash_unicos.copy()
-            df_rep['Ubicación(es)'] = df_rep['COD REAL'].map(ubicaciones_map)
+            df_rep = df_sku_unico_global.copy()
             
             if filtro_reporte == "Bloqueados (Estado B)":
                 df_rep = df_rep[df_rep['Estado'].astype(str).str.strip().str.upper() == 'B']
             elif filtro_reporte == "Sin Stock (Quiebre: Stock = 0)":
-                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] <= 0)]
+                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock'] <= 0)]
             elif filtro_reporte == "Stock Bajo (Alerta: Stock 1 a 5)":
-                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
+                df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock'] > 0) & (df_rep['Stock'] <= 5)]
             elif filtro_reporte == "Cobertura Alta (Sobreabastecido: ≥ 30 días)":
-                df_rep = df_rep[df_rep['Cob_Num'] >= 30]
+                df_rep = df_rep[df_rep['Cobertura'] >= 30]
             elif filtro_reporte == "No está en el planograma":
                 df_rep = df_rep[df_rep['Ubicación(es)'].isna() | (df_rep['Ubicación(es)'].astype(str).str.strip() == "")]
                 
-            col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
             cols_to_show = [
-                'COD REAL', 'EAN', col_desc, 'Ubicación(es)', 
+                'COD REAL', 'EAN', 'Descripción', 'Ubicación(es)', 
                 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo', 
-                'Marca', 'Stock', 'Cobertura', 'Venta', 'Monto Margen'
+                'Stock', 'Cobertura', 'Venta', 'Monto Margen'
             ]
             cols_to_show = [c for c in cols_to_show if c in df_rep.columns]
 
