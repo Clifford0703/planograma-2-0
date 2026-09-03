@@ -114,20 +114,15 @@ st.markdown(f"""
             font-family: 'Inter', sans-serif !important;
         }}
         
-        body.modal-active {{
-            overflow: hidden !important;
-            height: 100vh !important;
-        }}
-        
         header[data-testid="stHeader"] {{
             background-color: transparent !important;
         }}
         
         .block-container {{
-            padding-left: 0.4rem !important;
-            padding-right: 0.4rem !important;
-            padding-top: 0.8rem !important;
-            padding-bottom: 1rem !important;
+            padding-left: 1.2rem !important;
+            padding-right: 1.2rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1.5rem !important;
             max-width: 100% !important;
         }}
         
@@ -182,7 +177,7 @@ st.markdown(f"""
             font-weight: 900 !important;
         }}
         
-        /* SELECTBOXES */
+        /* SELECTBOXES Y RADIOS */
         [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
             background-color: {t["input_bg"]} !important;
             background: {t["input_bg"]} !important;
@@ -303,22 +298,22 @@ st.markdown(f"""
             box-shadow: {t["card_shadow"]};
         }}
 
-        .chart-scroll-wrapper {{
-            width: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
-            padding-bottom: 8px;
+        .dash-card-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid {t["border_subtle"]};
         }}
-        .chart-scroll-wrapper::-webkit-scrollbar {{
-            height: 8px;
-        }}
-        .chart-scroll-wrapper::-webkit-scrollbar-track {{
-            background: {t["bg_app"]};
-            border-radius: 4px;
-        }}
-        .chart-scroll-wrapper::-webkit-scrollbar-thumb {{
-            background: {t["accent"]};
-            border-radius: 4px;
+
+        .dash-card-title {{
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: {text_primary};
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }}
 
         .insight-box {{
@@ -404,190 +399,166 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA ---
+# --- GENERADOR DEL PLANOGRAMA (ESTRUCTURA ORIGINAL RÁPIDA) ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
     df['TieneOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').notna()
     df['NumOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').fillna(999999)
     
-    pasillo_col = 'PASILLO' if 'PASILLO' in df.columns else ('Pasillo' if 'Pasillo' in df.columns else None)
-    lateral_col = 'LATERAL' if 'LATERAL' in df.columns else ('Lateral' if 'Lateral' in df.columns else None)
-    
-    df['Pasillo_Val'] = df[pasillo_col].astype(str).str.strip().str.upper() if pasillo_col else "1"
-    df['Lateral_Val'] = df[lateral_col].astype(str).str.strip().str.upper() if lateral_col else "A"
-
     bandeja_str = df.get('Bandeja', pd.Series(["1.1"]*len(df))).astype(str)
     df[['Cuerpo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0:2]
     df['Cuerpo_Ord'] = pd.to_numeric(df['Cuerpo_Ord'], errors='coerce').fillna(1)
-    df['Nivel_Num'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
+    df['Nivel_Ord'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
 
     df = df.sort_values(
-        by=['Pasillo_Val', 'Lateral_Val', 'Cuerpo_Ord', 'Nivel_Num', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
-        ascending=[True, True, True, False, False, True, True]
+        by=['Cuerpo_Ord', 'Nivel_Ord', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
+        ascending=[True, False, False, True, True]
     )
 
-    pasillos = {}
+    cuerpos = {}
     todas_marcas = sorted(list(df["Marca"].dropna().unique())) if "Marca" in df.columns else []
     todas_categorias = sorted([c for c in df["Categoría"].dropna().unique() if c not in ['SIN DATOS', 'S/C', 'nan', '']]) if "Categoría" in df.columns else []
-    todos_pasillos = sorted(list(df["Pasillo_Val"].dropna().unique()))
-    todos_laterales = sorted(list(df["Lateral_Val"].dropna().unique()))
+    todos_niveles = sorted(list(df["Nivel_Ord"].dropna().unique()), reverse=True)
 
     for _, r in df.iterrows():
-        p_val = r['Pasillo_Val']
-        lat_val = r['Lateral_Val']
         b_str = str(r.get("Bandeja", "1.1")).strip()
         cuerpo_id = f"Cuerpo {b_str.split('.')[0]}" if "." in b_str else "Cuerpo 1"
-        
-        if p_val not in pasillos: pasillos[p_val] = {}
-        if lat_val not in pasillos[p_val]: pasillos[p_val][lat_val] = {}
-        if cuerpo_id not in pasillos[p_val][lat_val]: pasillos[p_val][lat_val][cuerpo_id] = {}
-        if b_str not in pasillos[p_val][lat_val][cuerpo_id]: pasillos[p_val][lat_val][cuerpo_id][b_str] = []
-        
-        pasillos[p_val][lat_val][cuerpo_id][b_str].append(r)
+        if cuerpo_id not in cuerpos: cuerpos[cuerpo_id] = {}
+        if b_str not in cuerpos[cuerpo_id]: cuerpos[cuerpo_id][b_str] = []
+        cuerpos[cuerpo_id][b_str].append(r)
 
-    html_pasillos = ""
-    for p_val, laterals_dict in sorted(pasillos.items()):
-        for lat_val, cuerpos_dict in sorted(laterals_dict.items()):
-            html_cuerpos = ""
-            for cuerpo_nombre, niveles_dict in sorted(cuerpos_dict.items()):
-                cuerpo_num = cuerpo_nombre.replace("Cuerpo ", "").strip()
-                niveles_ordenados = sorted(niveles_dict.keys(), key=lambda x: int(str(x).split('.')[-1]) if str(x).replace('.','').isdigit() else 1, reverse=True)
-                html_niveles = ""
+    html_cuerpos = ""
+    for cuerpo_nombre, niveles_dict in sorted(cuerpos.items()):
+        cuerpo_num = cuerpo_nombre.replace("Cuerpo ", "").strip()
+        niveles_ordenados = sorted(niveles_dict.keys(), reverse=True)
+        html_niveles = ""
+        
+        todos_items_cuerpo = [it for sublist in niveles_dict.values() for it in sublist]
+        cats_cuerpo = [str(it.get('Categoría', '')) for it in todos_items_cuerpo if str(it.get('Categoría', '')) not in ['', 'S/C', 'SIN DATOS', 'nan']]
+        cat_predominante = max(set(cats_cuerpo), key=cats_cuerpo.count) if cats_cuerpo else ""
+
+        for b_nombre in niveles_ordenados:
+            items = niveles_dict[b_nombre]
+            total_caras = sum([int(it.get("Caras", 1)) if str(it.get("Caras", 1)).isdigit() else 1 for it in items])
+            nivel_num = b_nombre.split(".")[-1] if "." in b_nombre else "1"
+
+            cards_html = ""
+            for it in items:
+                cod_real = str(it.get("COD REAL", ""))
+                ean = str(it.get("EAN", ""))
+                nombre = str(it.get("Descripción", it.get("Nombre", "")))
+                marca = str(it.get("Marca", "S/M"))
+                estado = str(it.get("Estado", ""))
                 
-                todos_items_cuerpo = [it for sublist in niveles_dict.values() for it in sublist]
-                cats_cuerpo = [str(it.get('Categoría', '')) for it in todos_items_cuerpo if str(it.get('Categoría', '')) not in ['', 'S/C', 'SIN DATOS', 'nan']]
-                cat_predominante = max(set(cats_cuerpo), key=cats_cuerpo.count) if cats_cuerpo else ""
+                caras_val = str(it.get("Caras", "1"))
+                caras = int(caras_val) if caras_val.isdigit() and int(caras_val) > 0 else 1
+                pos = str(it.get("N°", "-")) if not pd.isna(it.get("N°", "-")) else "-"
 
-                for b_nombre in niveles_ordenados:
-                    items = niveles_dict[b_nombre]
-                    total_caras = sum([int(it.get("Caras", 1)) if str(it.get("Caras", 1)).isdigit() else 1 for it in items])
-                    nivel_num = str(b_nombre).split(".")[-1] if "." in str(b_nombre) else str(b_nombre)
-
-                    cards_html = ""
-                    for it in items:
-                        cod_real = str(it.get("COD REAL", ""))
-                        ean = str(it.get("EAN", ""))
-                        nombre = str(it.get("Descripción", it.get("Nombre", "")))
-                        marca = str(it.get("Marca", "S/M"))
-                        estado = str(it.get("Estado", ""))
-                        
-                        caras_val = str(it.get("Caras", "1"))
-                        caras = int(caras_val) if caras_val.isdigit() and int(caras_val) > 0 else 1
-                        pos = str(it.get("N°", "-")) if not pd.isna(it.get("N°", "-")) else "-"
-
-                        stock_val = safe_float(it.get("Stock", -999.0))
-                        cob_val = safe_float(it.get("Cobertura", -999.0))
-                        venta_val = safe_float(it.get("Venta", -999.0))
-                        part_val = safe_float(it.get("% Part", -999.0))
-                        
-                        dept_val = str(it.get("Departamento", "SIN DATOS")).replace('"', '&quot;')
-                        sec_val = str(it.get("Sección", "SIN DATOS")).replace('"', '&quot;')
-                        catjer_val = str(it.get("Categoría", "SIN DATOS")).replace('"', '&quot;')
-                        ga_val = str(it.get("Grupo de Artículo", "SIN DATOS")).replace('"', '&quot;')
-                        
-                        link_foto = str(it.get("Links de fotos", "")).strip()
-                        if link_foto in ['nan', '', 'None', 'SIN DATOS', 'NaN']:
-                            link_foto_final = ""
-                        else:
-                            link_foto_final = link_foto.replace("http://", "https://")
-                        
-                        part_fmt = format_pct(part_val)
-                        stock_fmt = f"{stock_val:.2f}" if stock_val != -999.0 else "SIN DATOS"
-                        cob_fmt = f"{cob_val:.2f}" if cob_val != -999.0 else "SIN DATOS"
-                        estilo_cobertura = "color: #ef4444; font-weight: 800;" if cob_val != -999.0 and cob_val >= 30 else ""
-                        
-                        if es_realograma:
-                            foto_render = link_foto_final if link_foto_final else "https://via.placeholder.com/60x150.png/1e293b/94a3b8?text=Sin+Foto"
-                            clase_alerta, cat_leyenda = obtener_alerta_css(estado, stock_val)
-                            img_tags = "".join([f'<img src="{foto_render}" alt="{marca}">' for _ in range(caras)])
-                            
-                            html_interno = f"""
-                              <div class="top-badge"></div>
-                              <div class="sku-images-wrapper">{img_tags}</div>
-                              <div class="sku-fleje">
-                                <span class="fleje-ean">{ean}</span>
-                                <span class="fleje-caras">{caras}C</span>
-                              </div>
-                            """
-                            clase_wrapper = f"sku-item sku-group {clase_alerta}"
-                            estilo_wrapper = f"flex: {caras};"
-                        else:
-                            bg_color, border_color, text_color, name_color, cat_leyenda = obtener_estado_y_color(estado, stock_val, dark=es_oscuro)
-                            
-                            html_interno = f"""
-                              <div class="sku-header-row">
-                                <span class="sku-pos" style="color: {text_color}; font-weight: 800;">{pos}</span>
-                                <span class="sku-caras-tag" style="color: {text_color}; background: rgba(0,0,0,0.25); border: 1px solid {text_color}44;">{caras}C</span>
-                              </div>
-                              <div class="sku-details">
-                                <span class="sku-brand-text" style="color: {text_color};">{marca}</span>
-                                <span class="sku-name-text" style="color: {name_color};">{nombre}</span>
-                              </div>
-                              <div class="sku-bottom-bar" style="border-top: 1px dashed {border_color};">
-                                <span class="sku-stock-pill" style="color: {text_color}; font-weight: 800;">Stk: {stock_fmt}</span>
-                                <span class="sku-cap-val" style="{estilo_cobertura}">Cob: {cob_fmt}</span>
-                              </div>
-                            """
-                            clase_wrapper = "sku-item sku-card"
-                            estilo_wrapper = f"flex: {caras}; background-color: {bg_color}; border: 1.5px solid {border_color};"
-
-                        cards_html += f"""
-                        <div class="{clase_wrapper}" style="{estilo_wrapper}" 
-                             data-brand="{marca}" data-name="{nombre}" data-ean="{ean}"
-                             data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_val}" data-part="{part_fmt}" 
-                             data-cod="{cod_real}" data-cat="{cat_leyenda}" 
-                             data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
-                             data-foto="{link_foto_final}"
-                             title="Detalles: {nombre}">
-                          {html_interno}
-                        </div>
-                        """
-
-                    if es_realograma:
-                        shelf_render = f"""
-                          <div class="shelf-products">{cards_html}</div>
-                          <div class="shelf-base"><span class="shelf-name-tag">NIVEL {nivel_num} • {total_caras} CARAS</span></div>
-                        """
-                    else:
-                        shelf_render = f"""
-                          <div class="shelf-info"><span>NIVEL {nivel_num}</span><span class="shelf-caras-count">{total_caras} CARAS</span></div>
-                          <div class="shelf-products">{cards_html}</div>
-                          <div class="shelf-bottom-rail"></div>
-                        """
-
-                    html_niveles += f"""
-                    <div class="shelf-row" data-level="{nivel_num}">
-                      {shelf_render}
-                    </div>
+                stock_val = safe_float(it.get("Stock", -999.0))
+                cob_val = safe_float(it.get("Cobertura", -999.0))
+                venta_val = safe_float(it.get("Venta", -999.0))
+                part_val = safe_float(it.get("% Part", -999.0))
+                
+                dept_val = str(it.get("Departamento", "SIN DATOS")).replace('"', '&quot;')
+                sec_val = str(it.get("Sección", "SIN DATOS")).replace('"', '&quot;')
+                catjer_val = str(it.get("Categoría", "SIN DATOS")).replace('"', '&quot;')
+                ga_val = str(it.get("Grupo de Artículo", "SIN DATOS")).replace('"', '&quot;')
+                
+                link_foto = str(it.get("Links de fotos", "")).strip()
+                if link_foto in ['nan', '', 'None', 'SIN DATOS', 'NaN']:
+                    link_foto_final = ""
+                else:
+                    link_foto_final = link_foto.replace("http://", "https://")
+                
+                part_fmt = format_pct(part_val)
+                stock_fmt = f"{stock_val:.2f}" if stock_val != -999.0 else "SIN DATOS"
+                cob_fmt = f"{cob_val:.2f}" if cob_val != -999.0 else "SIN DATOS"
+                estilo_cobertura = "color: #ef4444; font-weight: 800;" if cob_val != -999.0 and cob_val >= 30 else ""
+                
+                if es_realograma:
+                    foto_render = link_foto_final if link_foto_final else "https://via.placeholder.com/60x150.png/1e293b/94a3b8?text=Sin+Foto"
+                    clase_alerta, cat_leyenda = obtener_alerta_css(estado, stock_val)
+                    img_tags = "".join([f'<img src="{foto_render}" alt="{marca}">' for _ in range(caras)])
+                    
+                    html_interno = f"""
+                      <div class="top-badge"></div>
+                      <div class="sku-images-wrapper">{img_tags}</div>
+                      <div class="sku-fleje">
+                        <span class="fleje-ean">{ean}</span>
+                        <span class="fleje-caras">{caras}C</span>
+                      </div>
                     """
+                    clase_wrapper = f"sku-item sku-group {clase_alerta}"
+                    estilo_wrapper = f"flex: {caras};"
+                else:
+                    bg_color, border_color, text_color, name_color, cat_leyenda = obtener_estado_y_color(estado, stock_val, dark=es_oscuro)
+                    
+                    html_interno = f"""
+                      <div class="sku-header-row">
+                        <span class="sku-pos" style="color: {text_color}; font-weight: 800;">{pos}</span>
+                        <span class="sku-caras-tag" style="color: {text_color}; background: rgba(0,0,0,0.25); border: 1px solid {text_color}44;">{caras}C</span>
+                      </div>
+                      <div class="sku-details">
+                        <span class="sku-brand-text" style="color: {text_color};">{marca}</span>
+                        <span class="sku-name-text" style="color: {name_color};">{nombre}</span>
+                      </div>
+                      <div class="sku-bottom-bar" style="border-top: 1px dashed {border_color};">
+                        <span class="sku-stock-pill" style="color: {text_color}; font-weight: 800;">Stk: {stock_fmt}</span>
+                        <span class="sku-cap-val" style="{estilo_cobertura}">Cob: {cob_fmt}</span>
+                      </div>
+                    """
+                    clase_wrapper = "sku-item sku-card"
+                    estilo_wrapper = f"flex: {caras}; background-color: {bg_color}; border: 1.5px solid {border_color};"
 
-                subtitulo_cat = f'<span class="bay-subcat">{cat_predominante}</span>' if cat_predominante else ''
-
-                html_cuerpos += f"""
-                <div class="bay-column" data-module="{cuerpo_num}">
-                  <div class="bay-title" title="Toca para cuadrar este cuerpo a todo el ancho">
-                    <span class="bay-main-title">{cuerpo_nombre.upper()} 🔍</span>
-                    {subtitulo_cat}
-                  </div>
-                  <div class="bay-shelves">
-                    {html_niveles}
-                  </div>
+                cards_html += f"""
+                <div class="{clase_wrapper}" style="{estilo_wrapper}" 
+                     data-brand="{marca}" data-name="{nombre}" data-ean="{ean}"
+                     data-stock="{stock_fmt}" data-cob="{cob_fmt}" data-venta="{venta_val}" data-part="{part_fmt}" 
+                     data-cod="{cod_real}" data-cat="{cat_leyenda}" 
+                     data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
+                     data-foto="{link_foto_final}"
+                     title="Detalles: {nombre}">
+                  {html_interno}
                 </div>
                 """
 
-            html_pasillos += f"""
-            <div class="pasillo-section" data-pasillo="{p_val}" data-lateral="{lat_val}">
-              <div class="aisle-container mode-multi" id="aisleContainer_{p_val}_{lat_val}">
-                {html_cuerpos}
-              </div>
+            if es_realograma:
+                shelf_render = f"""
+                  <div class="shelf-products">{cards_html}</div>
+                  <div class="shelf-base"><span class="shelf-name-tag">NIVEL {nivel_num} • {total_caras} CARAS</span></div>
+                """
+            else:
+                shelf_render = f"""
+                  <div class="shelf-info"><span>NIVEL {nivel_num}</span><span class="shelf-caras-count">{total_caras} CARAS</span></div>
+                  <div class="shelf-products">{cards_html}</div>
+                  <div class="shelf-bottom-rail"></div>
+                """
+
+            html_niveles += f"""
+            <div class="shelf-row" data-level="{nivel_num}">
+              {shelf_render}
             </div>
             """
 
+        subtitulo_cat = f'<span class="bay-subcat">{cat_predominante}</span>' if cat_predominante else ''
+
+        html_cuerpos += f"""
+        <div class="bay-column" data-module="{cuerpo_num}">
+          <div class="bay-title">
+            <span class="bay-main-title">{cuerpo_nombre.upper()}</span>
+            {subtitulo_cat}
+          </div>
+          <div class="bay-shelves">
+            {html_niveles}
+          </div>
+        </div>
+        """
+
     options_marcas = "".join([f'<option value="{m}">{m}</option>' for m in todas_marcas])
     options_categorias = "".join([f'<option value="{c}">{c}</option>' for c in todas_categorias])
-    options_pasillos = "".join([f'<option value="{p}">Pasillo {p}</option>' for p in todos_pasillos])
-    options_laterales = "".join([f'<option value="{l}">Lateral {l}</option>' for l in todos_laterales])
+    options_cuerpos = "".join([f'<option value="{k.replace("Cuerpo ", "")}">{k}</option>' for k in cuerpos.keys()])
+    options_niveles = "".join([f'<option value="{int(lvl)}">Nivel {int(lvl)}</option>' for lvl in todos_niveles])
 
     app_bg = t["bg_app"]
     card_bg = t["bg_card"]
@@ -610,20 +581,20 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           color: {text_primary}; 
           margin: 0; 
           padding: 0; 
-          height: auto; 
-          min-height: 100vh;
+          height: 100vh; 
+          overflow: hidden; 
         }}
         
         .main-container {{ 
           padding: 4px 6px; 
-          height: auto; 
-          min-height: 100vh; 
+          height: 100vh; 
           display: flex; 
           flex-direction: column; 
-          box-sizing: border-box; 
+          box-sizing: border-box;
+          overflow: hidden; 
         }}
 
-        ::-webkit-scrollbar {{ height: 8px; width: 8px; }}
+        ::-webkit-scrollbar {{ height: 6px; width: 6px; }}
         ::-webkit-scrollbar-track {{ background: {card_bg}; border-radius: 4px; }}
         ::-webkit-scrollbar-thumb {{ background: #3b82f6; border-radius: 4px; }}
 
@@ -771,8 +742,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           width: 100%; 
           position: relative; 
           flex: 1; 
-          height: auto; 
-          min-height: fit-content; 
+          min-height: 0; 
           background: {card_bg}; 
           border-radius: 10px; 
           border: 1px solid {t["border_subtle"]}; 
@@ -780,58 +750,29 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden; 
         }}
 
-        /* BOTÓN FLOTANTE PARA SALIR DEL MODO CUERPO INDIVIDUAL */
-        .btn-return-all {{
-          display: none;
-          position: absolute;
-          top: 12px;
-          left: 14px;
-          z-index: 500;
-          background: #3b82f6;
-          color: #ffffff;
-          border: none;
-          border-radius: 6px;
-          padding: 7px 16px;
-          font-weight: 800;
-          font-size: 0.78rem;
-          box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-          cursor: pointer;
-          transition: transform 0.2s ease;
-        }}
-        .btn-return-all:hover {{ transform: scale(1.04); background: #2563eb; }}
-
         .fullscreen-legend-bar {{
           display: none; 
+          position: sticky; 
+          top: 0; 
+          left: 0; 
+          right: 0; 
           background: {card_bg}; 
           border-bottom: 1px solid {t["border_subtle"]}; 
-          padding: 12px 18px; 
-          min-height: 54px;
+          padding: 12px 20px; 
           z-index: 10000; 
-          backdrop-filter: blur(12px); 
-          flex-direction: column;
+          backdrop-filter: blur(8px); 
+          align-items: center; 
+          gap: 12px; 
+          overflow-x: auto; 
+          white-space: nowrap; 
+        }}
+        
+        .fs-cat-wrapper {{
+          display: flex; 
+          align-items: center; 
           gap: 8px; 
-          box-sizing: border-box;
-          flex-shrink: 0 !important;
+          margin-left: auto; 
         }}
-
-        .fs-header-row {{ display: flex; align-items: center; justify-content: space-between; width: 100%; }}
-        .fs-controls-group {{ display: flex; align-items: center; gap: 10px; }}
-        .fs-toggle-btn {{
-          background: {t['accent']}1a;
-          color: {t['accent']};
-          border: 1.5px solid {t['accent']}44;
-          font-weight: 800;
-          font-size: 0.80rem;
-          padding: 6px 12px;
-          border-radius: 6px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }}
-        .fs-collapsible-content {{ display: flex; flex-wrap: wrap; align-items: center; gap: 10px; width: 100%; padding-top: 4px; }}
-        .fs-collapsible-content.collapsed {{ display: none !important; }}
-        .fs-cat-wrapper {{ display: flex; align-items: center; gap: 8px; margin-left: auto; }}
         .fs-cat-select {{
           background: {input_bg}; 
           border: 1.5px solid {border_col}; 
@@ -841,7 +782,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           font-size: 0.80rem; 
           font-weight: 700; 
           outline: none; 
-          min-height: 32px;
         }}
         
         .aisle-wrapper:fullscreen, .aisle-wrapper:-webkit-full-screen {{
@@ -850,28 +790,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           height: 100vh !important; 
           padding: 0 !important; 
           border: none !important; 
-          display: flex !important;
-          flex-direction: column !important;
-          overflow: hidden !important; 
         }}
         .aisle-wrapper:fullscreen .fullscreen-legend-bar, 
-        .aisle-wrapper:-webkit-full-screen .fullscreen-legend-bar {{ display: flex !important; }}
-        .aisle-wrapper:fullscreen .zoom-layer,
-        .aisle-wrapper:-webkit-full-screen .zoom-layer {{
-          flex: 1 1 auto !important;
-          min-height: 0 !important;
-          height: 100% !important;
-          overflow-y: auto !important;
-          overflow-x: auto !important;
-          display: flex !important;
-        }}
-        .aisle-wrapper:fullscreen .aisle-container,
-        .aisle-wrapper:-webkit-full-screen .aisle-container {{
-          height: auto !important;
-          min-height: 100% !important;
-          overflow-y: visible !important;
-          overflow-x: auto !important;
-          padding-bottom: 80px !important;
+        .aisle-wrapper:-webkit-full-screen .fullscreen-legend-bar {{
+          display: flex !important; 
         }}
 
         .nav-btn {{ 
@@ -902,76 +824,42 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .zoom-layer {{
           display: flex; 
           width: 100%; 
-          height: auto;
-          min-height: fit-content;
-          transform-origin: 0 0; 
+          height: 100%; 
+          transform-origin: 50% 0; 
           will-change: transform; 
-          justify-content: flex-start; 
-          align-items: flex-start; 
+          justify-content: center; 
+          align-items: stretch; 
+          transition: transform 0.2s ease-out; 
         }}
 
-        .pasillo-section {{
-          display: none;
-          width: 100%;
-          height: 100%;
-        }}
-        .pasillo-section.active {{
-          display: block;
-        }}
-
-        /* CONTENEDOR CON EFECTO IMANTADO */
         .aisle-container {{ 
           display: flex; 
           flex-direction: row; 
           gap: 16px; 
           background: {app_bg}; 
-          padding: 14px 45px 50px 45px; 
+          padding: 14px 45px; 
           overflow-x: auto; 
-          overflow-y: visible; 
+          overflow-y: auto; 
           scroll-behavior: smooth; 
-          scroll-snap-type: x mandatory;
+          scroll-snap-type: x mandatory; 
           width: 100%; 
-          height: auto; 
-          min-height: fit-content;
+          height: 100%; 
           box-sizing: border-box; 
-          align-items: flex-start;
         }}
-
-        /* MODO MULTIPLE: HASTA 4 EN ESCRITORIO CON ANCLAJE AL BORDE */
-        .aisle-container.mode-multi .bay-column {{
-          flex: 0 0 calc((100% - 48px) / 4) !important; 
-          min-width: 280px !important; 
-          max-width: calc((100% - 48px) / 4) !important;
-          scroll-snap-align: start !important;
-          scroll-snap-stop: always !important;
-        }}
-
-        /* MODO 1 CUERPO: CADA CUERPO SE EXPULSA AL 100% DEL ANCHO Y SE IMANTA */
-        .aisle-container.mode-single {{
-          padding: 14px 0 50px 0 !important;
-          scroll-snap-type: x mandatory !important;
-        }}
-        .aisle-container.mode-single .bay-column {{
-          flex: 0 0 100% !important;
-          width: 100% !important;
-          min-width: 100% !important;
-          max-width: 100% !important;
-          scroll-snap-align: start !important;
-          scroll-snap-stop: always !important;
-          border-radius: 0 !important;
-        }}
-
+        
         .bay-column {{ 
+          flex: 0 0 100%; 
+          width: 100%; 
           background: {card_bg}; 
           border: 1px solid {t["border_subtle"]}; 
           border-radius: 8px; 
           display: flex; 
           flex-direction: column; 
           height: fit-content; 
+          scroll-snap-align: center; 
           padding-bottom: 12px; 
           box-sizing: border-box; 
           box-shadow: {t["card_shadow"]}; 
-          transition: all 0.2s ease;
         }}
         .bay-column.hidden {{ display: none !important; }}
         
@@ -984,10 +872,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           justify-content: space-between; 
           align-items: center; 
           flex-shrink: 0; 
-          cursor: pointer;
-          user-select: none;
         }}
-        .bay-title:hover {{ background: {t['accent']}11; }}
         .bay-main-title {{ font-size: 0.82rem; font-weight: 800; color: {text_primary}; letter-spacing: 0.5px; }}
         .bay-subcat {{ font-size: 0.70rem; font-weight: 600; color: #3b82f6; text-transform: uppercase; }}
         
@@ -1053,7 +938,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .shelf-bottom-rail {{ height: 4px; background: {t["border_subtle"]}; border-radius: 0 0 2px 2px; }}
         .shelf-info {{ background: {card_bg}; border-left: 3px solid #3b82f6; padding: 3px 8px; font-size: 0.65rem; font-weight: 700; display: flex; justify-content: space-between; color: {text_primary}; }}
         
-        /* MODAL DE DETALLE */
+        /* MODAL DE DETALLE SEGURO CON Z-INDEX MÁXIMO */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
@@ -1124,16 +1009,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .m-val {{ font-weight: 700; text-align: right; max-width: 65%; font-feature-settings: "tnum"; }}
 
         @media (max-width: 768px) {{
-            body, html {{ height: auto !important; overflow-y: auto !important; overflow-x: hidden !important; }}
-            .main-container {{ height: auto !important; min-height: 100vh !important; overflow-y: visible !important; padding-bottom: 25px !important; }}
-            .aisle-wrapper {{ height: auto !important; min-height: fit-content !important; flex: none !important; margin-bottom: 15px !important; overflow: visible !important; }}
-            .zoom-layer {{ height: auto !important; min-height: fit-content !important; }}
-            .aisle-container {{ height: auto !important; min-height: fit-content !important; overflow-y: visible !important; padding: 8px 6px 40px 6px !important; touch-action: pan-x pan-y !important; gap: 10px !important; }}
             .nav-btn {{ display: none !important; }}
+            .aisle-container {{ padding: 8px 4px !important; touch-action: pan-x pan-y !important; }}
             .kpi-container {{ display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 6px !important; }}
             .kpi-card {{ min-width: unset !important; }}
             .kpi-card:last-child {{ grid-column: 1 / -1 !important; }}
-            .aisle-container.mode-multi .bay-column {{ flex: 0 0 88vw !important; width: 88vw !important; max-width: 88vw !important; }}
+            .bay-column {{ flex: 0 0 100% !important; width: 100% !important; max-width: 100% !important; scroll-snap-align: center !important; }}
             .shelf-products {{ min-height: 70px !important; }}
             .sku-card {{ min-width: 75px !important; }}
             .sku-images-wrapper img {{ height: 70px !important; max-width: 40px !important; }}
@@ -1142,6 +1023,34 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </head>
     <body>
       <div class="main-container" id="mainContainer">
+
+        <!-- MODAL DE DETALLE -->
+        <div id="productModal" class="modal-overlay">
+          <div class="modal-content" id="modalContent">
+            <span class="modal-close">&times;</span>
+            
+            <div class="modal-img-container" id="m-img-container">
+              <img id="m-img" src="" alt="Foto Producto" style="display: none;">
+              <div id="m-placeholder" class="modal-img-placeholder">
+                <span>📷</span>
+                <div>Sin imagen disponible</div>
+              </div>
+            </div>
+
+            <h3 id="m-name" style="margin-top: 0; font-size: 1.05rem; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; line-height: 1.3;">Producto</h3>
+            <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod" style="font-family: monospace;"></span></div>
+            <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean" style="font-family: monospace;"></span></div>
+            <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
+            <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept"></span></div>
+            <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec"></span></div>
+            <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
+            <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga"></span></div>
+            <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
+            <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
+            <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
+            <div class="m-row" style="border-bottom: none;"><span class="m-label" style="color: #f59e0b; font-weight: 700;">★ TOP Ventas:</span><span class="m-val" id="m-top" style="color: #f59e0b; font-weight: 800;"></span></div>
+          </div>
+        </div>
 
         <div class="saas-top-bar">
           <div class="top-highlight-badge">
@@ -1155,6 +1064,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           </div>
         </div>
 
+        <!-- TARJETAS KPIS -->
         <div class="kpi-container">
           <div class="kpi-card" style="border-bottom: 3px solid #3b82f6;"><span class="kpi-title">Total SKUs</span><span class="kpi-val" id="t-total">0</span></div>
           <div class="kpi-card" style="border-bottom: 3px solid #ef4444;"><span class="kpi-title">Bloqueados</span><span class="kpi-val" id="t-bloq" style="color: #ef4444;">0</span></div>
@@ -1169,8 +1079,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           <div class="filter-group"><span class="filter-label">🔍 Buscar Producto</span><input type="text" id="searchInput" class="filter-input" placeholder="Nombre o EAN..."></div>
           <div class="filter-group"><span class="filter-label">🏷️ Marca</span><select id="brandSelect" class="filter-select"><option value="ALL">Todas</option>{options_marcas}</select></div>
           <div class="filter-group"><span class="filter-label">📂 Categoría</span><select id="catSelect" class="filter-select"><option value="ALL">Todas</option>{options_categorias}</select></div>
-          <div class="filter-group"><span class="filter-label">📦 Pasillo</span><select id="pasilloSelect" class="filter-select">{options_pasillos}</select></div>
-          <div class="filter-group"><span class="filter-label">📶 Lateral</span><select id="lateralSelect" class="filter-select">{options_laterales}</select></div>
+          <div class="filter-group"><span class="filter-label">📦 Cuerpo</span><select id="baySelect" class="filter-select"><option value="ALL">Todos</option>{options_cuerpos}</select></div>
+          <div class="filter-group"><span class="filter-label">📶 Nivel</span><select id="levelSelect" class="filter-select"><option value="ALL">Todos</option>{options_niveles}</select></div>
           <div class="btn-group">
             <button id="fullscreenBtn" class="btn-saas btn-fullscreen" title="Pantalla Completa">⛶ Pantalla Completa</button>
             <button id="resetBtn" class="btn-saas btn-reset">Restablecer</button>
@@ -1186,72 +1096,39 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
             <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
+        <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
-          
-          <button id="btnReturnAll" class="btn-return-all">← Ver Múltiples Cuerpos</button>
-
-          <div id="productModal" class="modal-overlay">
-            <div class="modal-content" id="modalContent">
-              <span class="modal-close">&times;</span>
-              
-              <div class="modal-img-container" id="m-img-container">
-                <img id="m-img" src="" alt="Foto Producto" style="display: none;">
-                <div id="m-placeholder" class="modal-img-placeholder">
-                  <span>📷</span>
-                  <div>Sin imagen disponible</div>
-                </div>
-              </div>
-
-              <h3 id="m-name" style="margin-top: 0; font-size: 1.05rem; font-weight: 800; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; line-height: 1.3;">Producto</h3>
-              <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod" style="font-family: monospace;"></span></div>
-              <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean" style="font-family: monospace;"></span></div>
-              <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
-              <div class="m-row"><span class="m-label">Departamento:</span><span class="m-val" id="m-dept"></span></div>
-              <div class="m-row"><span class="m-label">Sección:</span><span class="m-val" id="m-sec"></span></div>
-              <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
-              <div class="m-row"><span class="m-label">Grupo Artículo:</span><span class="m-val" id="m-ga"></span></div>
-              <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
-              <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
-              <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
-              <div class="m-row" style="border-bottom: none;"><span class="m-label" style="color: #f59e0b; font-weight: 700;">★ TOP Ventas:</span><span class="m-val" id="m-top" style="color: #f59e0b; font-weight: 800;"></span></div>
-            </div>
-          </div>
-
-          <div class="fullscreen-legend-bar" id="fsLegendBar">
-            <div class="fs-header-row">
-              <div class="fs-controls-group">
-                <button id="fsToggleBtn" class="fs-toggle-btn">📍 Leyenda y Filtros ▾</button>
-              </div>
-              <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 6px 14px; font-weight: 800;">✕ Salir Pantalla Completa</button>
+          <div class="fullscreen-legend-bar">
+            <span style="font-size: 0.80rem; font-weight: 800; color: {text_secondary};">📍 LEYENDA:</span>
+            <div class="legend-chips">
+              <button class="legend-chip" data-filter="Bloqueado" style="--bg: {'#451a1a' if es_oscuro else '#fee2e2'}; --tc: {'#fca5a5' if es_oscuro else '#991b1b'};">Bloqueado</button>
+              <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'};">Sin Stock</button>
+              <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'};">Stock 1-5</button>
+              <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'};">Stock >5</button>
+              <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥30</button>
+              <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP</button>
             </div>
             
-            <div class="fs-collapsible-content" id="fsCollapsible">
-              <div class="legend-chips">
-                <button class="legend-chip" data-filter="Bloqueado" style="--bg: {'#451a1a' if es_oscuro else '#fee2e2'}; --tc: {'#fca5a5' if es_oscuro else '#991b1b'};">Bloqueado</button>
-                <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'};">Sin Stock</button>
-                <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'};">Stock 1-5</button>
-                <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'};">Stock >5</button>
-                <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥30</button>
-                <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP</button>
-              </div>
-              
-              <div class="fs-cat-wrapper">
-                <span style="font-size: 0.82rem; font-weight: 800; color: {text_secondary};">Categoría:</span>
-                <select id="fsCatSelect" class="fs-cat-select">
-                  <option value="ALL">Todas las Categorías</option>
-                  {options_categorias}
-                </select>
-              </div>
+            <div class="fs-cat-wrapper">
+              <span style="font-size: 0.75rem; font-weight: 700; color: {text_secondary};">Categoría:</span>
+              <select id="fsCatSelect" class="fs-cat-select">
+                <option value="ALL">Todas las Categorías</option>
+                {options_categorias}
+              </select>
             </div>
+            
+            <button id="exitFsBtn" class="btn-saas btn-reset" style="padding: 4px 10px;">✕ Salir</button>
           </div>
 
           <button class="nav-btn nav-btn-prev" id="btnPrev" title="Cuerpo Anterior">❮</button>
           <div class="zoom-layer" id="zoomLayer">
-            {html_pasillos}
+            <div class="aisle-container" id="aisleContainer">
+              {html_cuerpos}
+            </div>
           </div>
           <button class="nav-btn nav-btn-next" id="btnNext" title="Cuerpo Siguiente">❯</button>
         </div>
@@ -1261,26 +1138,18 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
       <script>
         const aisleWrapper = document.getElementById('aisleWrapper');
         const zoomLayer = document.getElementById('zoomLayer');
+        const container = document.getElementById('aisleContainer');
         const btnPrev = document.getElementById('btnPrev');
         const btnNext = document.getElementById('btnNext');
         const fullscreenBtn = document.getElementById('fullscreenBtn');
         const exitFsBtn = document.getElementById('exitFsBtn');
-        const fsToggleBtn = document.getElementById('fsToggleBtn');
-        const fsCollapsible = document.getElementById('fsCollapsible');
-        const btnReturnAll = document.getElementById('btnReturnAll');
         
-        let scale = 1, minScale = 0.4, maxScale = 3.5;
+        let scale = 1, minScale = 0.5, maxScale = 3.5;
         let posX = 0, posY = 0;
         let startX = 0, startY = 0;
         let initialDist = 0;
         let isTouching = false;
         let lastTap = 0;
-        let isSingleMode = false;
-
-        function getActiveContainer() {{
-          const activeSec = document.querySelector('.pasillo-section.active');
-          return activeSec ? activeSec.querySelector('.aisle-container') : null;
-        }}
 
         function updateZoom() {{
           zoomLayer.style.transform = `translate3d(${{posX}}px, ${{posY}}px, 0) scale(${{scale}})`;
@@ -1290,58 +1159,24 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
         }}
 
-        // ENFOCA UN CUERPO Y LO IMANTA AL 100% DEL ANCHO DE LA PANTALLA
-        function enfocarCuerpoIndividual(targetBayElem) {{
-          const container = getActiveContainer();
-          if (!container || !targetBayElem) return;
+        function autoFitCuerpo(targetBay) {{
+          const bay = targetBay || document.querySelector('.bay-column:not(.hidden)');
+          if (bay) {{
+            const viewportW = container.clientWidth;
+            const viewportH = container.clientHeight;
+            const bayW = bay.offsetWidth || bay.scrollWidth;
+            const bayH = bay.offsetHeight || bay.scrollHeight;
 
-          isSingleMode = true;
-          container.classList.remove('mode-multi');
-          container.classList.add('mode-single');
-          btnReturnAll.style.display = 'block';
-
-          scale = 1; posX = 0; posY = 0; updateZoom();
-
-          requestAnimationFrame(() => {{
-            targetBayElem.scrollIntoView({{ behavior: 'smooth', inline: 'start', block: 'nearest' }});
-          }});
-          setTimeout(updateScrollButtons, 350);
-        }}
-
-        // REGRESA A LA VISTA DE MÚLTIPLES CUERPOS
-        function regresarAVistaGeneral() {{
-          const container = getActiveContainer();
-          if (!container) return;
-
-          isSingleMode = false;
-          container.classList.remove('mode-single');
-          container.classList.add('mode-multi');
-          btnReturnAll.style.display = 'none';
-
-          scale = 1; posX = 0; posY = 0; updateZoom();
-          setTimeout(updateScrollButtons, 350);
-        }}
-
-        btnReturnAll.addEventListener('click', regresarAVistaGeneral);
-
-        // CLIC EN EL TÍTULO DE UN CUERPO PARA ENFOCARLO AL 100%
-        document.querySelectorAll('.bay-title').forEach(titleElem => {{
-          titleElem.addEventListener('click', (e) => {{
-            const bayElem = titleElem.closest('.bay-column');
-            if (bayElem) {{
-              if (!isSingleMode) {{
-                enfocarCuerpoIndividual(bayElem);
-              }} else {{
-                regresarAVistaGeneral();
-              }}
+            if (bayW > 0 && bayH > 0) {{
+              const scaleW = (viewportW - 16) / bayW;
+              const scaleH = (viewportH - 20) / bayH;
+              scale = Math.min(scaleW, scaleH, 1.0);
+              posX = 0;
+              posY = 0;
+              updateZoom();
             }}
-          }});
-        }});
-
-        fsToggleBtn.addEventListener('click', () => {{
-          const isCollapsed = fsCollapsible.classList.toggle('collapsed');
-          fsToggleBtn.textContent = isCollapsed ? '📍 Leyenda y Filtros ▸' : '📍 Leyenda y Filtros ▾';
-        }});
+          }}
+        }}
 
         aisleWrapper.addEventListener('touchstart', (e) => {{
           if (e.touches.length === 1) {{
@@ -1351,13 +1186,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
               startY = e.touches[0].clientY - posY;
             }}
             const now = new Date().getTime();
-            // DOBLE TOQUE: ENFOCA EL CUERPO AL 100% O REGRESA A LA VISTA GENERAL
-            if (now - lastTap < 320 && now - lastTap > 0) {{
-              const clickedBay = e.target.closest('.bay-column');
-              if (clickedBay && !isSingleMode) {{
-                enfocarCuerpoIndividual(clickedBay);
+            if (now - lastTap < 300 && now - lastTap > 0) {{
+              if (scale < 0.95 || scale > 1.05) {{
+                scale = 1; posX = 0; posY = 0; updateZoom();
               }} else {{
-                regresarAVistaGeneral();
+                const clickedBay = e.target.closest('.bay-column');
+                autoFitCuerpo(clickedBay);
               }}
             }}
             lastTap = now;
@@ -1378,14 +1212,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             e.preventDefault();
             const currentDist = getDistance(e.touches);
             const factor = currentDist / initialDist;
-            
-            // GESTO PELLIZCO PARA ALEJAR (ZOOM OUT): REGRESA A LA VISTA MULTIPLE
-            if (factor < 0.88 && isSingleMode) {{
-              regresarAVistaGeneral();
-              isTouching = false;
-              return;
-            }}
-
             scale = Math.min(Math.max(scale * (factor > 1 ? 1.03 : 0.97), minScale), maxScale);
             initialDist = currentDist;
             updateZoom();
@@ -1395,9 +1221,6 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         aisleWrapper.addEventListener('touchend', () => {{ isTouching = false; }});
 
         function updateScrollButtons() {{
-          const container = getActiveContainer();
-          if (!container) return;
-
           requestAnimationFrame(() => {{
             const maxScroll = container.scrollWidth - container.clientWidth;
             btnPrev.disabled = container.scrollLeft <= 10;
@@ -1405,34 +1228,24 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           }});
         }}
 
-        // NAVEGACIÓN IMANTADA ENTRE CUERPOS
         btnPrev.addEventListener('click', () => {{
-          const container = getActiveContainer();
-          if (!container) return;
-
-          if (isSingleMode) {{
-            const bayWidth = container.clientWidth;
-            container.scrollBy({{ left: -bayWidth, behavior: 'smooth' }});
-          }} else {{
-            const bayWidth = container.querySelector('.bay-column:not(.hidden)')?.offsetWidth || (container.clientWidth * 0.75);
-            container.scrollBy({{ left: -(bayWidth + 16), behavior: 'smooth' }});
+          const visibleModule = container.querySelector('.bay-column:not(.hidden)');
+          if(visibleModule) {{
+            container.scrollBy({{ left: -(visibleModule.offsetWidth + 16), behavior: 'smooth' }});
+            setTimeout(updateScrollButtons, 350);
           }}
-          setTimeout(updateScrollButtons, 350);
         }});
         
         btnNext.addEventListener('click', () => {{
-          const container = getActiveContainer();
-          if (!container) return;
-
-          if (isSingleMode) {{
-            const bayWidth = container.clientWidth;
-            container.scrollBy({{ left: bayWidth, behavior: 'smooth' }});
-          }} else {{
-            const bayWidth = container.querySelector('.bay-column:not(.hidden)')?.offsetWidth || (container.clientWidth * 0.75);
-            container.scrollBy({{ left: (bayWidth + 16), behavior: 'smooth' }});
+          const visibleModule = container.querySelector('.bay-column:not(.hidden)');
+          if(visibleModule) {{
+            container.scrollBy({{ left: (visibleModule.offsetWidth + 16), behavior: 'smooth' }});
+            setTimeout(updateScrollButtons, 350);
           }}
-          setTimeout(updateScrollButtons, 350);
         }});
+        
+        container.addEventListener('scroll', updateScrollButtons);
+        window.addEventListener('resize', updateScrollButtons);
 
         fullscreenBtn.addEventListener('click', () => {{
           if (!document.fullscreenElement) {{
@@ -1451,26 +1264,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         }});
 
         document.addEventListener('fullscreenchange', () => {{
-          if (!document.fullscreenElement) {{
-            fullscreenBtn.textContent = "⛶ Pantalla Completa";
-            regresarAVistaGeneral();
-          }}
+          if (!document.fullscreenElement) fullscreenBtn.textContent = "⛶ Pantalla Completa";
           scale = 1; posX = 0; posY = 0; updateZoom();
-          const container = getActiveContainer();
-          if (container) {{
-            requestAnimationFrame(() => {{
-              container.scrollLeft = 0;
-              container.scrollTop = 0;
-            }});
-          }}
         }});
 
         const searchInput = document.getElementById('searchInput');
         const brandSelect = document.getElementById('brandSelect');
         const catSelect = document.getElementById('catSelect');
         const fsCatSelect = document.getElementById('fsCatSelect');
-        const pasilloSelect = document.getElementById('pasilloSelect');
-        const lateralSelect = document.getElementById('lateralSelect');
+        const baySelect = document.getElementById('baySelect');
+        const levelSelect = document.getElementById('levelSelect');
         const resetBtn = document.getElementById('resetBtn');
         const printBayBtn = document.getElementById('printBayBtn');
         const topNInput = document.getElementById('topNInput');
@@ -1478,31 +1281,25 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         let currentLegendFilter = null;
         const allBrands = Array.from(brandSelect.options).map(o => ({{val: o.value, text: o.text}}));
         const allCats = Array.from(catSelect.options).map(o => ({{val: o.value, text: o.text}}));
+        const allBays = Array.from(baySelect.options).map(o => ({{val: o.value, text: o.text}}));
+        const allLevels = Array.from(levelSelect.options).map(o => ({{val: o.value, text: o.text}}));
 
         function applyFilters() {{
           const query = searchInput.value.toLowerCase().trim();
           let selectedBrand = brandSelect.value;
           let selectedCat = catSelect.value;
-          let selectedPasillo = pasilloSelect.value;
-          let selectedLateral = lateralSelect.value;
+          let selectedBay = baySelect.value;
+          let selectedLevel = levelSelect.value;
           const topN = parseInt(topNInput.value) || 5;
-
-          document.querySelectorAll('.pasillo-section').forEach(sec => {{
-             const p = sec.getAttribute('data-pasillo');
-             const l = sec.getAttribute('data-lateral');
-             if (p === selectedPasillo && l === selectedLateral) {{
-                 sec.classList.add('active');
-             }} else {{
-                 sec.classList.remove('active');
-             }}
-          }});
 
           let visibleSkus = new Map();
           let totalVentasFiltered = 0;
 
-          document.querySelectorAll('.pasillo-section.active .sku-item').forEach(card => {{
+          document.querySelectorAll('.sku-item').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const catjer = card.getAttribute('data-catjer') || '';
+             const bay = card.closest('.bay-column').getAttribute('data-module');
+             const level = card.closest('.shelf-row').getAttribute('data-level');
              const name = (card.getAttribute('data-name') || '').toLowerCase();
              const ean = card.getAttribute('data-ean') || '';
              const cod = card.getAttribute('data-cod');
@@ -1512,8 +1309,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
              const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
              const matchCat = (selectedCat === 'ALL' || catjer === selectedCat);
+             const matchBay = (selectedBay === 'ALL' || bay === selectedBay);
+             const matchLevel = (selectedLevel === 'ALL' || level === selectedLevel);
 
-             if (matchSearch && matchBrand && matchCat) {{
+             if (matchSearch && matchBrand && matchCat && matchBay && matchLevel) {{
                  if (!visibleSkus.has(cod)) {{
                      visibleSkus.set(cod, venta);
                      if (venta > 0) totalVentasFiltered += venta;
@@ -1535,12 +1334,16 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
           let availableBrands = new Set();
           let availableCats = new Set();
+          let availableBays = new Set();
+          let availableLevels = new Set();
           
           let setTot = new Set(), setBloq = new Set(), setSin = new Set(), setBajo = new Set(), setOk = new Set(), setCob = new Set(), setTop = new Set();
 
-          document.querySelectorAll('.pasillo-section.active .sku-item').forEach(card => {{
+          document.querySelectorAll('.sku-item').forEach(card => {{
              const brand = card.getAttribute('data-brand') || '';
              const catjer = card.getAttribute('data-catjer') || '';
+             const bay = card.closest('.bay-column').getAttribute('data-module');
+             const level = card.closest('.shelf-row').getAttribute('data-level');
              const name = (card.getAttribute('data-name') || '').toLowerCase();
              const ean = card.getAttribute('data-ean') || '';
              const cat = card.getAttribute('data-cat') || '';
@@ -1554,11 +1357,15 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
              const matchSearch = (query === '' || name.includes(query) || ean.includes(query) || brand.toLowerCase().includes(query));
              const matchBrand = (selectedBrand === 'ALL' || brand === selectedBrand);
              const matchCat = (selectedCat === 'ALL' || catjer === selectedCat);
+             const matchBay = (selectedBay === 'ALL' || bay === selectedBay);
+             const matchLevel = (selectedLevel === 'ALL' || level === selectedLevel);
 
-             const passesStandard = matchSearch && matchBrand && matchCat;
+             const passesStandard = matchSearch && matchBrand && matchCat && matchBay && matchLevel;
 
-             if(matchSearch && matchCat) availableBrands.add(brand);
-             if(matchSearch && matchBrand && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
+             if(matchSearch && matchCat && matchBay && matchLevel) availableBrands.add(brand);
+             if(matchSearch && matchBrand && matchBay && matchLevel && catjer && catjer !== 'SIN DATOS') availableCats.add(catjer);
+             if(matchSearch && matchBrand && matchCat && matchLevel) availableBays.add(bay);
+             if(matchSearch && matchBrand && matchCat && matchBay) availableLevels.add(level);
 
              if(passesStandard) {{
                  setTot.add(cod);
@@ -1577,7 +1384,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
                  else passesLegend = (cat === currentLegendFilter);
              }}
 
-             if (matchBrand && matchSearch) {{
+             if (matchBrand && matchCat && matchSearch) {{
                  if (currentLegendFilter) {{
                      if (passesLegend) {{
                          card.classList.remove('dimmed');
@@ -1604,22 +1411,10 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           document.getElementById('t-cob').textContent = setCob.size;
           document.getElementById('t-top').textContent = setTop.size;
 
-          # FILTRADO ESTRICTO DE CUERPOS: SE OCULTAN CUERPOS SIN PRODUCTOS COINCIDENTES
-          const activeContainer = getActiveContainer();
-          if (activeContainer) {{
-            activeContainer.querySelectorAll('.bay-column').forEach(bay => {{
-              let hasMatch = false;
-              if (currentLegendFilter) {{
-                hasMatch = bay.querySelectorAll('.sku-item.highlighted').length > 0;
-              }} else {{
-                hasMatch = bay.querySelectorAll('.sku-item:not(.dimmed)').length > 0;
-              }}
-              bay.classList.toggle('hidden', !hasMatch);
-            }});
-          }}
-
           if (selectedBrand !== 'ALL' && !availableBrands.has(selectedBrand)) selectedBrand = 'ALL';
           if (selectedCat !== 'ALL' && !availableCats.has(selectedCat)) selectedCat = 'ALL';
+          if (selectedBay !== 'ALL' && !availableBays.has(selectedBay)) selectedBay = 'ALL';
+          if (selectedLevel !== 'ALL' && !availableLevels.has(selectedLevel)) selectedLevel = 'ALL';
 
           brandSelect.innerHTML = '';
           allBrands.forEach(opt => {{ if(opt.val === 'ALL' || availableBrands.has(opt.val)) brandSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBrand)); }});
@@ -1633,11 +1428,46 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             }}
           }});
 
+          baySelect.innerHTML = '';
+          allBays.forEach(opt => {{ if(opt.val === 'ALL' || availableBays.has(opt.val)) baySelect.add(new Option(opt.text, opt.val, false, opt.val === selectedBay)); }});
+
+          levelSelect.innerHTML = '';
+          allLevels.forEach(opt => {{ if(opt.val === 'ALL' || availableLevels.has(opt.val)) levelSelect.add(new Option(opt.text, opt.val, false, opt.val === selectedLevel)); }});
+
+          document.querySelectorAll('.bay-column').forEach(bay => {{
+            const bayNum = bay.getAttribute('data-module');
+            const passesBayFilter = (selectedBay === 'ALL' || selectedBay === bayNum);
+            const hasMatch = Array.from(bay.querySelectorAll('.sku-item')).some(card => {{
+                if (currentLegendFilter) return card.classList.contains('highlighted');
+                return !card.classList.contains('dimmed');
+            }});
+
+            bay.classList.toggle('hidden', !(passesBayFilter && hasMatch));
+          }});
+
+          document.querySelectorAll('.shelf-row').forEach(shelf => {{
+            const shelfLevel = shelf.getAttribute('data-level');
+            const passesLevelFilter = (selectedLevel === 'ALL' || selectedLevel === shelfLevel);
+            shelf.classList.toggle('hidden', !passesLevelFilter);
+          }});
+          
           updateScrollButtons();
         }}
 
-        printBayBtn.addEventListener('click', () => {{ window.print(); }});
+        printBayBtn.addEventListener('click', () => {{
+            let currentBay = baySelect.value;
+            if (currentBay === 'ALL') {{
+                const firstVisible = document.querySelector('.bay-column:not(.hidden)');
+                if (firstVisible) {{
+                    const bayId = firstVisible.getAttribute('data-module');
+                    baySelect.value = bayId;
+                    applyFilters();
+                }}
+            }}
+            window.print();
+        }});
 
+        # LEYENDA
         document.querySelectorAll('.legend-chip').forEach(chip => {{
             chip.addEventListener('click', () => {{
                 const filter = chip.getAttribute('data-filter');
@@ -1655,18 +1485,19 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
         searchInput.addEventListener('input', applyFilters);
         brandSelect.addEventListener('change', applyFilters);
-        catSelect.addEventListener('change', () => {{ fsCatSelect.value = catSelect.value; applyFilters(); }});
-        fsCatSelect.addEventListener('change', () => {{ catSelect.value = fsCatSelect.value; applyFilters(); }});
         
-        pasilloSelect.addEventListener('change', () => {{
-          regresarAVistaGeneral();
+        catSelect.addEventListener('change', () => {{
+          fsCatSelect.value = catSelect.value;
           applyFilters();
         }});
-        lateralSelect.addEventListener('change', () => {{
-          regresarAVistaGeneral();
+        
+        fsCatSelect.addEventListener('change', () => {{
+          catSelect.value = fsCatSelect.value;
           applyFilters();
         }});
 
+        baySelect.addEventListener('change', applyFilters);
+        levelSelect.addEventListener('change', applyFilters);
         topNInput.addEventListener('input', applyFilters);
         
         resetBtn.addEventListener('click', () => {{
@@ -1674,12 +1505,15 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
           brandSelect.innerHTML = ''; allBrands.forEach(o => brandSelect.add(new Option(o.text, o.val)));
           catSelect.innerHTML = ''; fsCatSelect.innerHTML = ''; allCats.forEach(o => {{ catSelect.add(new Option(o.text, o.val)); fsCatSelect.add(new Option(o.text, o.val)); }});
-          brandSelect.value = 'ALL'; catSelect.value = 'ALL'; fsCatSelect.value = 'ALL';
+          baySelect.innerHTML = ''; allBays.forEach(o => baySelect.add(new Option(o.text, o.val)));
+          levelSelect.innerHTML = ''; allLevels.forEach(o => levelSelect.add(new Option(o.text, o.val)));
+          brandSelect.value = 'ALL'; catSelect.value = 'ALL'; fsCatSelect.value = 'ALL'; baySelect.value = 'ALL'; levelSelect.value = 'ALL';
           topNInput.value = 5;
-          regresarAVistaGeneral();
+          scale = 1; posX = 0; posY = 0; updateZoom();
+          applyFilters();
         }});
 
-        // MODAL DE DETALLE
+        # MODAL PRODUCTO
         const modal = document.getElementById('productModal');
         const closeBtn = document.querySelector('.modal-close');
         const modalImg = document.getElementById('m-img');
@@ -1741,6 +1575,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           brandSelect.value = 'ALL';
           catSelect.value = 'ALL';
           fsCatSelect.value = 'ALL';
+          baySelect.value = 'ALL';
+          levelSelect.value = 'ALL';
           applyFilters();
         }}, 100);
       </script>
@@ -1748,7 +1584,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     </html>
     """
 
-# --- CARGA INTEGRADA DE FUENTES Y CRUCE CON URL DE JERARQUÍA OFICIAL ---
+# --- CARGA INTEGRADA DE FUENTES Y CRUCE DE FOTOS ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -1789,14 +1625,7 @@ def cargar_todas_las_fuentes():
             df_matriz = pd.read_excel(url_planos, sheet_name=0, skiprows=2)
             df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
 
-        df_matriz.columns = [str(c).strip() for c in df_matriz.columns]
         df_matriz['COD_REAL_Str'] = df_matriz['COD REAL'].astype(str).apply(clean_sku)
-        df_matriz['COD REAL'] = df_matriz['COD_REAL_Str']
-
-        if 'PASILLO' not in df_matriz.columns:
-            df_matriz['PASILLO'] = "1"
-        if 'LATERAL' not in df_matriz.columns:
-            df_matriz['LATERAL'] = "A"
 
         # 2. Coberturas y Stock
         df_cob_raw = leer_tabla_por_ancla(url_coberturas, "Material", sheet_target=0, skiprows_fallback=3)
@@ -1885,30 +1714,50 @@ def cargar_todas_las_fuentes():
             df_sap['Grupo de Artículo'] = df_sap_raw[col_n_ga].fillna('SIN DATOS').astype(str).str.strip()
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- APLICACIÓN DE CRUCES SECUENCIALES ---
+        # --- CONSTRUCCIÓN DE LA TABLA ÚNICA DE SKU SEGÚN TUS REQUISITOS ---
+        if not df_vta.empty:
+            materiales_vta_validos = df_vta[['Material_Str']].copy()
+            # Excluir materiales que contengan guion '-'
+            materiales_vta_validos = materiales_vta_validos[~materiales_vta_validos['Material_Str'].str.contains('-')]
+            materiales_vta_validos = materiales_vta_validos.rename(columns={'Material_Str': 'Material_Unico'})
+        else:
+            materiales_vta_validos = pd.DataFrame(columns=['Material_Unico'])
+
+        planos_skus = df_matriz[['COD_REAL_Str']].drop_duplicates().rename(columns={'COD_REAL_Str': 'Material_Unico'})
+        
+        # Anexar factVentas (sin guiones) con COD REAL de factPlano y quitar duplicados
+        df_catalogo_base = pd.concat([materiales_vta_validos, planos_skus]).drop_duplicates(subset=['Material_Unico'])
+        df_catalogo_base = df_catalogo_base[df_catalogo_base['Material_Unico'] != ""]
+
+        # Cruce con factPlano para ubicar la Bandeja / Ubicación
+        df_maestro = df_catalogo_base.merge(df_matriz, left_on='Material_Unico', right_on='COD_REAL_Str', how='left')
+
+        # Cruces con coberturas, ventas, barras y fotos mediante 'Material'
         if not df_cob.empty:
-            df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
-            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+            df_maestro = df_maestro.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='Material_Unico', right_on='Material_Str', how='left')
+            df_maestro.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
         if not df_vta.empty:
-            df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
-            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+            df_maestro = df_maestro.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='Material_Unico', right_on='Material_Str', how='left')
+            df_maestro.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
         if not df_bar.empty:
-            df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
-            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+            df_maestro = df_maestro.merge(df_bar[['Material_Str', 'EAN_Master', 'G.A.']], left_on='Material_Unico', right_on='Material_Str', how='left')
+            df_maestro.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
         if not df_fotos.empty:
-            df_matriz = df_matriz.merge(df_fotos[['Sku_Foto_Str', 'Links de fotos']], left_on='COD_REAL_Str', right_on='Sku_Foto_Str', how='left')
-            df_matriz.drop(columns=['Sku_Foto_Str'], inplace=True, errors='ignore')
+            df_maestro = df_maestro.merge(df_fotos[['Sku_Foto_Str', 'Links de fotos']], left_on='Material_Unico', right_on='Sku_Foto_Str', how='left')
+            df_maestro.drop(columns=['Sku_Foto_Str'], inplace=True, errors='ignore')
 
-        if 'G.A.' in df_matriz.columns:
-            df_matriz['G.A._Str'] = df_matriz['G.A.'].astype(str).apply(clean_sku)
+        df_maestro['COD REAL'] = df_maestro['Material_Unico']
+
+        if 'G.A.' in df_maestro.columns:
+            df_maestro['G.A._Str'] = df_maestro['G.A.'].astype(str).apply(clean_sku)
         else:
-            df_matriz['G.A._Str'] = ""
+            df_maestro['G.A._Str'] = ""
 
         if not df_sap.empty:
-            df_matriz = df_matriz.merge(
+            df_maestro = df_maestro.merge(
                 df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], 
                 left_on='G.A._Str', 
                 right_on='CodGA_Str', 
@@ -1917,24 +1766,21 @@ def cargar_todas_las_fuentes():
             )
             for col_target in ['Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']:
                 col_sap_name = f"{col_target}_sap"
-                if col_sap_name in df_matriz.columns:
-                    df_matriz[col_target] = df_matriz[col_sap_name].replace(['SIN DATOS', 'nan', 'None', '', 'NaN'], pd.NA).fillna(df_matriz[col_target])
-                    df_matriz.drop(columns=[col_sap_name], inplace=True, errors='ignore')
+                if col_sap_name in df_maestro.columns:
+                    df_maestro[col_target] = df_maestro[col_sap_name].replace(['SIN DATOS', 'nan', 'None', '', 'NaN'], pd.NA).fillna(df_maestro[col_target])
+                    df_maestro.drop(columns=[col_sap_name], inplace=True, errors='ignore')
 
-            df_matriz.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
+            df_maestro.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
 
-        # Rellenar nulos
+        # Asignación estricta de valores por defecto (Si no hay datos -> SIN DATOS / -999.0)
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
-            df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
+            df_maestro[col] = df_maestro[col].fillna(val_def) if col in df_maestro.columns else val_def
 
-        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS'), ('PASILLO', '1'), ('LATERAL', 'A')]:
-            df_matriz[col] = df_matriz[col].fillna(val_def).astype(str).str.strip() if col in df_matriz.columns else val_def
-
-        if 'Bandeja' in df_matriz.columns and 'EAN' in df_matriz.columns:
-            df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
+        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS'), ('Descripción', 'SIN DATOS'), ('EAN', 'SIN DATOS')]:
+            df_maestro[col] = df_maestro[col].fillna(val_def).astype(str).str.strip() if col in df_maestro.columns else val_def
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_matriz, hora_lectura, None
+        return df_maestro, hora_lectura, None
     except Exception as e:
         return None, None, str(e)
 
