@@ -780,26 +780,25 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden; 
         }}
 
-        /* BOTÓN CENTRADO HORIZONTALMENTE PARA NO TAPAR TÍTULOS */
+        /* BOTÓN FLOTANTE PARA SALIR DEL MODO CUERPO INDIVIDUAL */
         .btn-return-all {{
           display: none;
           position: absolute;
-          top: 10px;
-          left: 50%;
-          transform: translateX(-50%);
+          top: 12px;
+          left: 14px;
           z-index: 500;
           background: #3b82f6;
           color: #ffffff;
           border: none;
           border-radius: 6px;
-          padding: 7px 18px;
+          padding: 7px 16px;
           font-weight: 800;
-          font-size: 0.80rem;
-          box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+          font-size: 0.78rem;
+          box-shadow: 0 4px 14px rgba(0,0,0,0.35);
           cursor: pointer;
-          transition: transform 0.2s ease, background 0.2s ease;
+          transition: transform 0.2s ease;
         }}
-        .btn-return-all:hover {{ transform: translateX(-50%) scale(1.04); background: #2563eb; }}
+        .btn-return-all:hover {{ transform: scale(1.04); background: #2563eb; }}
 
         .fullscreen-legend-bar {{
           display: none; 
@@ -1187,7 +1186,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Sin Stock" style="--bg: {'#431407' if es_oscuro else '#ffedd5'}; --tc: {'#fdba74' if es_oscuro else '#9a3412'}; --bd: 1px solid {'#7c2d12' if es_oscuro else '#fdba74'};">Sin Stock</button>
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
-            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
+            <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1.5px solid #ef4444;">Cob ≥ 30</button>
             <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
@@ -1608,7 +1607,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           document.getElementById('t-cob').textContent = setCob.size;
           document.getElementById('t-top').textContent = setTop.size;
 
-          // FILTRADO ESTRICTO DE CUERPOS: SE OCULTAN CUERPOS SIN PRODUCTOS COINCIDENTES
+          # FILTRADO ESTRICTO DE CUERPOS: SE OCULTAN CUERPOS SIN PRODUCTOS COINCIDENTES
           const activeContainer = getActiveContainer();
           if (activeContainer) {{
             activeContainer.querySelectorAll('.bay-column').forEach(bay => {{
@@ -2171,7 +2170,6 @@ if df_raw is not None and not df_raw.empty:
             ).reset_index()
 
             if not ventas_cuerpo.empty:
-                # ETIQUETA EN DOS LÍNEAS COMBINADA
                 ventas_cuerpo['Cuerpo_Label_Combined'] = [
                     f"P{row['Pasillo_Key']} [{row['Lateral_Key']}]<br><b>C{int(row['Cuerpo_Num'])}</b>" 
                     for _, row in ventas_cuerpo.iterrows()
@@ -2468,7 +2466,8 @@ if df_raw is not None and not df_raw.empty:
                 "Bloqueados (Estado B)",
                 "Sin Stock (Quiebre: Stock = 0)",
                 "Stock Bajo (Alerta: Stock 1 a 5)",
-                "Cobertura Alta (Sobreabastecido: ≥ 30 días)"
+                "Cobertura Alta (Sobreabastecido: ≥ 30 días)",
+                "No está en el planograma"
             ], label_visibility="visible")
         
         with col_dl:
@@ -2496,6 +2495,8 @@ if df_raw is not None and not df_raw.empty:
                 df_rep = df_rep[(df_rep['Estado'].astype(str).str.strip().str.upper() == 'A') & (df_rep['Stock_Num'] > 0) & (df_rep['Stock_Num'] <= 5)]
             elif filtro_reporte == "Cobertura Alta (Sobreabastecido: ≥ 30 días)":
                 df_rep = df_rep[df_rep['Cob_Num'] >= 30]
+            elif filtro_reporte == "No está en el planograma":
+                df_rep = df_rep[df_rep['Ubicación(es)'].isna() | (df_rep['Ubicación(es)'].astype(str).str.strip() == "")]
                 
             col_desc = 'Descripción' if 'Descripción' in df_rep.columns else 'Nombre'
             cols_to_show = [
