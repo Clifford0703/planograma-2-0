@@ -267,7 +267,7 @@ st.markdown(f"""
         .fin-kpi-title {{
             font-size: 0.68rem;
             font-weight: 800;
-            color: {t["text_secondary"]};
+            color: {text_secondary};
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 4px;
@@ -779,7 +779,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden; 
         }}
 
-        /* BOTÓN FLOTANTE PARA SALIR DEL MODO CUERPO INDIVIDUAL */
+        /* BOTÓN FLOTANTE PARA REGRESAR A VISTA MULTIPLE */
         .btn-return-all {{
           display: none;
           position: absolute;
@@ -1021,6 +1021,12 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         .fleje-ean {{ font-weight: 600; font-family: monospace; }}
         .fleje-caras {{ font-weight: 800; color: #3b82f6; }}
         
+        .alerta-bloqueado .sku-images-wrapper img {{ filter: grayscale(100%) opacity(0.4); }}
+        .alerta-sinstock .sku-images-wrapper img {{ filter: drop-shadow(0 0 8px #ef4444); }}
+        .alerta-stockbajo .sku-images-wrapper img {{ filter: drop-shadow(0 0 6px #f59e0b); }}
+        .sku-group.is-top .top-badge::after {{ content: '⭐'; position: absolute; top: -14px; right: -4px; font-size: 1rem; }}
+        
+        /* BLOQUES DE PRODUCTOS */
         .sku-card {{ 
           border-radius: 6px; 
           padding: 6px; 
@@ -1186,7 +1192,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
             <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
@@ -2155,8 +2161,9 @@ if df_raw is not None and not df_raw.empty:
             ).reset_index()
 
             if not ventas_cuerpo.empty:
-                ventas_cuerpo['Cuerpo_Label_Simple'] = [
-                    f"P{row['Pasillo_Key']} [{row['Lateral_Key']}] • C{int(row['Cuerpo_Num'])}" 
+                # ETIQUETA EN DOS LÍNEAS COMBINADA: PASILLO Y LATERAL ARRIBA, CUERPO DEBAJO
+                ventas_cuerpo['Cuerpo_Label_Combined'] = [
+                    f"P{row['Pasillo_Key']} [{row['Lateral_Key']}]<br><b>C{int(row['Cuerpo_Num'])}</b>" 
                     for _, row in ventas_cuerpo.iterrows()
                 ]
                 ventas_cuerpo['Categoria_Full'] = [
@@ -2168,7 +2175,7 @@ if df_raw is not None and not df_raw.empty:
                     for _, row in ventas_cuerpo.iterrows()
                 ]
             else:
-                ventas_cuerpo['Cuerpo_Label_Simple'] = []
+                ventas_cuerpo['Cuerpo_Label_Combined'] = []
                 ventas_cuerpo['Categoria_Full'] = []
                 ventas_cuerpo['Margen_Pct'] = []
 
@@ -2184,7 +2191,7 @@ if df_raw is not None and not df_raw.empty:
             
             fig.add_trace(
                 go.Bar(
-                    x=ventas_cuerpo['Cuerpo_Label_Simple'], 
+                    x=ventas_cuerpo['Cuerpo_Label_Combined'], 
                     y=ventas_cuerpo['Venta_Total'],
                     name="Ventas Totales (S/)",
                     text=ventas_cuerpo['Venta_Total'].apply(lambda x: f"S/ {x/1000:,.1f}K" if x >= 1000 else f"S/ {x:,.0f}"),
@@ -2200,7 +2207,7 @@ if df_raw is not None and not df_raw.empty:
 
             fig.add_trace(
                 go.Scatter(
-                    x=ventas_cuerpo['Cuerpo_Label_Simple'], 
+                    x=ventas_cuerpo['Cuerpo_Label_Combined'], 
                     y=ventas_cuerpo['Margen_Pct'],
                     name="Margen %",
                     mode="lines+markers+text",
@@ -2214,7 +2221,7 @@ if df_raw is not None and not df_raw.empty:
             )
 
             num_cols = len(ventas_cuerpo)
-            ancho_grafico = max(650, int(num_cols * 125))
+            ancho_grafico = max(650, int(num_cols * 140))
 
             fig.update_layout(
                 width=ancho_grafico,
@@ -2223,7 +2230,7 @@ if df_raw is not None and not df_raw.empty:
                 hovermode="x unified",
                 hoverlabel=dict(bgcolor=t["bg_surface"], font_size=12, font_family="Inter"),
                 legend=dict(orientation="h", yanchor="bottom", y=1.06, xanchor="right", x=1, font=dict(color=t["plotly_text"], size=10)),
-                margin=dict(t=30, b=30, l=10, r=10),
+                margin=dict(t=30, b=40, l=10, r=10),
                 xaxis=dict(
                     showgrid=False, 
                     color=t["plotly_text"], 
