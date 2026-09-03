@@ -267,7 +267,7 @@ st.markdown(f"""
         .fin-kpi-title {{
             font-size: 0.68rem;
             font-weight: 800;
-            color: {text_secondary};
+            color: {t["text_secondary"]};
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 4px;
@@ -563,7 +563,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
 
                 html_cuerpos += f"""
                 <div class="bay-column" data-module="{cuerpo_num}">
-                  <div class="bay-title" title="Haz clic para ver a pantalla completa">
+                  <div class="bay-title" title="Toca para cuadrar este cuerpo a todo el ancho">
                     <span class="bay-main-title">{cuerpo_nombre.upper()} 🔍</span>
                     {subtitulo_cat}
                   </div>
@@ -779,11 +779,11 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           overflow: hidden; 
         }}
 
-        /* BOTÓN FLOTANTE PARA SALIR DEL MODO INDIVIDUAL */
+        /* BOTÓN FLOTANTE PARA SALIR DEL MODO CUERPO INDIVIDUAL */
         .btn-return-all {{
           display: none;
           position: absolute;
-          top: 10px;
+          top: 12px;
           left: 14px;
           z-index: 500;
           background: #3b82f6;
@@ -869,7 +869,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           height: auto !important;
           min-height: 100% !important;
           overflow-y: visible !important;
-          overflow-x: visible !important;
+          overflow-x: auto !important;
           padding-bottom: 80px !important;
         }}
 
@@ -918,6 +918,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           display: block;
         }}
 
+        /* CONTENEDOR CON EFECTO IMANTADO */
         .aisle-container {{ 
           display: flex; 
           flex-direction: row; 
@@ -935,25 +936,28 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           align-items: flex-start;
         }}
 
-        /* MODO MÚLTIPLES CUERPOS: HASTA 4 EN ESCRITORIO CON ANCLAJE AL INICIO */
+        /* MODO MULTIPLE: HASTA 4 EN ESCRITORIO CON ANCLAJE AL BORDE */
         .aisle-container.mode-multi .bay-column {{
           flex: 0 0 calc((100% - 48px) / 4) !important; 
           min-width: 280px !important; 
           max-width: calc((100% - 48px) / 4) !important;
           scroll-snap-align: start !important;
+          scroll-snap-stop: always !important;
         }}
 
-        /* MODO 1 CUERPO: OCUPA EL 100% EXACTO DEL ANCHO */
-        .aisle-container.mode-single .bay-column {{
-          display: none !important;
+        /* MODO 1 CUERPO: CADA CUERPO SE EXPULSA AL 100% DEL ANCHO Y SE IMANTA */
+        .aisle-container.mode-single {{
+          padding: 14px 0 50px 0 !important;
+          scroll-snap-type: x mandatory !important;
         }}
-        .aisle-container.mode-single .bay-column.active-focused {{
-          display: flex !important;
+        .aisle-container.mode-single .bay-column {{
           flex: 0 0 100% !important;
           width: 100% !important;
           min-width: 100% !important;
           max-width: 100% !important;
-          scroll-snap-align: center !important;
+          scroll-snap-align: start !important;
+          scroll-snap-stop: always !important;
+          border-radius: 0 !important;
         }}
 
         .bay-column {{ 
@@ -1189,7 +1193,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         <!-- CONTENEDOR CON SCROLL Y MODAL INTEGRADO -->
         <div class="aisle-wrapper" id="aisleWrapper">
           
-          <button id="btnReturnAll" class="btn-return-all">← Ver Todos los Cuerpos</button>
+          <button id="btnReturnAll" class="btn-return-all">← Ver Múltiples Cuerpos</button>
 
           <!-- MODAL DE DETALLE DEL PRODUCTO -->
           <div id="productModal" class="modal-overlay">
@@ -1273,7 +1277,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
         let initialDist = 0;
         let isTouching = false;
         let lastTap = 0;
-        let focusedBayId = null;
+        let isSingleMode = false;
 
         function getActiveContainer() {{
           const activeSec = document.querySelector('.pasillo-section.active');
@@ -1288,64 +1292,49 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
         }}
 
-        // ENFOCA UN CUERPO INDIVIDUAL AL 100% DEL ANCHO REAL
-        function enfocarCuerpoIndividual(bayId) {{
+        // ENFOCA UN CUERPO Y LO IMANTA AL 100% DEL ANCHO DE LA PANTALLA
+        function enfocarCuerpoIndividual(targetBayElem) {{
           const container = getActiveContainer();
-          if (!container) return;
+          if (!container || !targetBayElem) return;
 
-          focusedBayId = String(bayId);
+          isSingleMode = true;
           container.classList.remove('mode-multi');
           container.classList.add('mode-single');
-
-          container.querySelectorAll('.bay-column').forEach(col => {{
-            if (col.getAttribute('data-module') === focusedBayId) {{
-              col.classList.add('active-focused');
-            }} else {{
-              col.classList.remove('active-focused');
-            }}
-          }});
-
           btnReturnAll.style.display = 'block';
+
           scale = 1; posX = 0; posY = 0; updateZoom();
+
           requestAnimationFrame(() => {{
-            container.scrollLeft = 0;
-            container.scrollTop = 0;
+            targetBayElem.scrollIntoView({{ behavior: 'smooth', inline: 'start', block: 'nearest' }});
           }});
-          setTimeout(updateScrollButtons, 100);
+          setTimeout(updateScrollButtons, 350);
         }}
 
-        // REGRESA A LA VISTA PANORÁMICA DE MÚLTIPLES CUERPOS
+        // REGRESA A LA VISTA DE MÚLTIPLES CUERPOS
         function regresarAVistaGeneral() {{
           const container = getActiveContainer();
           if (!container) return;
 
-          focusedBayId = null;
+          isSingleMode = false;
           container.classList.remove('mode-single');
           container.classList.add('mode-multi');
-
-          container.querySelectorAll('.bay-column').forEach(col => {{
-            col.classList.remove('active-focused');
-          }});
-
           btnReturnAll.style.display = 'none';
+
           scale = 1; posX = 0; posY = 0; updateZoom();
-          requestAnimationFrame(() => {{
-            container.scrollLeft = 0;
-            container.scrollTop = 0;
-          }});
-          setTimeout(updateScrollButtons, 100);
+          setTimeout(updateScrollButtons, 350);
         }}
 
         btnReturnAll.addEventListener('click', regresarAVistaGeneral);
 
-        // CLIC EN EL TÍTULO DEL CUERPO PARA ENFOCARLO AL 100%
+        // CLIC EN EL TÍTULO DE UN CUERPO PARA ENFOCARLO AL 100%
         document.querySelectorAll('.bay-title').forEach(titleElem => {{
           titleElem.addEventListener('click', (e) => {{
             const bayElem = titleElem.closest('.bay-column');
             if (bayElem) {{
-              const bayId = bayElem.getAttribute('data-module');
-              if (!focusedBayId) {{
-                enfocarCuerpoIndividual(bayId);
+              if (!isSingleMode) {{
+                enfocarCuerpoIndividual(bayElem);
+              }} else {{
+                regresarAVistaGeneral();
               }}
             }}
           }});
@@ -1367,8 +1356,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             // DOBLE TOQUE: ENFOCA EL CUERPO AL 100% O REGRESA A LA VISTA GENERAL
             if (now - lastTap < 320 && now - lastTap > 0) {{
               const clickedBay = e.target.closest('.bay-column');
-              if (clickedBay && !focusedBayId) {{
-                enfocarCuerpoIndividual(clickedBay.getAttribute('data-module'));
+              if (clickedBay && !isSingleMode) {{
+                enfocarCuerpoIndividual(clickedBay);
               }} else {{
                 regresarAVistaGeneral();
               }}
@@ -1392,8 +1381,8 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             const currentDist = getDistance(e.touches);
             const factor = currentDist / initialDist;
             
-            // GESTO PELLIZCO PARA ALEJAR: REGRESA A LA VISTA DE VARIOS CUERPOS
-            if (factor < 0.88 && focusedBayId) {{
+            // GESTO PELLIZCO PARA ALEJAR (ZOOM OUT): REGRESA A LA VISTA MULTIPLE
+            if (factor < 0.88 && isSingleMode) {{
               regresarAVistaGeneral();
               isTouching = false;
               return;
@@ -1412,52 +1401,39 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
           if (!container) return;
 
           requestAnimationFrame(() => {{
-            if (focusedBayId) {{
-              const allBays = Array.from(container.querySelectorAll('.bay-column')).map(b => b.getAttribute('data-module'));
-              const curIdx = allBays.indexOf(focusedBayId);
-              btnPrev.disabled = (curIdx <= 0);
-              btnNext.disabled = (curIdx >= allBays.length - 1);
-            }} else {{
-              const maxScroll = container.scrollWidth - container.clientWidth;
-              btnPrev.disabled = container.scrollLeft <= 10;
-              btnNext.disabled = container.scrollLeft >= maxScroll - 10;
-            }}
+            const maxScroll = container.scrollWidth - container.clientWidth;
+            btnPrev.disabled = container.scrollLeft <= 10;
+            btnNext.disabled = container.scrollLeft >= maxScroll - 10;
           }});
         }}
 
-        // NAVEGACIÓN SECUENCIAL SIN CORTES
+        // NAVEGACIÓN IMANTADA ENTRE CUERPOS
         btnPrev.addEventListener('click', () => {{
           const container = getActiveContainer();
           if (!container) return;
 
-          if (focusedBayId) {{
-            const allBays = Array.from(container.querySelectorAll('.bay-column')).map(b => b.getAttribute('data-module'));
-            const curIdx = allBays.indexOf(focusedBayId);
-            if (curIdx > 0) {{
-              enfocarCuerpoIndividual(allBays[curIdx - 1]);
-            }}
+          if (isSingleMode) {{
+            const bayWidth = container.clientWidth;
+            container.scrollBy({{ left: -bayWidth, behavior: 'smooth' }});
           }} else {{
             const bayWidth = container.querySelector('.bay-column')?.offsetWidth || (container.clientWidth * 0.75);
             container.scrollBy({{ left: -(bayWidth + 16), behavior: 'smooth' }});
-            setTimeout(updateScrollButtons, 350);
           }}
+          setTimeout(updateScrollButtons, 350);
         }});
         
         btnNext.addEventListener('click', () => {{
           const container = getActiveContainer();
           if (!container) return;
 
-          if (focusedBayId) {{
-            const allBays = Array.from(container.querySelectorAll('.bay-column')).map(b => b.getAttribute('data-module'));
-            const curIdx = allBays.indexOf(focusedBayId);
-            if (curIdx < allBays.length - 1) {{
-              enfocarCuerpoIndividual(allBays[curIdx + 1]);
-            }}
+          if (isSingleMode) {{
+            const bayWidth = container.clientWidth;
+            container.scrollBy({{ left: bayWidth, behavior: 'smooth' }});
           }} else {{
             const bayWidth = container.querySelector('.bay-column')?.offsetWidth || (container.clientWidth * 0.75);
             container.scrollBy({{ left: (bayWidth + 16), behavior: 'smooth' }});
-            setTimeout(updateScrollButtons, 350);
           }}
+          setTimeout(updateScrollButtons, 350);
         }});
 
         fullscreenBtn.addEventListener('click', () => {{
@@ -2026,7 +2002,7 @@ if df_raw is not None and not df_raw.empty:
             )
             es_realograma = ("Realograma" in modo_vista)
         with col_view2:
-            st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para expandirlo a lo ancho.</i></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align: right; font-size: 0.80rem; color: {t['text_muted']}; margin-top: 5px;'>👆 <i>Toca el título de un cuerpo para enfocarlo al 100% de la pantalla.</i></div>", unsafe_allow_html=True)
             
         bandeja_series = df_base.get('Bandeja', pd.Series(["1.1"]*len(df_base))).astype(str)
         niveles_extraidos = bandeja_series.str.extract(r'(\d+)\.(\d+)')[1]
