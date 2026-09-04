@@ -114,6 +114,11 @@ st.markdown(f"""
             font-family: 'Inter', sans-serif !important;
         }}
         
+        body.modal-active {{
+            overflow: hidden !important;
+            height: 100vh !important;
+        }}
+        
         header[data-testid="stHeader"] {{
             background-color: transparent !important;
         }}
@@ -177,7 +182,7 @@ st.markdown(f"""
             font-weight: 900 !important;
         }}
         
-        /* SELECTBOXES Y RADIOS */
+        /* SELECTBOXES Y WIDGETS */
         [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
             background-color: {t["input_bg"]} !important;
             background: {t["input_bg"]} !important;
@@ -316,6 +321,24 @@ st.markdown(f"""
             gap: 6px;
         }}
 
+        .chart-scroll-wrapper {{
+            width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 8px;
+        }}
+        .chart-scroll-wrapper::-webkit-scrollbar {{
+            height: 8px;
+        }}
+        .chart-scroll-wrapper::-webkit-scrollbar-track {{
+            background: {t["bg_app"]};
+            border-radius: 4px;
+        }}
+        .chart-scroll-wrapper::-webkit-scrollbar-thumb {{
+            background: {t["accent"]};
+            border-radius: 4px;
+        }}
+
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -399,7 +422,7 @@ def obtener_alerta_css(estado, stock_val):
         else: return "alerta-ok", "Stock OK"
     else: return "alerta-desconocido", "Desconocido"
 
-# --- GENERADOR DEL PASILLO INTERACTIVO ORIGINAL (RÁPIDO Y FLUIDO) ---
+# --- GENERADOR DEL PLANOGRAMA ORIGINAL ---
 def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -992,6 +1015,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
     <body>
       <div class="main-container" id="mainContainer">
 
+        <!-- MODAL DE DETALLE -->
         <div id="productModal" class="modal-overlay">
           <div class="modal-content" id="modalContent">
             <span class="modal-close">&times;</span>
@@ -1054,7 +1078,7 @@ def generar_html_pasillo_interactivo(df, es_realograma=False, es_oscuro=True):
             <button class="legend-chip" data-filter="Stock Bajo" style="--bg: {'#422006' if es_oscuro else '#fef9c3'}; --tc: {'#fde047' if es_oscuro else '#854d0e'}; --bd: 1px solid {'#713f12' if es_oscuro else '#fde047'};">Stock 1 a 5</button>
             <button class="legend-chip" data-filter="Stock OK" style="--bg: {'#064e3b' if es_oscuro else '#dcfce7'}; --tc: {'#6ee7b7' if es_oscuro else '#166534'}; --bd: 1px solid {'#065f46' if es_oscuro else '#86efac'};">Stock > 5</button>
             <button class="legend-chip" data-filter="cob-alta" style="--bg: {'#1e293b' if es_oscuro else '#ffffff'}; --tc: #ef4444; --bd: 1px solid #ef4444;">Cob ≥ 30</button>
-            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1px solid #f59e0b;">★ TOP VENTAS</button>
+            <button class="legend-chip" data-filter="top-ventas" style="--bg: {'#422006' if es_oscuro else '#fef3c7'}; --tc: #d97706; --bd: 1.5px solid #f59e0b;">★ TOP VENTAS</button>
           </div>
         </div>
 
@@ -1551,7 +1575,7 @@ def cargar_todas_las_fuentes():
                 df.columns = [str(c).strip() for c in df.columns]
                 return df
 
-        # 1. Matriz de Planos (factPlano -> COD REAL)
+        # 1. Matriz de Planos (DATOST -> COD REAL)
         df_matriz = leer_tabla_por_ancla(url_planos, "COD REAL", sheet_target=0, skiprows_fallback=3)
         if "COD REAL" not in df_matriz.columns:
             df_matriz = pd.read_excel(url_planos, sheet_name=0, skiprows=2)
@@ -1583,13 +1607,12 @@ def cargar_todas_las_fuentes():
             df_cob['Cobertura'] = df_cob_raw[col_cob].apply(safe_float) if col_cob else -999.0
             df_cob = df_cob[df_cob['Material_Str'] != ""].drop_duplicates(subset=['Material_Str'])
 
-        # 3. Ventas y Margen (factVentas) - LIMPIEZA ESTRICTA: SIN GUIONES "-"
+        # 3. Ventas y Margen (factVentas) - LIMPIEZA: SIN GUIONES "-"
         df_vta_raw = leer_tabla_por_ancla(url_ventas, "Material", sheet_target=0, skiprows_fallback=2)
         df_vta = pd.DataFrame()
         col_mat_vta = 'Material' if 'Material' in df_vta_raw.columns else ('COD REAL' if 'COD REAL' in df_vta_raw.columns else None)
         if col_mat_vta:
             df_vta['Material_Str'] = df_vta_raw[col_mat_vta].astype(str).apply(clean_sku)
-            # REQUISITO: Excluir todos los códigos que contengan "-"
             df_vta = df_vta[~df_vta['Material_Str'].str.contains('-')].copy()
 
             col_v = 'Monto Venta Neta' if 'Monto Venta Neta' in df_vta_raw.columns else 'Venta'
@@ -1651,56 +1674,31 @@ def cargar_todas_las_fuentes():
             df_sap['Grupo de Artículo'] = df_sap_raw[col_n_ga].fillna('SIN DATOS').astype(str).str.strip()
             df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # --- CONSTRUCCIÓN DE LA TABLA DE SKU ÚNICO (FACTVENTAS SIN GUIONES ANEXADO CON FACTPLANO) ---
+        # --- APLICACIÓN DE CRUCES SECUENCIALES ORIGINALES ---
+        if not df_cob.empty:
+            df_matriz = df_matriz.merge(df_cob[['Material_Str', 'Estado', 'Stock', 'Cobertura']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
+            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+
         if not df_vta.empty:
-            mat_vta_base = df_vta[['Material_Str']].drop_duplicates().rename(columns={'Material_Str': 'Material_Unico'})
-        else:
-            mat_vta_base = pd.DataFrame(columns=['Material_Unico'])
-
-        mat_plano_base = df_matriz[['COD_REAL_Str']].drop_duplicates().rename(columns={'COD_REAL_Str': 'Material_Unico'})
-        
-        # Anexar factVentas con factPlano y quitar duplicados
-        df_catalogo_base = pd.concat([mat_vta_base, mat_plano_base]).drop_duplicates(subset=['Material_Unico'])
-        df_catalogo_base = df_catalogo_base[df_catalogo_base['Material_Unico'] != ""].copy()
-
-        # Generar formato de ubicación exacta a partir de factPlano (ej. C1 (N7))
-        def formatear_bandeja_limpia(val):
-            val_str = str(val).strip()
-            if '.' in val_str:
-                p = val_str.split('.')
-                return f"C{p[0]} (N{p[1]})"
-            return f"Cuerpo {val_str}"
-
-        df_matriz['Ubicacion_Fmt'] = df_matriz['Bandeja'].apply(formatear_bandeja_limpia)
-        mapa_ubicaciones = df_matriz.groupby('COD_REAL_Str')['Ubicacion_Fmt'].apply(
-            lambda x: ", ".join(sorted(list(set(x.dropna()))))
-        ).to_dict()
-
-        # Iniciar cruces para la tabla de SKU Único
-        df_sku_unico = df_catalogo_base.copy()
-        df_sku_unico['COD REAL'] = df_sku_unico['Material_Unico']
+            df_matriz = df_matriz.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen', '% Part']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
+            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
         if not df_bar.empty:
-            df_sku_unico = df_sku_unico.merge(df_bar[['Material_Str', 'Descripción', 'EAN_Master', 'G.A.']], left_on='Material_Unico', right_on='Material_Str', how='left')
-            df_sku_unico.rename(columns={'EAN_Master': 'EAN'}, inplace=True)
-            df_sku_unico.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+            df_matriz = df_matriz.merge(df_bar[['Material_Str', 'EAN_Master', 'Descripción', 'G.A.']], left_on='COD_REAL_Str', right_on='Material_Str', how='left')
+            df_matriz.rename(columns={'EAN_Master': 'EAN'}, inplace=True)
+            df_matriz.drop(columns=['Material_Str'], inplace=True, errors='ignore')
 
-        if not df_vta.empty:
-            df_sku_unico = df_sku_unico.merge(df_vta[['Material_Str', 'Venta', 'Monto Margen']], left_on='Material_Unico', right_on='Material_Str', how='left')
-            df_sku_unico.drop(columns=['Material_Str'], inplace=True, errors='ignore')
+        if not df_fotos.empty:
+            df_matriz = df_matriz.merge(df_fotos[['Sku_Foto_Str', 'Links de fotos']], left_on='COD_REAL_Str', right_on='Sku_Foto_Str', how='left')
+            df_matriz.drop(columns=['Sku_Foto_Str'], inplace=True, errors='ignore')
 
-        if not df_cob.empty:
-            df_sku_unico = df_sku_unico.merge(df_cob[['Material_Str', 'Stock', 'Cobertura']], left_on='Material_Unico', right_on='Material_Str', how='left')
-            df_sku_unico.drop(columns=['Material_Str'], inplace=True, errors='ignore')
-
-        # Jerarquía SAP mediante Grupo de A
-        if 'G.A.' in df_sku_unico.columns:
-            df_sku_unico['G.A._Str'] = df_sku_unico['G.A.'].astype(str).apply(clean_sku)
+        if 'G.A.' in df_matriz.columns:
+            df_matriz['G.A._Str'] = df_matriz['G.A.'].astype(str).apply(clean_sku)
         else:
-            df_sku_unico['G.A._Str'] = ""
+            df_matriz['G.A._Str'] = ""
 
         if not df_sap.empty:
-            df_sku_unico = df_sku_unico.merge(
+            df_matriz = df_matriz.merge(
                 df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], 
                 left_on='G.A._Str', 
                 right_on='CodGA_Str', 
@@ -1709,25 +1707,25 @@ def cargar_todas_las_fuentes():
             )
             for col_target in ['Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']:
                 col_sap_name = f"{col_target}_sap"
-                if col_sap_name in df_sku_unico.columns:
-                    df_sku_unico[col_target] = df_sku_unico[col_sap_name].replace(['SIN DATOS', 'nan', 'None', '', 'NaN'], pd.NA).fillna(df_sku_unico[col_target])
-                    df_sku_unico.drop(columns=[col_sap_name], inplace=True, errors='ignore')
-            df_sku_unico.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
+                if col_sap_name in df_matriz.columns:
+                    df_matriz[col_target] = df_matriz[col_sap_name].replace(['SIN DATOS', 'nan', 'None', '', 'NaN'], pd.NA).fillna(df_matriz[col_target])
+                    df_matriz.drop(columns=[col_sap_name], inplace=True, errors='ignore')
+            df_matriz.drop(columns=['CodGA_Str', 'G.A._Str'], inplace=True, errors='ignore')
 
-        # Asignar ubicación
-        df_sku_unico['Ubicación(es)'] = df_sku_unico['Material_Unico'].map(mapa_ubicaciones)
+        # Rellenar nulos
+        for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
+            df_matriz[col] = df_matriz[col].fillna(val_def) if col in df_matriz.columns else val_def
 
-        # Rellenar nulos de forma estricta (-999.0 para números y "SIN DATOS" para textos)
-        for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0)]:
-            df_sku_unico[col] = df_sku_unico[col].fillna(val_def) if col in df_sku_unico.columns else val_def
+        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS'), ('Descripción', 'SIN DATOS'), ('EAN', 'SIN DATOS')]:
+            df_matriz[col] = df_matriz[col].fillna(val_def).astype(str).str.strip() if col in df_matriz.columns else val_def
 
-        for col, val_def in [('Descripción', 'SIN DATOS'), ('EAN', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('Ubicación(es)', pd.NA)]:
-            df_sku_unico[col] = df_sku_unico[col].fillna(val_def).astype(str).str.strip() if col in df_sku_unico.columns else val_def
+        if 'Bandeja' in df_matriz.columns and 'EAN' in df_matriz.columns:
+            df_matriz = df_matriz.dropna(subset=["Bandeja", "EAN"], how="all")
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_matriz, df_sku_unico, hora_lectura, None
+        return df_matriz, hora_lectura, None
     except Exception as e:
-        return None, None, None, str(e)
+        return None, None, str(e)
 
 # --- HEADER SAAS UNIFICADO CON CRÉDITO DE AUTORÍA ---
 col_head1, col_head2, col_head3 = st.columns([5.5, 2, 2.5])
@@ -1758,7 +1756,7 @@ with col_head3:
         header_time_placeholder = st.empty()
 
 with st.spinner("Sincronizando fuentes externas en la nube..."):
-    df_nube, df_sku_unico_global, info_hora, error_nube = cargar_todas_las_fuentes()
+    df_nube, info_hora, error_nube = cargar_todas_las_fuentes()
 
 header_time_placeholder.markdown(f"""
     <div style="text-align: right; line-height: 1.3;">
@@ -1785,7 +1783,7 @@ if df_raw is not None and not df_raw.empty:
     df_base['Unid_Bandeja_Num'] = df_base[col_unid_bandeja].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     
     df_unicos = df_base.drop_duplicates(subset=['COD REAL']).copy()
-    df_unicos = df_unicos[df_unicos['COD REAL'].astype(str).str.strip() != ""]
+    df_unicos = df_unicos[df_unicos['COD REAL'].notna()]
     
     tab1, tab2, tab3 = st.tabs([
         "🛒 Vista Interactiva del Pasillo", 
@@ -1854,7 +1852,7 @@ if df_raw is not None and not df_raw.empty:
         if filtro_ga != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Grupo de Artículo'] == filtro_ga]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Grupo de Artículo'] == filtro_ga]
-        if filtro_marca != "Todas":
+        if filtro_marca != "Todos":
             df_dash_base = df_dash_base[df_dash_base['Marca'] == filtro_marca]
             df_dash_unicos = df_dash_unicos[df_dash_unicos['Marca'] == filtro_marca]
 
