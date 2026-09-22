@@ -870,7 +870,7 @@ def cargar_todas_las_fuentes():
             if not col_cat_sap and len(df_sap_raw.columns) >= 8:
                 col_cat_sap = df_sap_raw.columns[7]
 
-            col_dep_sap = cols_sap_map.get('DEPARTAMENTO', None))
+            col_dep_sap = cols_sap_map.get('DEPARTAMENTO', None)
             if not col_dep_sap and len(df_sap_raw.columns) >= 4:
                 col_dep_sap = df_sap_raw.columns[3]
 
