@@ -172,6 +172,26 @@ st.markdown(f"""
             font-size: 0.84rem;
             box-shadow: {t["card_shadow"]};
         }}
+
+        /* ENMARCADO HOMOGÉNEO DE IMAGEN PANORÁMICA */
+        .planograma-img-frame {{
+            width: 100%;
+            height: 260px;
+            background: #ffffff;
+            border: 1.5px solid {t["border_subtle"]};
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 12px;
+            box-shadow: {t["card_shadow"]};
+        }}
+        .planograma-img-frame img {{
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -266,8 +286,8 @@ def convertir_link_directo_drive(url_str):
             return f"https://lh3.googleusercontent.com/d/{file_id}"
     return url_str
 
-# --- GENERADOR DEL PLANOGRAMA PANORÁMICO CON LEYENDA INTERACTIVA INTEGRADA ---
-def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
+# --- GENERADOR DEL PLANOGRAMA PANORÁMICO DINÁMICO (DISTRIBUCIÓN VERTICAL COMPLETA) ---
+def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA", altura_total_cuerpo=360):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
     
@@ -445,6 +465,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             display: flex;
             flex-direction: row;
             width: 100%;
+            height: {altura_total_cuerpo}px;
             background: #ffffff;
         }}
         
@@ -453,23 +474,30 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             flex-direction: column;
             border-right: 2px solid #0f172a;
             min-width: 0;
+            height: 100%;
         }}
         .plano-cuerpo-col:last-child {{
             border-right: none;
         }}
         
+        /* DISTRIBUCIÓN VERTICAL AUTOMÁTICA (FLEX SPACE-BETWEEN) */
         .plano-cuerpo-shelves {{
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
             padding: 3px 2px;
             gap: 2.5px;
             flex-grow: 1;
+            height: 100%;
         }}
         
         .plano-level-row {{
             display: flex;
             flex-direction: column;
+            justify-content: flex-end;
             width: 100%;
+            flex: 1 1 0;
+            min-height: 0;
         }}
         
         .plano-facings-container {{
@@ -850,7 +878,6 @@ def cargar_todas_las_fuentes():
         df_sap = pd.DataFrame()
         
         if not df_sap_raw.empty:
-            # Buscar columnas por nombre exacto o por posición
             cols_sap_map = {str(c).strip().upper(): c for c in df_sap_raw.columns}
             
             col_ga_sap = cols_sap_map.get('GRUPO ARTÍCULO', cols_sap_map.get('GRUPO ARTICULO', cols_sap_map.get('COD GA', None)))
@@ -1056,7 +1083,6 @@ col_b1, col_b2, col_b3, col_b4 = st.columns([2.5, 2.5, 3.5, 1.5])
 with col_b1:
     tienda_sel = st.selectbox("Tienda", ["S008 Metro Schell", "S001 Metro Miraflores", "S004 Wong Benavides", "Todas las Tiendas"], key="gate_tienda")
 
-# Obtener mundos disponibles desde la columna 'Mundo' (SECCIÓN 3 de SAP)
 if df_pasillo_global is not None and not df_pasillo_global.empty and 'Mundo' in df_pasillo_global.columns:
     mundos_disponibles = sorted([m for m in df_pasillo_global['Mundo'].dropna().unique() if str(m).strip() not in ['SIN DATOS', 'S/D', 'nan', '']])
     if not mundos_disponibles:
@@ -1067,7 +1093,6 @@ else:
 with col_b2:
     mundo_sel = st.selectbox("Mundo (Sección SAP)", mundos_disponibles, key="gate_mundo")
 
-# Filtrar categorías pertenecientes a ese Mundo
 if df_pasillo_global is not None and not df_pasillo_global.empty:
     df_filtrado_mundo = df_pasillo_global[df_pasillo_global['Mundo'] == mundo_sel]
     cats_encontradas = sorted([c for c in df_filtrado_mundo['Categoría'].dropna().unique() if str(c) not in ['SIN DATOS', 'S/C', 'nan', '']])
@@ -1100,11 +1125,9 @@ if not st.session_state.busqueda_activa:
 else:
     df_base = df_pasillo_global.copy()
     
-    # Filtro por Mundo
     if 'Mundo' in df_base.columns:
         df_base = df_base[df_base['Mundo'] == mundo_sel].copy()
 
-    # Filtro por Categoría
     if cat_sel != "Todas las Categorías":
         df_base = df_base[df_base['Categoría'] == cat_sel].copy()
 
@@ -1246,13 +1269,13 @@ else:
             st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # --- PESTAÑA 2: NUEVO PLANOGRAMA PANORÁMICO (DESDE GOOGLE SHEET) ---
+    # --- PESTAÑA 2: PLANOGRAMA PANORÁMICO (ALTURA UNIFORME Y DISTRIBUCIÓN) ---
     # =========================================================================
     with tab_plano:
         cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else f"MUNDO {mundo_sel} - PLANOGRAMA INTEGRAL"
         st.markdown(f"<h4 style='color:#0f172a; margin-top: 0;'>{cat_actual_titulo}</h4>", unsafe_allow_html=True)
         
-        # 1. IMAGEN OFICIAL DESDE EL GOOGLE SHEET ENLAZADO
+        # 1. IMAGEN DEL PLANOGRAMA ENMARCADA A ALTURA PANORÁMICA FIJA (MÁXIMO 260px)
         url_sheet_img = None
         cat_key_lookup = cat_actual_titulo.strip().upper()
         
@@ -1265,21 +1288,33 @@ else:
                     break
         
         if url_sheet_img:
-            st.image(url_sheet_img, use_container_width=True, caption=f"Planograma Institucional Oficial - {cat_actual_titulo}")
+            st.markdown(f"""
+                <div class="planograma-img-frame">
+                    <img src="{url_sheet_img}" alt="Planograma Oficial {cat_actual_titulo}">
+                </div>
+            """, unsafe_allow_html=True)
         else:
-            st.info(f"💡 No se encontró imagen asignada para **{cat_actual_titulo}** en el libro maestro. Puedes agregar el link en la hoja compartida.")
+            st.info(f"💡 No se encontró imagen asignada para **{cat_actual_titulo}** en el libro maestro de fotos.")
 
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
 
-        # 2. DIAGRAMA PANORÁMICO AJUSTADO CON LEYENDA INTERACTIVA INTEGRADA
+        # 2. CÁLCULO DE LA ALTURA DINÁMICA DE LA GÓNDOLA Y RENDERIZADO
         bandeja_series = get_clean_series(df_base, 'Bandeja')
         desglose = bandeja_series.apply(desglosar_cuerpo_y_nivel)
         niveles_reales = [x[1] for x in desglose]
         max_niveles_count = max(niveles_reales) if len(niveles_reales) > 0 else 8
-        altura_plano = max(500, 160 + max_niveles_count * 53)
+        
+        # Altura del cuerpo calculada en base al cuerpo con más niveles (cada nivel ~48px)
+        altura_cuerpo_px = max(260, max_niveles_count * 48)
+        # Altura del iframe que contiene el card exterior, header, leyenda y footer
+        altura_iframe = altura_cuerpo_px + 140
 
-        html_plano_rect = generar_html_planograma_panoramico(df_base, titulo_categoria=cat_actual_titulo)
-        components.html(html_plano_rect, height=altura_plano, scrolling=True)
+        html_plano_rect = generar_html_planograma_panoramico(
+            df_base, 
+            titulo_categoria=cat_actual_titulo, 
+            altura_total_cuerpo=altura_cuerpo_px
+        )
+        components.html(html_plano_rect, height=altura_iframe, scrolling=True)
 
     # =========================================================================
     # --- PESTAÑA 3: DASHBOARD ANALÍTICO FINANCIERO ---
