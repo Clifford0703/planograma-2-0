@@ -1,8 +1,25 @@
+Excelente decisión. Centralizar la relación **Categoría $\leftrightarrow$ Imagen del Planograma** en ese Google Sheet permite que cualquier actualización de planogramas en la nube se refleje en la aplicación sin tocar una sola línea de código.
+
+### Integración técnica aplicada:
+
+1. **Lectura automática del nuevo Sheet:**
+Se incorpora la URL de exportación del libro (`1E8B6FIK7XLAp9t-WqWnBU4jL1i3C3EhBmjP0W1_wI38`) en la función `cargar_todas_las_fuentes()` con caché para máxima velocidad.
+2. **Conversor automático de enlaces de Google Drive:**
+La función `convertir_link_directo_drive(url)` detecta automáticamente enlaces de Google Drive (como `/file/d/ID/view` o `id=ID`) y los transforma al endpoint directo `[https://lh3.googleusercontent.com/d/](https://lh3.googleusercontent.com/d/){ID}` para que `st.image()` renderice la imagen panorámica arriba sin fallar.
+3. **Estructura estricta y reducción del 30%:**
+* **Arriba:** Imagen oficial del planograma institucional extraída del Google Sheet.
+* **Abajo:** Diagrama panorámico de rectángulos con su **Código SAP vertical**, leyenda interactiva con resaltado en vivo, altura reducida un 30% y lectura correcta de los dígitos de `Bandeja` (cuerpo y nivel).
+
+
+
+Aquí tienes el código completo listo para producción:
+
+```python
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 import io
-import os
+import re
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
@@ -253,6 +270,20 @@ def obtener_color_operativo(estado, stock_val):
     else: 
         return "#64748b", "#334155", "#ffffff", "Desconocido"
 
+def convertir_link_directo_drive(url_str):
+    """Convierte cualquier formato de enlace de Google Drive en una URL de imagen directa."""
+    if not url_str or pd.isna(url_str):
+        return None
+    url_str = str(url_str).strip()
+    if "drive.google.com" in url_str:
+        file_id_match = re.search(r'/d/([a-zA-Z0-9_-]+)', url_str)
+        if not file_id_match:
+            file_id_match = re.search(r'id=([a-zA-Z0-9_-]+)', url_str)
+        if file_id_match:
+            file_id = file_id_match.group(1)
+            return f"https://lh3.googleusercontent.com/d/{file_id}"
+    return url_str
+
 # --- GENERADOR DEL PLANOGRAMA PANORÁMICO CON LEYENDA INTERACTIVA INTEGRADA ---
 def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
     df = df.copy()
@@ -362,7 +393,6 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{ font-family: 'Inter', sans-serif; background: #ffffff; color: #0f172a; padding: 2px; width: 100%; }}
         
-        /* LEYENDA INTERACTIVA */
         .interactive-legend-bar {{
             display: flex;
             align-items: center;
@@ -485,7 +515,6 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             transition: transform 0.15s ease, opacity 0.2s ease, filter 0.2s ease, box-shadow 0.15s ease;
         }}
         
-        /* ESTADOS DE INTERACTIVIDAD */
         .plano-rect.dimmed {{
             opacity: 0.12 !important;
             filter: grayscale(80%) !important;
@@ -569,7 +598,6 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
       </style>
     </head>
     <body>
-      <!-- BARRA DE LEYENDA INTERACTIVA -->
       <div class="interactive-legend-bar">
         <span class="legend-label-title">📍 Resaltar Estado:</span>
         <button type="button" class="legend-btn btn-bloq" data-target="Bloqueado">Bloqueado (B)</button>
@@ -604,7 +632,6 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
       </div>
       
       <script>
-        // LÓGICA DE LA LEYENDA INTERACTIVA
         let currentActiveState = null;
         const legendButtons = document.querySelectorAll('.legend-btn[data-target]');
         const btnVerTodos = document.getElementById('btnVerTodos');
@@ -612,7 +639,6 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
 
         function aplicarFiltroLeyenda(estado) {{
             if (currentActiveState === estado) {{
-                // Desactivar si se hace clic de nuevo
                 currentActiveState = null;
                 legendButtons.forEach(b => b.classList.remove('active'));
                 rects.forEach(r => {{
@@ -657,7 +683,6 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             }});
         }});
 
-        // LÓGICA DEL MODAL DE DETALLE
         const modal = document.getElementById('pModal');
         const closeBtn = document.querySelector('.modal-close');
         
@@ -685,16 +710,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
     </html>
     """
 
-# --- MAPA DE PLANOGRAMAS INSTITUCIONALES (MUNDO DESAYUNO) ---
-MAPA_PLANOGRAMAS_IMG = {
-    "PANES Y TOSTADAS": "panes_y_tostadas.jpg",
-    "MIELES / JALEAS / SIROPE": "mieles_jaleas_sirope.jpg",
-    "TÉ E INFUSIONES": "te_e_infusiones.jpg",
-    "MODIFICADORES DE LECHES / COMPLEMENTOS / SUPLEMENTOS": "modificadores_leches.jpg",
-    "CAFÉ Y COMPLEMENTOS": "cafes_y_complementos.jpg",
-}
-
-# --- CARGA INTEGRADA DE FUENTES Y LIMPIEZA TOTAL ---
+# --- CARGA INTEGRADA DE TODAS LAS FUENTES ---
 @st.cache_data(ttl=14400)
 def cargar_todas_las_fuentes():
     try:
@@ -704,6 +720,8 @@ def cargar_todas_las_fuentes():
         url_barras = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
         url_jerarquia = "https://docs.google.com/spreadsheets/d/1JI4Ef0138lwI-fJsQmX5lz-fqXvemZQD/export?format=xlsx"
         url_fotos = "https://docs.google.com/spreadsheets/d/1y8P_GVLySBrbGkm-1nc0BiTwGCorhVtF/export?format=xlsx"
+        # NUEVO LIBRO DE PLANOGRAMAS E IMÁGENES
+        url_cat_imagenes = "https://docs.google.com/spreadsheets/d/1E8B6FIK7XLAp9t-WqWnBU4jL1i3C3EhBmjP0W1_wI38/export?format=xlsx"
 
         def leer_tabla_por_ancla(url, palabra_ancla, sheet_target=0, skiprows_fallback=0):
             try:
@@ -731,6 +749,30 @@ def cargar_todas_las_fuentes():
                 df.columns = [str(c).strip() for c in df.columns]
                 df = df.loc[:, ~df.columns.duplicated()].copy()
                 return df
+
+        # 0. Cargar el Libro Maestro de Imágenes de Planogramas
+        mapa_imagenes_dict = {}
+        try:
+            df_img_sheet = pd.read_excel(url_cat_imagenes, sheet_name=0)
+            df_img_sheet.columns = [str(c).strip() for c in df_img_sheet.columns]
+            
+            col_cat_img = None
+            col_url_img = None
+            for col in df_img_sheet.columns:
+                col_lower = col.lower()
+                if "categor" in col_lower:
+                    col_cat_img = col
+                if any(x in col_lower for x in ["link", "imagen", "url", "foto", "drive"]):
+                    col_url_img = col
+            
+            if col_cat_img and col_url_img:
+                for _, row in df_img_sheet.iterrows():
+                    c_name = str(row[col_cat_img]).strip().upper()
+                    u_link = convertir_link_directo_drive(str(row[col_url_img]).strip())
+                    if c_name and u_link:
+                        mapa_imagenes_dict[c_name] = u_link
+        except Exception:
+            pass
 
         # 1. Matriz de Planos
         df_matriz = leer_tabla_por_ancla(url_planos, "COD REAL", sheet_target=0, skiprows_fallback=3)
@@ -966,13 +1008,13 @@ def cargar_todas_las_fuentes():
             sanitizar_columna_str(df_sku_unico, col, val_def)
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
-        return df_pasillo_base, df_sku_unico, hora_lectura, None
+        return df_pasillo_base, df_sku_unico, mapa_imagenes_dict, hora_lectura, None
     except Exception as e:
-        return None, None, None, str(e)
+        return None, None, {}, None, str(e)
 
 # --- HEADER Y CARGA ---
 with st.spinner("Sincronizando fuentes externas en la nube..."):
-    df_pasillo_global, df_sku_unico_global, info_hora, error_nube = cargar_todas_las_fuentes()
+    df_pasillo_global, df_sku_unico_global, mapa_imagenes_online, info_hora, error_nube = cargar_todas_las_fuentes()
 
 col_head1, col_head3 = st.columns([7.5, 2.5])
 with col_head1:
@@ -1185,26 +1227,32 @@ else:
             st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # --- PESTAÑA 2: NUEVO PLANOGRAMA PANORÁMICO (ALTURA REDUCIDA EN 30%) ---
+    # --- PESTAÑA 2: NUEVO PLANOGRAMA PANORÁMICO (DESDE GOOGLE SHEET DE IMÁGENES) ---
     # =========================================================================
     with tab_plano:
         cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else "CAFÉS Y COMPLEMENTOS"
         st.markdown(f"<h4 style='color:#0f172a; margin-top: 0;'>{cat_actual_titulo}</h4>", unsafe_allow_html=True)
         
-        # 1. IMAGEN DEL PLANOGRAMA INSTITUCIONAL ARRIBA
-        nombre_archivo_img = MAPA_PLANOGRAMAS_IMG.get(cat_sel, "cafes_y_complementos.jpg")
+        # 1. IMAGEN OFICIAL DESDE EL GOOGLE SHEET ENLAZADO
+        url_sheet_img = None
+        cat_key_lookup = cat_actual_titulo.strip().upper()
         
-        expander_img = st.expander("📸 Ver / Vincular Imagen Oficial del Planograma Institucional", expanded=True)
-        with expander_img:
-            if os.path.exists(nombre_archivo_img):
-                st.image(nombre_archivo_img, use_container_width=True, caption=f"Planograma Oficial - {cat_actual_titulo}")
-            elif os.path.exists(f"assets/{nombre_archivo_img}"):
-                st.image(f"assets/{nombre_archivo_img}", use_container_width=True, caption=f"Planograma Oficial - {cat_actual_titulo}")
-            else:
-                st.markdown(f"<p style='color: #475569; font-size: 0.84rem;'>Sube la imagen del planograma para <b>{cat_actual_titulo}</b> (se recordará en la sesión):</p>", unsafe_allow_html=True)
-                uploaded_img = st.file_uploader(f"Cargar imagen para {cat_actual_titulo}", type=["jpg", "png", "jpeg"], key=f"uploader_{cat_sel}")
-                if uploaded_img:
-                    st.image(uploaded_img, use_container_width=True, caption=f"Planograma Oficial - {cat_actual_titulo}")
+        # Búsqueda exacta o parcial en el mapa de imágenes
+        if cat_key_lookup in mapa_imagenes_online:
+            url_sheet_img = mapa_imagenes_online[cat_key_lookup]
+        else:
+            for k, val in mapa_imagenes_online.items():
+                if k in cat_key_lookup or cat_key_lookup in k:
+                    url_sheet_img = val
+                    break
+        
+        if url_sheet_img:
+            st.image(url_sheet_img, use_container_width=True, caption=f"Planograma Institucional Oficial - {cat_actual_titulo}")
+        else:
+            # Fallback opcional si la categoría no estuviera aún en el sheet
+            st.info(f"💡 No se encontró enlace directo para **{cat_actual_titulo}** en el libro de imágenes. Puede agregarlo a la hoja compartida para que cargue automáticamente.")
+
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
         # 2. DIAGRAMA PANORÁMICO AJUSTADO CON LEYENDA INTERACTIVA INTEGRADA
         bandeja_series = get_clean_series(df_base, 'Bandeja')
@@ -1328,3 +1376,5 @@ else:
             st.dataframe(df_err[cols_e], use_container_width=True, hide_index=True)
         else:
             st.success("🎉 ¡Excelente! No se detectaron desajustes de cruce en esta categoría.")
+
+```
