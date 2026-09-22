@@ -1,20 +1,3 @@
-Excelente decisión. Centralizar la relación **Categoría $\leftrightarrow$ Imagen del Planograma** en ese Google Sheet permite que cualquier actualización de planogramas en la nube se refleje en la aplicación sin tocar una sola línea de código.
-
-### Integración técnica aplicada:
-
-1. **Lectura automática del nuevo Sheet:**
-Se incorpora la URL de exportación del libro (`1E8B6FIK7XLAp9t-WqWnBU4jL1i3C3EhBmjP0W1_wI38`) en la función `cargar_todas_las_fuentes()` con caché para máxima velocidad.
-2. **Conversor automático de enlaces de Google Drive:**
-La función `convertir_link_directo_drive(url)` detecta automáticamente enlaces de Google Drive (como `/file/d/ID/view` o `id=ID`) y los transforma al endpoint directo `[https://lh3.googleusercontent.com/d/](https://lh3.googleusercontent.com/d/){ID}` para que `st.image()` renderice la imagen panorámica arriba sin fallar.
-3. **Estructura estricta y reducción del 30%:**
-* **Arriba:** Imagen oficial del planograma institucional extraída del Google Sheet.
-* **Abajo:** Diagrama panorámico de rectángulos con su **Código SAP vertical**, leyenda interactiva con resaltado en vivo, altura reducida un 30% y lectura correcta de los dígitos de `Bandeja` (cuerpo y nivel).
-
-
-
-Aquí tienes el código completo listo para producción:
-
-```python
 import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
