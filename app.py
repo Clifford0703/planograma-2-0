@@ -55,7 +55,7 @@ st.markdown(f"""
             max-width: 100% !important;
         }}
         
-        /* PESTAÑAS (TABS) MODERNAS */
+        /* PESTAÑAS (TABS) */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
             background-color: #e2e8f0 !important;
@@ -430,7 +430,7 @@ def cargar_todas_las_fuentes():
                 df_fotos['Links de fotos'] = get_clean_series(df_fotos_raw, col_link_foto).str.strip()
                 df_fotos = df_fotos[df_fotos['Sku_Foto_Str'] != ""].drop_duplicates(subset=['Sku_Foto_Str'])
 
-        # 6. Jerarquía Comercial SAP: MUNDO -> SECCIÓN (3)
+        # 6. Jerarquía Comercial SAP
         try:
             df_sap_raw = pd.read_excel(url_jerarquia, sheet_name='NuevaJqGA', skiprows=2)
         except Exception:
@@ -477,7 +477,7 @@ def cargar_todas_las_fuentes():
                 df_sap['Grupo de Artículo'] = get_clean_series(df_sap_raw, col_nomga_sap).fillna('SIN DATOS').str.strip() if col_nomga_sap else 'SIN DATOS'
                 df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
-        # Cruce seguro en df_pasillo_base
+        # Cruce en df_pasillo_base
         df_pasillo_base = df_matriz.copy()
         
         if not df_cob.empty:
@@ -756,7 +756,6 @@ else:
         tot_no_plano = len(df_no_plano)
         ventas_no_plano = df_no_plano['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
 
-        # 5 TARJETAS CON VALORES CENTRADOS
         st.markdown(f"""
             <div class="kpi-cards-grid grid-5-col">
                 <div class="kpi-card-lux" style="border-bottom: 4px solid #10b981;">
@@ -851,7 +850,7 @@ else:
             st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # --- PESTAÑA 2: PLANOGRAMA FÍSICO PANORÁMICO (RESPONSIVE + FULLSCREEN INMERSIVO) ---
+    # --- PESTAÑA 2: PLANOGRAMA FÍSICO PANORÁMICO (CERO SCROLLBAR INTERNA) ---
     # =========================================================================
     with tab_plano:
         cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else f"MUNDO {mundo_sel} - PLANOGRAMA INTEGRAL"
@@ -870,7 +869,7 @@ else:
         pct_top_vta = (monto_top_vta / ventas_tot_plano * 100) if ventas_tot_plano > 0 else 0
         top_skus_set = set(df_top_vta['COD REAL'].astype(str).str.strip().unique())
 
-        # 2. CONSTRUCCIÓN DE CUERPOS Y NIVELES (AUTO-DISTRIBUCIÓN VERTICAL)
+        # 2. CONSTRUCCIÓN DE CUERPOS Y NIVELES (DISTRIBUCIÓN VERTICAL DINÁMICA)
         bandeja_series = get_clean_series(df_base, 'Bandeja')
         desglose = bandeja_series.apply(desglosar_cuerpo_y_nivel)
         df_base['Cuerpo_Ord'] = [x[0] for x in desglose]
@@ -987,7 +986,9 @@ else:
             </div>
         """ if url_sheet_img else ""
 
-        altura_iframe = altura_cuerpo_px + (280 if not url_sheet_img else 550)
+        # CÁLCULO DE ALTURA CON MARGEN SUFICIENTE PARA EVITAR SCROLL INTERNO
+        offset_elementos = 740 if url_sheet_img else 460
+        altura_iframe = altura_cuerpo_px + offset_elementos
 
         html_componente_completo = f"""
         <!DOCTYPE html>
@@ -996,7 +997,17 @@ else:
           <meta charset="UTF-8">
           <style>
             * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-            body {{ font-family: 'Plus Jakarta Sans', sans-serif; background: #ffffff; color: #0f172a; padding: 2px; width: 100%; }}
+            
+            /* BLOQUEO TOTAL DE SCROLLBAR VERTICAL INTERNA */
+            html, body {{
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                background: #ffffff;
+                color: #0f172a;
+                padding: 4px;
+                width: 100%;
+                overflow-y: hidden !important;
+                height: auto !important;
+            }}
             
             /* 1. RESALTAR TOP VENTAS */
             .top-ventas-bar {{
@@ -1035,7 +1046,7 @@ else:
                 color: #2563eb;
             }}
 
-            /* 2. TARJETAS INFORMATIVAS (EXACTAMENTE 6 TARJETAS, SIN TOP VENTAS, NO CLICABLES) */
+            /* 2. TARJETAS INFORMATIVAS (EXACTAMENTE 6, SIN TOP VENTAS) */
             .filter-cards-grid {{
                 display: grid;
                 grid-template-columns: repeat(6, 1fr);
@@ -1043,7 +1054,7 @@ else:
                 margin-bottom: 12px;
             }}
             
-            /* REGLA RESPONSIVE ESTRICTA: MÁXIMO 3 COLUMNAS EN CELULAR / PANTALLAS ESTRECHAS */
+            /* REGLA RESPONSIVE ESTRICTA: MÁXIMO 3 COLUMNAS EN PANTALLAS PEQUEÑAS */
             @media (max-width: 900px) {{
                 .filter-cards-grid {{
                     grid-template-columns: repeat(3, 1fr) !important;
@@ -1104,7 +1115,7 @@ else:
             .cb-cobalta .card-static-title {{ color: #db2777; }}
             .cb-cobalta .card-static-val {{ color: #db2777; }}
 
-            /* 3. BUSCADOR Y ACCIONES COMPACTAS (ICONOS) */
+            /* 3. BUSCADOR Y ACCIONES COMPACTAS */
             .controls-panel {{
                 background: #ffffff;
                 border: 1.5px solid #cbd5e1;
@@ -1180,11 +1191,11 @@ else:
 
             #fullscreenAuditor:fullscreen {{
                 padding: 16px;
-                overflow-y: auto;
+                overflow-y: auto !important; /* Scroll permitido solo en modo pantalla completa */
                 background: #ffffff;
             }}
 
-            /* BOTÓN CÓMODO '✕ SALIR' (SOLO VISIBLE EN FULLSCREEN) */
+            /* BOTÓN SALIR VISIBLE SOLO EN MODO FULLSCREEN */
             .exit-fullscreen-btn {{
                 display: none;
                 position: fixed;
@@ -1233,14 +1244,14 @@ else:
                 object-fit: contain;
             }}
 
-            /* BARRA DE LEYENDA OPERATIVA INTERACTIVA (STICKY / FLOTANTE EN FULLSCREEN) */
+            /* BARRA DE LEYENDA OPERATIVA INTERACTIVA (STICKY / FLOTANTE) */
             .interactive-legend-bar {{
                 display: flex;
                 align-items: center;
                 gap: 8px;
                 flex-wrap: wrap;
                 padding: 8px 12px;
-                background: rgba(255, 255, 255, 0.95);
+                background: rgba(255, 255, 255, 0.96);
                 backdrop-filter: blur(8px);
                 border: 1.5px solid #cbd5e1;
                 border-radius: 6px;
@@ -1449,7 +1460,7 @@ else:
             </div>
           </div>
 
-          <!-- 2. TARJETAS INFORMATIVAS (EXACTAMENTE 6 TARJETAS, SIN TOP VENTAS, NO CLICABLES) -->
+          <!-- 2. TARJETAS INFORMATIVAS (EXACTAMENTE 6, SIN TOP VENTAS, NO CLICABLES) -->
           <div class="filter-cards-grid">
             <div class="card-static cb-total">
                 <div class="card-static-title">TOTAL SKUS</div>
@@ -1498,17 +1509,17 @@ else:
             </div>
           </div>
 
-          <!-- 4. CONTENEDOR INMERSIVO DE AUDITORÍA (FULLSCREEN) -->
+          <!-- 4. CONTENEDOR INMERSIVO DE AUDITORÍA -->
           <div id="fullscreenAuditor">
-            <!-- BOTÓN CÓMODO '✕ SALIR' -->
+            <!-- BOTÓN SALIR DE PANTALLA COMPLETA -->
             <button type="button" class="exit-fullscreen-btn" id="btnExitFullscreen">
                 ✕ Salir de Pantalla Completa
             </button>
 
-            <!-- A. FOTO OFICIAL DEL PLANOGRAMA -->
+            <!-- FOTO OFICIAL DEL PLANOGRAMA -->
             {img_html_block}
 
-            <!-- B. BARRA DE LEYENDA OPERATIVA (STICKY / FLOTANTE) -->
+            <!-- BARRA DE LEYENDA OPERATIVA INTERACTIVA -->
             <div class="interactive-legend-bar">
                 <span class="legend-label-title">📍 LEYENDA OPERATIVA:</span>
                 <button type="button" class="legend-btn btn-bloq" data-target="Bloqueado">Bloqueado (B)</button>
@@ -1518,7 +1529,7 @@ else:
                 <button type="button" class="legend-btn btn-todos" id="btnVerTodos" style="margin-left: auto;">Ver Todos</button>
             </div>
 
-            <!-- C. DIAGRAMA PANORÁMICO -->
+            <!-- DIAGRAMA PANORÁMICO -->
             <div class="plano-outer-card" id="planoCard">
                 <div class="plano-top-header">{cat_actual_titulo}</div>
                 <div class="plano-body-container">
@@ -1593,7 +1604,7 @@ else:
                 }});
             }}
 
-            // INTERACTIVIDAD EXCLUSIVA EN LEYENDA OPERATIVA
+            // INTERACTIVIDAD EXCLUSIVA EN LA LEYENDA OPERATIVA
             legendButtons.forEach(btn => {{
                 btn.addEventListener('click', () => {{
                     const target = btn.getAttribute('data-target');
@@ -1629,7 +1640,7 @@ else:
                 aplicarFiltrosGlobales();
             }});
 
-            // PANTALLA COMPLETA INMERSIVA (FOTO + PLANOGRAMA + LEYENDA FLOTANTE)
+            // PANTALLA COMPLETA NATIVA INMERSIVA
             const fullAuditor = document.getElementById('fullscreenAuditor');
             document.getElementById('btnFullscreen').addEventListener('click', () => {{
                 if (!document.fullscreenElement) {{
@@ -1647,7 +1658,7 @@ else:
                 }}
             }});
 
-            // MODAL DE DETALLE
+            // MODAL
             const modal = document.getElementById('pModal');
             const closeBtn = document.querySelector('.modal-close');
             rects.forEach(rect => {{
@@ -1672,10 +1683,11 @@ else:
         </body>
         </html>
         """
-        components.html(html_componente_completo, height=altura_iframe, scrolling=True)
+        # scrolling=False asegura que no se pinte la barra de scroll vertical interna en Streamlit
+        components.html(html_componente_completo, height=altura_iframe, scrolling=False)
 
     # =========================================================================
-    # --- PESTAÑA 3: DASHBOARD ANALÍTICO FINANCIERO (TARJETAS FINANCIERAS AQUÍ) ---
+    # --- PESTAÑA 3: DASHBOARD ANALÍTICO FINANCIERO (TARJETAS FINANCIERAS) ---
     # =========================================================================
     with tab_dash:
         ventas_plano = df_unicos['Venta_Num'].sum()
@@ -1688,7 +1700,6 @@ else:
         tot_skus_cat = len(df_sku_unico_global)
         pct_skus_surtido = (skus_en_plano / tot_skus_cat * 100) if tot_skus_cat > 0 else 100.0
 
-        # LAS 4 TARJETAS FINANCIERAS CENTRADAS
         st.markdown(f"""
             <div class="kpi-cards-grid grid-4-col">
                 <div class="kpi-card-lux" style="border-bottom: 4px solid #2563eb;">
