@@ -165,24 +165,6 @@ st.markdown(f"""
             box-shadow: {t["card_shadow"]};
         }}
 
-        .dash-card-header {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            padding-bottom: 6px;
-            border-bottom: 1px solid {t["border_subtle"]};
-        }}
-
-        .dash-card-title {{
-            font-size: 0.85rem;
-            font-weight: 800;
-            color: {t["text_primary"]};
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }}
-
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -242,12 +224,6 @@ def sanitizar_columna_num(df, col, default=-999.0):
 
 # DESGLOSE EXACTO DEL CUERPO Y NIVEL DESDE LA CELDA BANDEJA
 def desglosar_cuerpo_y_nivel(val):
-    """
-    Desglosa el valor de la columna Bandeja:
-    - Si es '18' -> Cuerpo: 1, Nivel: 8
-    - Si es '48' -> Cuerpo: 4, Nivel: 8
-    - Si contiene '.' tipo '4.8' -> Cuerpo: 4, Nivel: 8
-    """
     s = clean_sku(val)
     if not s:
         return 1, 1
@@ -279,7 +255,7 @@ def obtener_color_operativo(estado, stock_val):
     else: 
         return "#64748b", "#334155", "#ffffff", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA PANORÁMICO COMPLETO AL ANCHO DE PANTALLA ---
+# --- GENERADOR DEL PLANOGRAMA PANORÁMICO (ALTURA REDUCIDA EN 30%) ---
 def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -390,7 +366,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         body {{ font-family: 'Inter', sans-serif; background: #ffffff; color: #0f172a; padding: 2px; width: 100%; }}
         
         .plano-outer-card {{
-            border: 2.5px solid #0f172a;
+            border: 2px solid #0f172a;
             border-radius: 4px;
             overflow: hidden;
             background: #ffffff;
@@ -400,13 +376,13 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         .plano-top-header {{
             background: #facc15;
             color: #b91c1c;
-            font-size: 1.25rem;
+            font-size: 1.05rem;
             font-weight: 900;
             text-align: center;
-            padding: 8px 12px;
+            padding: 6px 10px;
             letter-spacing: 1px;
             text-transform: uppercase;
-            border-bottom: 2.5px solid #0f172a;
+            border-bottom: 2px solid #0f172a;
         }}
         
         .plano-body-container {{
@@ -429,8 +405,8 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         .plano-cuerpo-shelves {{
             display: flex;
             flex-direction: column;
-            padding: 4px 2px;
-            gap: 4px;
+            padding: 3px 2px;
+            gap: 2.5px;
             flex-grow: 1;
         }}
         
@@ -440,12 +416,13 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             width: 100%;
         }}
         
+        /* ALTURA REDUCIDA EN UN 30%: DE 64px A 45px */
         .plano-facings-container {{
             display: flex;
             flex-direction: row;
             align-items: stretch;
             gap: 1px;
-            height: 64px;
+            height: 45px;
             padding: 0 1px;
             width: 100%;
         }}
@@ -466,27 +443,27 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         .plano-rect:hover {{
             transform: scale(1.08);
             z-index: 50;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.4);
         }}
         
         .plano-sap-vertical {{
             writing-mode: vertical-rl;
             transform: rotate(180deg);
-            font-size: 0.60rem;
+            font-size: 0.50rem;
             font-weight: 900;
             letter-spacing: -0.3px;
             line-height: 1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-height: 58px;
+            max-height: 40px;
             font-family: monospace;
             pointer-events: none;
             user-select: none;
         }}
         
         .plano-shelf-bar {{
-            height: 6px;
+            height: 4.5px;
             background: #facc15;
             border: 1px solid #ca8a04;
             margin-top: 1px;
@@ -497,10 +474,10 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             background: #ffffff;
             border-top: 2px solid #0f172a;
             color: #0f172a;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             font-weight: 900;
             text-align: center;
-            padding: 6px 0;
+            padding: 4px 0;
             letter-spacing: 0.5px;
         }}
         
@@ -953,7 +930,6 @@ if not st.session_state.busqueda_activa:
 else:
     df_base = df_pasillo_global.copy()
     
-    # Filtrar según la categoría elegida en la compuerta
     if cat_sel != "Todas las Categorías":
         df_base = df_base[df_base['Categoría'] == cat_sel].copy()
 
@@ -1095,7 +1071,7 @@ else:
             st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # --- PESTAÑA 2: NUEVO PLANOGRAMA PANORÁMICO (CÓDIGO SAP EN CADA FACING) ---
+    # --- PESTAÑA 2: NUEVO PLANOGRAMA PANORÁMICO (ALTURA REDUCIDA EN 30%) ---
     # =========================================================================
     with tab_plano:
         cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else "CAFÉS Y COMPLEMENTOS"
@@ -1127,12 +1103,12 @@ else:
             </div>
         """, unsafe_allow_html=True)
 
-        # 3. DIAGRAMA PANORÁMICO AJUSTADO AL 100% DE LA PANTALLA (EXACTAMENTE 8 NIVELES Y 4 CUERPOS)
+        # 3. DIAGRAMA PANORÁMICO AJUSTADO (ALTURA TOTAL COMPACTADA)
         bandeja_series = get_clean_series(df_base, 'Bandeja')
         desglose = bandeja_series.apply(desglosar_cuerpo_y_nivel)
         niveles_reales = [x[1] for x in desglose]
         max_niveles_count = max(niveles_reales) if len(niveles_reales) > 0 else 8
-        altura_plano = max(600, 140 + max_niveles_count * 75)
+        altura_plano = max(460, 110 + max_niveles_count * 53)
 
         html_plano_rect = generar_html_planograma_panoramico(df_base, titulo_categoria=cat_actual_titulo)
         components.html(html_plano_rect, height=altura_plano, scrolling=True)
