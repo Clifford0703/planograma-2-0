@@ -850,12 +850,12 @@ else:
             st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # --- PESTAÑA 2: PLANOGRAMA FÍSICO PANORÁMICO (CERO SCROLLBAR INTERNA) ---
+    # --- PESTAÑA 2: PLANOGRAMA FÍSICO PANORÁMICO (MODAL AL FRENTE + FOTO SKU) ---
     # =========================================================================
     with tab_plano:
         cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else f"MUNDO {mundo_sel} - PLANOGRAMA INTEGRAL"
         
-        # 1. CÁLCULO DE MÉTRICAS OPERATIVAS (6 TARJETAS EXACTAS, SIN TOP VENTAS)
+        # 1. CÁLCULO DE MÉTRICAS OPERATIVAS (6 TARJETAS EXACTAS)
         tot_skus_op = len(df_unicos)
         bloq_op = len(df_unicos[df_unicos['Estado'].str.strip().str.upper() == 'B'])
         quiebre_op = len(df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] <= 0)])
@@ -930,6 +930,10 @@ else:
                     sec_val = str(it.get("Sección", "SIN DATOS")).replace('"', '&quot;')
                     catjer_val = str(it.get("Categoría", "SIN DATOS")).replace('"', '&quot;')
                     ga_val = str(it.get("Grupo de Artículo", "SIN DATOS")).replace('"', '&quot;')
+                    
+                    foto_sku = str(it.get("Links de fotos", "")).strip()
+                    if foto_sku.upper() in ["SIN DATOS", "NAN", "NONE", ""]:
+                        foto_sku = ""
 
                     bg_color, border_color, text_color, cat_leyenda = obtener_color_operativo(estado, stock_val)
                     es_cob_alta = "1" if cob_val >= 30 else "0"
@@ -943,6 +947,7 @@ else:
                              data-stock="{stock_val:.2f}" data-cob="{cob_val:.2f}" data-venta="{venta_val}" data-part="{format_pct(part_val)}"
                              data-cod="{cod_real}" data-cat="{cat_leyenda}" data-pos="{pos_val}" data-nivel="{n_num}"
                              data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
+                             data-foto="{foto_sku}"
                              title="Nivel {n_num} • Pos {pos_val} | SAP: {cod_real} | {nombre}">
                             <span class="plano-sap-vertical">{cod_real}</span>
                         </div>
@@ -986,7 +991,6 @@ else:
             </div>
         """ if url_sheet_img else ""
 
-        # CÁLCULO DE ALTURA CON MARGEN SUFICIENTE PARA EVITAR SCROLL INTERNO
         offset_elementos = 740 if url_sheet_img else 460
         altura_iframe = altura_cuerpo_px + offset_elementos
 
@@ -1046,7 +1050,7 @@ else:
                 color: #2563eb;
             }}
 
-            /* 2. TARJETAS INFORMATIVAS (EXACTAMENTE 6, SIN TOP VENTAS) */
+            /* 2. TARJETAS INFORMATIVAS */
             .filter-cards-grid {{
                 display: grid;
                 grid-template-columns: repeat(6, 1fr);
@@ -1054,7 +1058,6 @@ else:
                 margin-bottom: 12px;
             }}
             
-            /* REGLA RESPONSIVE ESTRICTA: MÁXIMO 3 COLUMNAS EN PANTALLAS PEQUEÑAS */
             @media (max-width: 900px) {{
                 .filter-cards-grid {{
                     grid-template-columns: repeat(3, 1fr) !important;
@@ -1191,11 +1194,11 @@ else:
 
             #fullscreenAuditor:fullscreen {{
                 padding: 16px;
-                overflow-y: auto !important; /* Scroll permitido solo en modo pantalla completa */
+                overflow-y: auto !important;
                 background: #ffffff;
             }}
 
-            /* BOTÓN SALIR VISIBLE SOLO EN MODO FULLSCREEN */
+            /* BOTÓN SALIR */
             .exit-fullscreen-btn {{
                 display: none;
                 position: fixed;
@@ -1244,7 +1247,7 @@ else:
                 object-fit: contain;
             }}
 
-            /* BARRA DE LEYENDA OPERATIVA INTERACTIVA (STICKY / FLOTANTE) */
+            /* BARRA DE LEYENDA OPERATIVA INTERACTIVA */
             .interactive-legend-bar {{
                 display: flex;
                 align-items: center;
@@ -1410,14 +1413,14 @@ else:
                 letter-spacing: 0.5px;
             }}
             
-            /* MODAL */
+            /* MODAL DE INFORMACIÓN (CORREGIDO PARA MOSTRARSE SIEMPRE AL FRENTE EN FULLSCREEN) */
             .modal-overlay {{ 
               position: fixed !important; 
               inset: 0 !important; 
               width: 100vw !important; 
               height: 100vh !important; 
-              background: rgba(15, 23, 42, 0.65) !important; 
-              z-index: 99999 !important; 
+              background: rgba(15, 23, 42, 0.72) !important; 
+              z-index: 2147483647 !important; /* Máximo z-index posible en el navegador */
               opacity: 0; 
               pointer-events: none; 
               transition: opacity 0.2s ease; 
@@ -1425,23 +1428,100 @@ else:
               align-items: center !important; 
               justify-content: center !important; 
               padding: 16px !important; 
-              backdrop-filter: blur(4px); 
+              backdrop-filter: blur(5px); 
             }}
             .modal-overlay.active {{ opacity: 1 !important; pointer-events: auto !important; }}
             .modal-content {{ 
               background: #ffffff !important; 
               color: #0f172a !important; 
-              padding: 22px !important; 
-              border-radius: 10px !important; 
-              width: 90% !important; 
+              padding: 20px 22px !important; 
+              border-radius: 12px !important; 
+              width: 92% !important; 
               max-width: 440px !important; 
               border: 2.5px solid #2563eb !important; 
-              box-shadow: 0 20px 40px rgba(0,0,0,0.2) !important; 
+              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important; 
               position: relative !important; 
             }}
-            .modal-close {{ position: absolute; top: 10px; right: 14px; font-size: 1.4rem; cursor: pointer; color: #64748b; font-weight: 800; }}
-            .modal-close:hover {{ color: #0f172a; }}
-            .m-row {{ border-bottom: 1px solid #e2e8f0; padding: 6px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
+            .modal-close {{ 
+              position: absolute; 
+              top: 10px; 
+              right: 14px; 
+              font-size: 1.4rem; 
+              cursor: pointer; 
+              color: #64748b; 
+              font-weight: 800; 
+              line-height: 1;
+            }}
+            .modal-close:hover {{ color: #dc2626; }}
+
+            /* CONTENEDOR DE FOTO DEL SKU EN MODAL */
+            .m-header-box {{
+                display: flex;
+                gap: 12px;
+                align-items: center;
+                border-bottom: 2px solid #2563eb;
+                padding-bottom: 12px;
+                margin-bottom: 10px;
+            }}
+            .m-img-wrapper {{
+                width: 76px;
+                height: 76px;
+                border-radius: 8px;
+                background: #f8fafc;
+                border: 1.5px solid #cbd5e1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                overflow: hidden;
+                flex-shrink: 0;
+            }}
+            .m-img-wrapper img {{
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+            }}
+            .m-no-img {{
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: #94a3b8;
+                font-size: 0.62rem;
+                font-weight: 800;
+                text-align: center;
+                line-height: 1.1;
+                gap: 2px;
+            }}
+            .m-header-info {{
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                overflow: hidden;
+            }}
+            .m-header-title {{
+                font-size: 0.88rem;
+                font-weight: 800;
+                color: #0f172a;
+                line-height: 1.25;
+                margin-bottom: 4px;
+                word-wrap: break-word;
+            }}
+            .m-header-badge {{
+                font-size: 0.65rem;
+                font-weight: 800;
+                color: #2563eb;
+                text-transform: uppercase;
+                letter-spacing: 0.4px;
+            }}
+
+            .m-row {{ 
+              border-bottom: 1px solid #f1f5f9; 
+              padding: 5px 0; 
+              display: flex; 
+              justify-content: space-between; 
+              align-items: center;
+              font-size: 0.80rem; 
+            }}
             .m-label {{ font-weight: 600; color: #2563eb; }}
             .m-val {{ font-weight: 700; text-align: right; }}
           </style>
@@ -1460,7 +1540,7 @@ else:
             </div>
           </div>
 
-          <!-- 2. TARJETAS INFORMATIVAS (EXACTAMENTE 6, SIN TOP VENTAS, NO CLICABLES) -->
+          <!-- 2. TARJETAS INFORMATIVAS (EXACTAMENTE 6) -->
           <div class="filter-cards-grid">
             <div class="card-static cb-total">
                 <div class="card-static-title">TOTAL SKUS</div>
@@ -1536,22 +1616,31 @@ else:
                     {html_cuerpos}
                 </div>
             </div>
-          </div>
 
-          <!-- MODAL DE AUDITORÍA -->
-          <div id="pModal" class="modal-overlay">
-            <div class="modal-content">
-              <span class="modal-close">&times;</span>
-              <h4 id="m-name" style="margin-bottom: 8px; color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 6px;">Producto</h4>
-              <div class="m-row"><span class="m-label">Código SAP / Cód. Real:</span><span class="m-val" id="m-cod" style="font-family: monospace; font-size: 0.95rem; font-weight: 900;"></span></div>
-              <div class="m-row"><span class="m-label">Ubicación (Nivel / Pos):</span><span class="m-val" id="m-pos"></span></div>
-              <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
-              <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
-              <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
-              <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
-              <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
-              <div class="m-row"><span class="m-label">Estado Stock:</span><span class="m-val" id="m-cat"></span></div>
-              <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
+            <!-- MODAL DE AUDITORÍA DENTRO DEL CONTENEDOR FULLSCREEN (AL FRENTE) -->
+            <div id="pModal" class="modal-overlay">
+              <div class="modal-content">
+                <span class="modal-close">&times;</span>
+                
+                <div class="m-header-box">
+                  <div class="m-img-wrapper" id="m-img-wrapper">
+                    <!-- Dinámico con JS -->
+                  </div>
+                  <div class="m-header-info">
+                    <span class="m-header-badge" id="m-brand"></span>
+                    <h4 class="m-header-title" id="m-name">Producto</h4>
+                  </div>
+                </div>
+
+                <div class="m-row"><span class="m-label">Código SAP / Cód. Real:</span><span class="m-val" id="m-cod" style="font-family: monospace; font-size: 0.95rem; font-weight: 900;"></span></div>
+                <div class="m-row"><span class="m-label">Ubicación (Nivel / Pos):</span><span class="m-val" id="m-pos"></span></div>
+                <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
+                <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
+                <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
+                <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
+                <div class="m-row"><span class="m-label">Estado Stock:</span><span class="m-val" id="m-cat"></span></div>
+                <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
+              </div>
             </div>
           </div>
 
@@ -1658,9 +1747,11 @@ else:
                 }}
             }});
 
-            // MODAL
+            // MODAL CON IMAGEN DE PRODUCTO
             const modal = document.getElementById('pModal');
             const closeBtn = document.querySelector('.modal-close');
+            const imgWrapper = document.getElementById('m-img-wrapper');
+
             rects.forEach(rect => {{
                 rect.addEventListener('click', () => {{
                     document.getElementById('m-name').textContent = rect.getAttribute('data-name');
@@ -1674,6 +1765,15 @@ else:
                     document.getElementById('m-cat').textContent = rect.getAttribute('data-cat');
                     const v = parseFloat(rect.getAttribute('data-venta')) || 0;
                     document.getElementById('m-venta').textContent = v === -999 ? "SIN DATOS" : "S/ " + v.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}});
+
+                    // Renderizado de Imagen de Producto
+                    const fotoUrl = rect.getAttribute('data-foto');
+                    if (fotoUrl && fotoUrl.trim() !== '') {{
+                        imgWrapper.innerHTML = `<img src="${{fotoUrl}}" alt="Producto" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'m-no-img\\'><span style=\\'font-size:1.4rem;\\'>🖼️</span><span>Sin foto</span></div>';">`;
+                    }} else {{
+                        imgWrapper.innerHTML = `<div class="m-no-img"><span style="font-size:1.4rem;">🖼️</span><span>Sin foto</span></div>`;
+                    }}
+
                     modal.classList.add('active');
                 }});
             }});
@@ -1683,7 +1783,6 @@ else:
         </body>
         </html>
         """
-        # scrolling=False asegura que no se pinte la barra de scroll vertical interna en Streamlit
         components.html(html_componente_completo, height=altura_iframe, scrolling=False)
 
     # =========================================================================
