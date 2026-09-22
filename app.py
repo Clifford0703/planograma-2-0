@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- PALETA DESIGN SYSTEM ---
+# --- PALETA DESIGN SYSTEM (MODO CLARO FIJO) ---
 t = {
     "bg_app": "#f8fafc",
     "bg_surface": "#ffffff",
@@ -47,8 +47,8 @@ st.markdown(f"""
         }}
         
         .block-container {{
-            padding-left: 1.2rem !important;
-            padding-right: 1.2rem !important;
+            padding-left: 0.8rem !important;
+            padding-right: 0.8rem !important;
             padding-top: 0.8rem !important;
             padding-bottom: 1.5rem !important;
             max-width: 100% !important;
@@ -165,24 +165,6 @@ st.markdown(f"""
             box-shadow: {t["card_shadow"]};
         }}
 
-        .dash-card-header {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-            padding-bottom: 6px;
-            border-bottom: 1px solid {t["border_subtle"]};
-        }}
-
-        .dash-card-title {{
-            font-size: 0.85rem;
-            font-weight: 800;
-            color: {t["text_primary"]};
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }}
-
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -240,28 +222,24 @@ def sanitizar_columna_num(df, col, default=-999.0):
     else:
         df[col] = default
 
-# COLORES MÁS FUERTES Y DE ALTO CONTRASTE OPERATIVO
-def obtener_estado_y_color_fuerte(estado, stock_val):
+# COLORES SÓLIDOS DE ALTO CONTRASTE OPERATIVO
+def obtener_color_operativo(estado, stock_val):
     estado = str(estado).strip().upper()
     if estado == "B": 
-        # Bloqueado: Rojo intenso
         return "#dc2626", "#991b1b", "#ffffff", "Bloqueado"
     elif estado == "SIN DATOS":
         return "#64748b", "#334155", "#ffffff", "Sin Datos"
     elif estado == "A":
         if stock_val <= 0: 
-            # Sin Stock: Naranja vibrante
             return "#ea580c", "#c2410c", "#ffffff", "Sin Stock"
         elif stock_val <= 5: 
-            # Stock Bajo: Amarillo oro saturado con texto oscuro
             return "#facc15", "#ca8a04", "#0f172a", "Stock Bajo"
         else: 
-            # Stock OK: Verde esmeralda vivo
             return "#16a34a", "#15803d", "#ffffff", "Stock OK"
     else: 
         return "#64748b", "#334155", "#ffffff", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA PANORÁMICO COMPACTO EN RECTÁNGULOS ---
+# --- GENERADOR DEL PLANOGRAMA PANORÁMICO COMPLETO AL ANCHO DE PANTALLA ---
 def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -279,12 +257,13 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
     df['Cuerpo_Ord'] = pd.to_numeric(df['Cuerpo_Ord'], errors='coerce').fillna(1)
     df['Nivel_Num'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
 
-    # Orden exacto: Cuerpo (izq a der), Nivel (arriba a abajo), Posición (izq a der)
+    # Orden estricto: Cuerpo (1 a 4), Nivel (8 a 1), Posición (izq a der)
     df = df.sort_values(
         by=['Cuerpo_Ord', 'Nivel_Num', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
         ascending=[True, False, False, True, True]
     )
 
+    # Agrupar por cuerpo y niveles
     cuerpos_dict = {}
     for _, r in df.iterrows():
         b_str = str(r.get("Bandeja", "1.1")).strip()
@@ -333,9 +312,9 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
                 catjer_val = str(it.get("Categoría", "SIN DATOS")).replace('"', '&quot;')
                 ga_val = str(it.get("Grupo de Artículo", "SIN DATOS")).replace('"', '&quot;')
 
-                bg_color, border_color, text_color, cat_leyenda = obtener_estado_y_color_fuerte(estado, stock_val)
+                bg_color, border_color, text_color, cat_leyenda = obtener_color_operativo(estado, stock_val)
 
-                # Generar un rectángulo por cada cara para visualización fiel
+                # Generar rectángulo vertical esbelto por cada cara
                 for c_idx in range(caras):
                     rects_html += f"""
                     <div class="plano-rect" style="background-color: {bg_color}; border-color: {border_color}; color: {text_color};"
@@ -343,10 +322,8 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
                          data-stock="{stock_val:.2f}" data-cob="{cob_val:.2f}" data-venta="{venta_val}" data-part="{format_pct(part_val)}"
                          data-cod="{cod_real}" data-cat="{cat_leyenda}" data-pos="{pos_val}" data-nivel="{nivel_num}"
                          data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
-                         title="Pos: {pos_val} | SAP: {cod_real} | {nombre} (Stk: {stock_val:.0f})">
-                        <span class="plano-tag-caras">{caras}C</span>
-                        <span class="plano-sap-label">{cod_real}</span>
-                        <span class="plano-brand-sub">{marca[:8]}</span>
+                         title="Pos: {pos_val} | SAP: {cod_real} | {nombre}">
+                        <span class="plano-sap-vertical">{cod_real}</span>
                     </div>
                     """
 
@@ -375,27 +352,26 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
       <meta charset="UTF-8">
       <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-        body {{ font-family: 'Inter', sans-serif; background: #ffffff; color: #0f172a; padding: 2px; }}
+        body {{ font-family: 'Inter', sans-serif; background: #ffffff; color: #0f172a; padding: 2px; width: 100%; }}
         
         .plano-outer-card {{
-            border: 2px solid #eab308;
-            border-radius: 8px;
+            border: 2.5px solid #0f172a;
+            border-radius: 4px;
             overflow: hidden;
             background: #ffffff;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
             width: 100%;
         }}
         
         .plano-top-header {{
             background: #facc15;
             color: #b91c1c;
-            font-size: 1.15rem;
+            font-size: 1.25rem;
             font-weight: 900;
             text-align: center;
             padding: 8px 12px;
             letter-spacing: 1px;
             text-transform: uppercase;
-            border-bottom: 2px solid #eab308;
+            border-bottom: 2.5px solid #0f172a;
         }}
         
         .plano-body-container {{
@@ -408,7 +384,8 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         .plano-cuerpo-col {{
             display: flex;
             flex-direction: column;
-            border-right: 1.5px solid #0f172a;
+            border-right: 2px solid #0f172a;
+            min-width: 0;
         }}
         .plano-cuerpo-col:last-child {{
             border-right: none;
@@ -417,8 +394,8 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         .plano-cuerpo-shelves {{
             display: flex;
             flex-direction: column;
-            padding: 6px 4px;
-            gap: 5px;
+            padding: 4px 2px;
+            gap: 4px;
             flex-grow: 1;
         }}
         
@@ -431,9 +408,9 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         .plano-facings-container {{
             display: flex;
             flex-direction: row;
-            align-items: flex-end;
-            gap: 1.5px;
-            min-height: 60px;
+            align-items: stretch;
+            gap: 1px;
+            height: 64px;
             padding: 0 1px;
             width: 100%;
         }}
@@ -441,65 +418,42 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         .plano-rect {{
             flex: 1 1 0;
             min-width: 0;
-            height: 60px;
-            border: 1px solid rgba(0,0,0,0.85);
+            height: 100%;
+            border: 1px solid #000000;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             overflow: hidden;
             position: relative;
-            padding: 2px 0;
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }}
         .plano-rect:hover {{
-            transform: scale(1.06);
+            transform: scale(1.08);
             z-index: 50;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }}
         
-        .plano-tag-caras {{
-            position: absolute;
-            top: 1px;
-            font-size: 0.45rem;
-            font-weight: 900;
-            opacity: 0.85;
-            line-height: 1;
-        }}
-        
-        .plano-sap-label {{
+        .plano-sap-vertical {{
             writing-mode: vertical-rl;
             transform: rotate(180deg);
-            font-size: 0.58rem;
+            font-size: 0.60rem;
             font-weight: 900;
-            letter-spacing: -0.4px;
+            letter-spacing: -0.3px;
             line-height: 1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-height: 46px;
+            max-height: 58px;
             font-family: monospace;
             pointer-events: none;
             user-select: none;
-        }}
-        
-        .plano-brand-sub {{
-            position: absolute;
-            bottom: 1px;
-            font-size: 0.42rem;
-            font-weight: 800;
-            opacity: 0.85;
-            white-space: nowrap;
-            overflow: hidden;
-            max-width: 100%;
         }}
         
         .plano-shelf-bar {{
             height: 6px;
             background: #facc15;
             border: 1px solid #ca8a04;
-            border-radius: 1px;
             margin-top: 1px;
             width: 100%;
         }}
@@ -508,14 +462,14 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             background: #ffffff;
             border-top: 2px solid #0f172a;
             color: #0f172a;
-            font-size: 0.88rem;
+            font-size: 0.95rem;
             font-weight: 900;
             text-align: center;
             padding: 6px 0;
             letter-spacing: 0.5px;
         }}
         
-        /* MODAL */
+        /* MODAL DE AUDITORÍA */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
@@ -541,7 +495,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
           border-radius: 10px !important; 
           width: 90% !important; 
           max-width: 440px !important; 
-          border: 2px solid #2563eb !important; 
+          border: 2.5px solid #2563eb !important; 
           box-shadow: 0 20px 40px rgba(0,0,0,0.2) !important; 
           position: relative !important; 
         }}
@@ -565,7 +519,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         <div class="modal-content">
           <span class="modal-close">&times;</span>
           <h4 id="m-name" style="margin-bottom: 8px; color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 6px;">Producto</h4>
-          <div class="m-row"><span class="m-label">Código SAP / Real:</span><span class="m-val" id="m-cod" style="font-family: monospace; font-size: 0.95rem; font-weight: 900;"></span></div>
+          <div class="m-row"><span class="m-label">Código SAP / Cód. Real:</span><span class="m-val" id="m-cod" style="font-family: monospace; font-size: 0.95rem; font-weight: 900;"></span></div>
           <div class="m-row"><span class="m-label">Ubicación (Nivel / Pos):</span><span class="m-val" id="m-pos"></span></div>
           <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
           <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
@@ -943,8 +897,8 @@ with col_b3:
         cats_encontradas = sorted([c for c in df_pasillo_global['Categoría'].dropna().unique() if str(c) not in ['SIN DATOS', 'S/C', 'nan', '']])
     else:
         cats_encontradas = [
+            "CAFÉ Y COMPLEMENTOS",
             "MODIFICADORES DE LECHES / COMPLEMENTOS / SUPLEMENTOS", 
-            "CAFÉ Y COMPLEMENTOS", 
             "TÉ E INFUSIONES", 
             "PANES Y TOSTADAS", 
             "MIELES / JALEAS / SIROPE"
@@ -1112,27 +1066,28 @@ else:
     # --- PESTAÑA 2: NUEVO PLANOGRAMA PANORÁMICO (CÓDIGO SAP EN CADA FACING) ---
     # =========================================================================
     with tab_plano:
-        cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else "MUNDO DESAYUNO - PLANOGRAMA INTEGRAL"
+        cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else "CAFÉS Y COMPLEMENTOS"
         st.markdown(f"<h4 style='color:#0f172a; margin-top: 0;'>{cat_actual_titulo}</h4>", unsafe_allow_html=True)
         
-        # 1. CARGA O SELECCIÓN DE LA IMAGEN INSTITUCIONAL
-        nombre_archivo_img = MAPA_PLANOGRAMAS_IMG.get(cat_sel, None)
+        # 1. IMAGEN DEL PLANOGRAMA INSTITUCIONAL ARRIBA
+        nombre_archivo_img = MAPA_PLANOGRAMAS_IMG.get(cat_sel, "cafes_y_complementos.jpg")
         
         expander_img = st.expander("📸 Ver / Vincular Imagen Oficial del Planograma Institucional", expanded=True)
         with expander_img:
-            # Si el archivo existe localmente en el directorio de la app
-            if nombre_archivo_img and os.path.exists(nombre_archivo_img):
+            if os.path.exists(nombre_archivo_img):
                 st.image(nombre_archivo_img, use_container_width=True, caption=f"Planograma Oficial - {cat_actual_titulo}")
+            elif os.path.exists(f"assets/{nombre_archivo_img}"):
+                st.image(f"assets/{nombre_archivo_img}", use_container_width=True, caption=f"Planograma Oficial - {cat_actual_titulo}")
             else:
-                st.markdown(f"<p style='color: #475569; font-size: 0.84rem;'>Para ver la imagen oficial de <b>{cat_actual_titulo}</b>, puedes colocar el archivo <code>{nombre_archivo_img}</code> en la raíz del proyecto o subirlo aquí directamente:</p>", unsafe_allow_html=True)
-                uploaded_img = st.file_uploader(f"Cargar imagen de planograma para {cat_actual_titulo}", type=["jpg", "png", "jpeg"], key=f"uploader_{cat_sel}")
+                st.markdown(f"<p style='color: #475569; font-size: 0.84rem;'>Sube la imagen del planograma para <b>{cat_actual_titulo}</b> (se recordará en la sesión):</p>", unsafe_allow_html=True)
+                uploaded_img = st.file_uploader(f"Cargar imagen para {cat_actual_titulo}", type=["jpg", "png", "jpeg"], key=f"uploader_{cat_sel}")
                 if uploaded_img:
-                    st.image(uploaded_img, use_container_width=True, caption=f"Planograma Oficial Cargado - {cat_actual_titulo}")
+                    st.image(uploaded_img, use_container_width=True, caption=f"Planograma Oficial - {cat_actual_titulo}")
 
-        # 2. LEYENDA CON COLORES FUERTES DE ALTO CONTRASTE
+        # 2. LEYENDA SÓLIDA DE ALTO CONTRASTE OPERATIVO
         st.markdown("""
             <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; margin-bottom: 12px; align-items: center; font-size: 0.75rem; font-weight: 800;">
-                <span style="color: #2563eb; text-transform: uppercase;">📍 LEYENDA DE ESTADO:</span>
+                <span style="color: #2563eb; text-transform: uppercase;">📍 LEYENDA OPERATIVA:</span>
                 <span style="background: #dc2626; border: 1.5px solid #991b1b; color: #ffffff; padding: 3px 12px; border-radius: 12px;">Bloqueado (B)</span>
                 <span style="background: #ea580c; border: 1.5px solid #c2410c; color: #ffffff; padding: 3px 12px; border-radius: 12px;">Sin Stock / Quiebre (0)</span>
                 <span style="background: #facc15; border: 1.5px solid #ca8a04; color: #0f172a; padding: 3px 12px; border-radius: 12px;">Stock Bajo (1 a 5)</span>
@@ -1140,11 +1095,11 @@ else:
             </div>
         """, unsafe_allow_html=True)
 
-        # 3. DIAGRAMA PANORÁMICO AUTO-AJUSTADO AL ANCHO TOTAL CON CÓDIGOS SAP
+        # 3. DIAGRAMA PANORÁMICO AJUSTADO AL 100% DE LA PANTALLA
         bandeja_series = get_clean_series(df_base, 'Bandeja').replace('', '1.1')
         niveles_extraidos = bandeja_series.str.extract(r'(\d+)\.(\d+)')[1]
-        max_niveles_count = int(pd.to_numeric(niveles_extraidos, errors='coerce').fillna(6).max())
-        altura_plano = max(600, 130 + max_niveles_count * 82)
+        max_niveles_count = int(pd.to_numeric(niveles_extraidos, errors='coerce').fillna(8).max())
+        altura_plano = max(650, 140 + max_niveles_count * 75)
 
         html_plano_rect = generar_html_planograma_panoramico(df_base, titulo_categoria=cat_actual_titulo)
         components.html(html_plano_rect, height=altura_plano, scrolling=True)
