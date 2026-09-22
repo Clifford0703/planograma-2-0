@@ -30,7 +30,7 @@ t = {
     "card_shadow": "0 2px 6px rgba(0,0,0,0.05)",
 }
 
-# INYECCIÓN CSS CON MÁXIMO CONTRASTE
+# INYECCIÓN CSS
 st.markdown(f"""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -222,7 +222,6 @@ def sanitizar_columna_num(df, col, default=-999.0):
     else:
         df[col] = default
 
-# DESGLOSE EXACTO DEL CUERPO Y NIVEL DESDE LA CELDA BANDEJA
 def desglosar_cuerpo_y_nivel(val):
     s = clean_sku(val)
     if not s:
@@ -238,7 +237,6 @@ def desglosar_cuerpo_y_nivel(val):
         return 1, int(s)
     return 1, 1
 
-# COLORES SÓLIDOS DE ALTO CONTRASTE OPERATIVO
 def obtener_color_operativo(estado, stock_val):
     estado = str(estado).strip().upper()
     if estado == "B": 
@@ -255,7 +253,7 @@ def obtener_color_operativo(estado, stock_val):
     else: 
         return "#64748b", "#334155", "#ffffff", "Desconocido"
 
-# --- GENERADOR DEL PLANOGRAMA PANORÁMICO (ALTURA REDUCIDA EN 30%) ---
+# --- GENERADOR DEL PLANOGRAMA PANORÁMICO CON LEYENDA INTERACTIVA INTEGRADA ---
 def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
@@ -273,13 +271,11 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
     df['Cuerpo_Ord'] = [x[0] for x in desglose]
     df['Nivel_Num'] = [x[1] for x in desglose]
 
-    # Orden estricto: Cuerpo (izq-der), Nivel (arriba-abajo: 8 a 1), Posición (izq-der)
     df = df.sort_values(
         by=['Cuerpo_Ord', 'Nivel_Num', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
         ascending=[True, False, False, True, True]
     )
 
-    # Agrupar por cuerpo y número de nivel exacto
     cuerpos_dict = {}
     for _, r in df.iterrows():
         c_num = int(r['Cuerpo_Ord'])
@@ -329,6 +325,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
                 for c_idx in range(caras):
                     rects_html += f"""
                     <div class="plano-rect" style="background-color: {bg_color}; border-color: {border_color}; color: {text_color};"
+                         data-estado="{cat_leyenda}"
                          data-brand="{marca}" data-name="{nombre}" data-ean="{ean}"
                          data-stock="{stock_val:.2f}" data-cob="{cob_val:.2f}" data-venta="{venta_val}" data-part="{format_pct(part_val)}"
                          data-cod="{cod_real}" data-cat="{cat_leyenda}" data-pos="{pos_val}" data-nivel="{n_num}"
@@ -365,6 +362,53 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{ font-family: 'Inter', sans-serif; background: #ffffff; color: #0f172a; padding: 2px; width: 100%; }}
         
+        /* LEYENDA INTERACTIVA */
+        .interactive-legend-bar {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 8px 10px;
+            background: #ffffff;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }}
+        .legend-label-title {{
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #2563eb;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            margin-right: 4px;
+        }}
+        .legend-btn {{
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 14px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+            user-select: none;
+        }}
+        .legend-btn:hover {{
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }}
+        .legend-btn.active {{
+            outline: 2.5px solid #0f172a !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+            transform: scale(1.04);
+        }}
+        
+        .btn-bloq {{ background: #dc2626; color: #ffffff; border-color: #991b1b; }}
+        .btn-sinstk {{ background: #ea580c; color: #ffffff; border-color: #c2410c; }}
+        .btn-bajo {{ background: #facc15; color: #0f172a; border-color: #ca8a04; }}
+        .btn-ok {{ background: #16a34a; color: #ffffff; border-color: #15803d; }}
+        .btn-todos {{ background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }}
+
         .plano-outer-card {{
             border: 2px solid #0f172a;
             border-radius: 4px;
@@ -416,7 +460,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             width: 100%;
         }}
         
-        /* ALTURA REDUCIDA EN UN 30%: DE 64px A 45px */
+        /* ALTURA REDUCIDA EN UN 30%: 45px */
         .plano-facings-container {{
             display: flex;
             flex-direction: row;
@@ -438,12 +482,18 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             cursor: pointer;
             overflow: hidden;
             position: relative;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            transition: transform 0.15s ease, opacity 0.2s ease, filter 0.2s ease, box-shadow 0.15s ease;
         }}
-        .plano-rect:hover {{
+        
+        /* ESTADOS DE INTERACTIVIDAD */
+        .plano-rect.dimmed {{
+            opacity: 0.12 !important;
+            filter: grayscale(80%) !important;
+        }}
+        .plano-rect.highlighted {{
             transform: scale(1.08);
             z-index: 50;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+            box-shadow: 0 0 0 2px #0f172a, 0 4px 10px rgba(0,0,0,0.4) !important;
         }}
         
         .plano-sap-vertical {{
@@ -481,7 +531,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             letter-spacing: 0.5px;
         }}
         
-        /* MODAL DE AUDITORÍA */
+        /* MODAL */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
@@ -519,6 +569,16 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
       </style>
     </head>
     <body>
+      <!-- BARRA DE LEYENDA INTERACTIVA -->
+      <div class="interactive-legend-bar">
+        <span class="legend-label-title">📍 Resaltar Estado:</span>
+        <button type="button" class="legend-btn btn-bloq" data-target="Bloqueado">Bloqueado (B)</button>
+        <button type="button" class="legend-btn btn-sinstk" data-target="Sin Stock">Sin Stock / Quiebre (0)</button>
+        <button type="button" class="legend-btn btn-bajo" data-target="Stock Bajo">Stock Bajo (1 a 5)</button>
+        <button type="button" class="legend-btn btn-ok" data-target="Stock OK">Stock OK (> 5)</button>
+        <button type="button" class="legend-btn btn-todos" id="btnVerTodos" style="margin-left: auto;">Ver Todos</button>
+      </div>
+
       <div class="plano-outer-card">
         <div class="plano-top-header">{titulo_categoria}</div>
         <div class="plano-body-container">
@@ -526,7 +586,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         </div>
       </div>
       
-      <!-- MODAL DE DETALLE -->
+      <!-- MODAL DE AUDITORÍA -->
       <div id="pModal" class="modal-overlay">
         <div class="modal-content">
           <span class="modal-close">&times;</span>
@@ -544,10 +604,64 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
       </div>
       
       <script>
+        // LÓGICA DE LA LEYENDA INTERACTIVA
+        let currentActiveState = null;
+        const legendButtons = document.querySelectorAll('.legend-btn[data-target]');
+        const btnVerTodos = document.getElementById('btnVerTodos');
+        const rects = document.querySelectorAll('.plano-rect');
+
+        function aplicarFiltroLeyenda(estado) {{
+            if (currentActiveState === estado) {{
+                // Desactivar si se hace clic de nuevo
+                currentActiveState = null;
+                legendButtons.forEach(b => b.classList.remove('active'));
+                rects.forEach(r => {{
+                    r.classList.remove('dimmed', 'highlighted');
+                }});
+                return;
+            }}
+
+            currentActiveState = estado;
+            legendButtons.forEach(b => {{
+                if (b.getAttribute('data-target') === estado) {{
+                    b.classList.add('active');
+                }} else {{
+                    b.classList.remove('active');
+                }}
+            }});
+
+            rects.forEach(r => {{
+                const rEstado = r.getAttribute('data-estado');
+                if (rEstado === estado) {{
+                    r.classList.remove('dimmed');
+                    r.classList.add('highlighted');
+                }} else {{
+                    r.classList.add('dimmed');
+                    r.classList.remove('highlighted');
+                }}
+            }});
+        }}
+
+        legendButtons.forEach(btn => {{
+            btn.addEventListener('click', () => {{
+                const targetEstado = btn.getAttribute('data-target');
+                aplicarFiltroLeyenda(targetEstado);
+            }});
+        }});
+
+        btnVerTodos.addEventListener('click', () => {{
+            currentActiveState = null;
+            legendButtons.forEach(b => b.classList.remove('active'));
+            rects.forEach(r => {{
+                r.classList.remove('dimmed', 'highlighted');
+            }});
+        }});
+
+        // LÓGICA DEL MODAL DE DETALLE
         const modal = document.getElementById('pModal');
         const closeBtn = document.querySelector('.modal-close');
         
-        document.querySelectorAll('.plano-rect').forEach(rect => {{
+        rects.forEach(rect => {{
             rect.addEventListener('click', () => {{
                 document.getElementById('m-name').textContent = rect.getAttribute('data-name');
                 document.getElementById('m-cod').textContent = rect.getAttribute('data-cod');
@@ -1092,23 +1206,12 @@ else:
                 if uploaded_img:
                     st.image(uploaded_img, use_container_width=True, caption=f"Planograma Oficial - {cat_actual_titulo}")
 
-        # 2. LEYENDA SÓLIDA DE ALTO CONTRASTE OPERATIVO
-        st.markdown("""
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; margin-bottom: 12px; align-items: center; font-size: 0.75rem; font-weight: 800;">
-                <span style="color: #2563eb; text-transform: uppercase;">📍 LEYENDA OPERATIVA:</span>
-                <span style="background: #dc2626; border: 1.5px solid #991b1b; color: #ffffff; padding: 3px 12px; border-radius: 12px;">Bloqueado (B)</span>
-                <span style="background: #ea580c; border: 1.5px solid #c2410c; color: #ffffff; padding: 3px 12px; border-radius: 12px;">Sin Stock / Quiebre (0)</span>
-                <span style="background: #facc15; border: 1.5px solid #ca8a04; color: #0f172a; padding: 3px 12px; border-radius: 12px;">Stock Bajo (1 a 5)</span>
-                <span style="background: #16a34a; border: 1.5px solid #15803d; color: #ffffff; padding: 3px 12px; border-radius: 12px;">Stock OK (> 5)</span>
-            </div>
-        """, unsafe_allow_html=True)
-
-        # 3. DIAGRAMA PANORÁMICO AJUSTADO (ALTURA TOTAL COMPACTADA)
+        # 2. DIAGRAMA PANORÁMICO AJUSTADO CON LEYENDA INTERACTIVA INTEGRADA
         bandeja_series = get_clean_series(df_base, 'Bandeja')
         desglose = bandeja_series.apply(desglosar_cuerpo_y_nivel)
         niveles_reales = [x[1] for x in desglose]
         max_niveles_count = max(niveles_reales) if len(niveles_reales) > 0 else 8
-        altura_plano = max(460, 110 + max_niveles_count * 53)
+        altura_plano = max(500, 160 + max_niveles_count * 53)
 
         html_plano_rect = generar_html_planograma_panoramico(df_base, titulo_categoria=cat_actual_titulo)
         components.html(html_plano_rect, height=altura_plano, scrolling=True)
