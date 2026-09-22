@@ -15,7 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- PALETA DESIGN SYSTEM (MODO CLARO FIJO) ---
+# --- PALETA DESIGN SYSTEM ---
 t = {
     "bg_app": "#f8fafc",
     "bg_surface": "#ffffff",
@@ -165,6 +165,24 @@ st.markdown(f"""
             box-shadow: {t["card_shadow"]};
         }}
 
+        .dash-card-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid {t["border_subtle"]};
+        }}
+
+        .dash-card-title {{
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: {t["text_primary"]};
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }}
+
         .insight-box {{
             border-radius: 8px;
             padding: 14px 16px;
@@ -222,6 +240,28 @@ def sanitizar_columna_num(df, col, default=-999.0):
     else:
         df[col] = default
 
+# DESGLOSE EXACTO DEL CUERPO Y NIVEL DESDE LA CELDA BANDEJA
+def desglosar_cuerpo_y_nivel(val):
+    """
+    Desglosa el valor de la columna Bandeja:
+    - Si es '18' -> Cuerpo: 1, Nivel: 8
+    - Si es '48' -> Cuerpo: 4, Nivel: 8
+    - Si contiene '.' tipo '4.8' -> Cuerpo: 4, Nivel: 8
+    """
+    s = clean_sku(val)
+    if not s:
+        return 1, 1
+    if "." in s:
+        parts = s.split(".")
+        c = int(parts[0]) if parts[0].isdigit() else 1
+        n = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 1
+        return c, n
+    if len(s) >= 2 and s.isdigit():
+        return int(s[0]), int(s[1])
+    if s.isdigit():
+        return 1, int(s)
+    return 1, 1
+
 # COLORES SÓLIDOS DE ALTO CONTRASTE OPERATIVO
 def obtener_color_operativo(estado, stock_val):
     estado = str(estado).strip().upper()
@@ -252,45 +292,41 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         df['TieneOrden'] = False
         df['NumOrden'] = 999999
     
-    bandeja_str = get_clean_series(df, 'Bandeja').replace('', '1.1')
-    df[['Cuerpo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0:2]
-    df['Cuerpo_Ord'] = pd.to_numeric(df['Cuerpo_Ord'], errors='coerce').fillna(1)
-    df['Nivel_Num'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
+    bandeja_series = get_clean_series(df, 'Bandeja')
+    desglose = bandeja_series.apply(desglosar_cuerpo_y_nivel)
+    df['Cuerpo_Ord'] = [x[0] for x in desglose]
+    df['Nivel_Num'] = [x[1] for x in desglose]
 
-    # Orden estricto: Cuerpo (1 a 4), Nivel (8 a 1), Posición (izq a der)
+    # Orden estricto: Cuerpo (izq-der), Nivel (arriba-abajo: 8 a 1), Posición (izq-der)
     df = df.sort_values(
         by=['Cuerpo_Ord', 'Nivel_Num', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
         ascending=[True, False, False, True, True]
     )
 
-    # Agrupar por cuerpo y niveles
+    # Agrupar por cuerpo y número de nivel exacto
     cuerpos_dict = {}
     for _, r in df.iterrows():
-        b_str = str(r.get("Bandeja", "1.1")).strip()
         c_num = int(r['Cuerpo_Ord'])
+        n_num = int(r['Nivel_Num'])
         cuerpo_id = f"CUERPO {c_num:02d}"
         
         if cuerpo_id not in cuerpos_dict:
             cuerpos_dict[cuerpo_id] = {}
-        if b_str not in cuerpos_dict[cuerpo_id]:
-            cuerpos_dict[cuerpo_id][b_str] = []
-        cuerpos_dict[cuerpo_id][b_str].append(r)
+        if n_num not in cuerpos_dict[cuerpo_id]:
+            cuerpos_dict[cuerpo_id][n_num] = []
+        cuerpos_dict[cuerpo_id][n_num].append(r)
 
     total_cuerpos = len(cuerpos_dict) if len(cuerpos_dict) > 0 else 1
     pct_cuerpo = 100.0 / total_cuerpos
 
     html_cuerpos = ""
-    for cuerpo_id, niveles_dict in sorted(cuerpos_dict.items()):
-        niveles_ordenados = sorted(
-            niveles_dict.keys(), 
-            key=lambda x: int(str(x).split('.')[-1]) if str(x).replace('.','').isdigit() else 1, 
-            reverse=True
-        )
+    for cuerpo_id in sorted(cuerpos_dict.keys()):
+        niveles_dict = cuerpos_dict[cuerpo_id]
+        niveles_ordenados = sorted(niveles_dict.keys(), reverse=True)
         
         html_niveles = ""
-        for b_nombre in niveles_ordenados:
-            items = niveles_dict[b_nombre]
-            nivel_num = str(b_nombre).split(".")[-1] if "." in str(b_nombre) else str(b_nombre)
+        for n_num in niveles_ordenados:
+            items = niveles_dict[n_num]
             
             rects_html = ""
             for it in items:
@@ -314,15 +350,14 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
 
                 bg_color, border_color, text_color, cat_leyenda = obtener_color_operativo(estado, stock_val)
 
-                # Generar rectángulo vertical esbelto por cada cara
                 for c_idx in range(caras):
                     rects_html += f"""
                     <div class="plano-rect" style="background-color: {bg_color}; border-color: {border_color}; color: {text_color};"
                          data-brand="{marca}" data-name="{nombre}" data-ean="{ean}"
                          data-stock="{stock_val:.2f}" data-cob="{cob_val:.2f}" data-venta="{venta_val}" data-part="{format_pct(part_val)}"
-                         data-cod="{cod_real}" data-cat="{cat_leyenda}" data-pos="{pos_val}" data-nivel="{nivel_num}"
+                         data-cod="{cod_real}" data-cat="{cat_leyenda}" data-pos="{pos_val}" data-nivel="{n_num}"
                          data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
-                         title="Pos: {pos_val} | SAP: {cod_real} | {nombre}">
+                         title="Nivel {n_num} • Pos {pos_val} | SAP: {cod_real} | {nombre}">
                         <span class="plano-sap-vertical">{cod_real}</span>
                     </div>
                     """
@@ -785,11 +820,8 @@ def cargar_todas_las_fuentes():
         df_catalogo_base = df_catalogo_base[df_catalogo_base['Material_Unico'] != ""].copy()
 
         def formatear_bandeja_limpia(val):
-            val_str = str(val).strip()
-            if '.' in val_str:
-                p = val_str.split('.')
-                return f"C{p[0]} (N{p[1]})"
-            return f"Cuerpo {val_str}"
+            c, n = desglosar_cuerpo_y_nivel(val)
+            return f"C{c} (N{n})"
 
         df_matriz['Ubicacion_Fmt'] = get_clean_series(df_matriz, 'Bandeja').apply(formatear_bandeja_limpia)
         mapa_ubicaciones = df_matriz.groupby('COD_REAL_Str')['Ubicacion_Fmt'].apply(
@@ -1095,11 +1127,12 @@ else:
             </div>
         """, unsafe_allow_html=True)
 
-        # 3. DIAGRAMA PANORÁMICO AJUSTADO AL 100% DE LA PANTALLA
-        bandeja_series = get_clean_series(df_base, 'Bandeja').replace('', '1.1')
-        niveles_extraidos = bandeja_series.str.extract(r'(\d+)\.(\d+)')[1]
-        max_niveles_count = int(pd.to_numeric(niveles_extraidos, errors='coerce').fillna(8).max())
-        altura_plano = max(650, 140 + max_niveles_count * 75)
+        # 3. DIAGRAMA PANORÁMICO AJUSTADO AL 100% DE LA PANTALLA (EXACTAMENTE 8 NIVELES Y 4 CUERPOS)
+        bandeja_series = get_clean_series(df_base, 'Bandeja')
+        desglose = bandeja_series.apply(desglosar_cuerpo_y_nivel)
+        niveles_reales = [x[1] for x in desglose]
+        max_niveles_count = max(niveles_reales) if len(niveles_reales) > 0 else 8
+        altura_plano = max(600, 140 + max_niveles_count * 75)
 
         html_plano_rect = generar_html_planograma_panoramico(df_base, titulo_categoria=cat_actual_titulo)
         components.html(html_plano_rect, height=altura_plano, scrolling=True)
@@ -1113,8 +1146,8 @@ else:
         col_g_cuerpos, col_g_mix = st.columns([7, 3])
         with col_g_cuerpos:
             st.markdown("<b>Rendimiento por Cuerpo (Ventas vs Margen)</b>", unsafe_allow_html=True)
-            bandeja_str = get_clean_series(df_base, 'Bandeja').replace('', '1.1')
-            df_base['Cuerpo_Num'] = pd.to_numeric(bandeja_str.str.extract(r'(\d+)\.(\d+)')[0], errors='coerce').fillna(1)
+            bandeja_series = get_clean_series(df_base, 'Bandeja')
+            df_base['Cuerpo_Num'] = [desglosar_cuerpo_y_nivel(v)[0] for v in bandeja_series]
             
             vc = df_base.drop_duplicates(subset=['COD REAL', 'Cuerpo_Num']).groupby('Cuerpo_Num').agg(
                 Venta_Total=('Venta_Num', 'sum'),
