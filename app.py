@@ -15,194 +15,183 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- DESIGN SYSTEM / UI ---
+# --- PALETA DESIGN SYSTEM ---
 t = {
-    "bg_app": "#f4f7fb",
+    "bg_app": "#f8fafc",
     "bg_surface": "#ffffff",
     "bg_card": "#ffffff",
-    "border": "#d9e2ec",
-    "border_subtle": "#e7edf4",
-    "text_primary": "#172033",
-    "text_secondary": "#344054",
-    "text_muted": "#667085",
-    "accent": "#155eef",
-    "accent_soft": "#eef4ff",
-    "success": "#16a34a",
-    "warning": "#d97706",
-    "danger": "#dc2626",
-    "info": "#0284c7",
-    "grid_color": "rgba(16, 24, 40, 0.06)",
-    "card_shadow": "0 1px 2px rgba(16,24,40,.04), 0 4px 14px rgba(16,24,40,.04)",
+    "border": "#2563eb",
+    "border_subtle": "#cbd5e1",
+    "text_primary": "#0f172a",
+    "text_secondary": "#2563eb",
+    "text_muted": "#475569",
+    "accent": "#2563eb",
+    "grid_color": "rgba(0, 0, 0, 0.06)",
+    "card_shadow": "0 2px 6px rgba(0,0,0,0.05)",
 }
 
-# --- CSS GLOBAL / DESIGN TOKENS ---
+# INYECCIÓN CSS
 st.markdown(f"""
-<style>
-    :root {{
-        --bg-app: {t['bg_app']};
-        --surface: {t['bg_surface']};
-        --surface-muted: #f8fafc;
-        --border: {t['border']};
-        --border-subtle: {t['border_subtle']};
-        --text-primary: {t['text_primary']};
-        --text-secondary: {t['text_secondary']};
-        --text-muted: {t['text_muted']};
-        --primary: {t['accent']};
-        --primary-soft: {t['accent_soft']};
-        --success: {t['success']};
-        --warning: {t['warning']};
-        --danger: {t['danger']};
-        --info: {t['info']};
-        --radius-sm: 8px;
-        --radius-md: 12px;
-        --radius-lg: 16px;
-        --shadow-card: {t['card_shadow']};
-    }}
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        
+        html, body, .stApp, [data-testid="stAppViewContainer"], .main, section.main, [data-testid="stHeader"] {{
+            background-color: {t["bg_app"]} !important;
+            background: {t["bg_app"]} !important;
+            color: {t["text_primary"]} !important;
+            font-family: 'Inter', sans-serif !important;
+        }}
+        
+        header[data-testid="stHeader"] {{
+            background-color: transparent !important;
+        }}
+        
+        .block-container {{
+            padding-left: 0.8rem !important;
+            padding-right: 0.8rem !important;
+            padding-top: 0.8rem !important;
+            padding-bottom: 1.5rem !important;
+            max-width: 100% !important;
+        }}
+        
+        /* PESTAÑAS (TABS) */
+        .stTabs [data-baseweb="tab-list"] {{
+            gap: 8px !important;
+            background-color: #f1f5f9 !important;
+            padding: 6px !important;
+            border-radius: 8px !important;
+            border: 1.5px solid {t["border_subtle"]} !important;
+            margin-bottom: 14px !important;
+        }}
+        
+        .stTabs [data-baseweb="tab"] {{
+            height: 40px !important;
+            padding: 0 20px !important;
+            border-radius: 6px !important;
+            font-weight: 800 !important;
+            font-size: 0.88rem !important;
+            background-color: #e2e8f0 !important;
+            border: 1.5px solid {t["border_subtle"]} !important;
+            opacity: 1 !important;
+            transition: all 0.2s ease !important;
+        }}
+        
+        .stTabs [data-baseweb="tab"],
+        .stTabs [data-baseweb="tab"] *,
+        .stTabs [data-baseweb="tab"] p,
+        .stTabs [data-baseweb="tab"] span,
+        .stTabs [data-baseweb="tab"] div,
+        .stTabs [data-baseweb="tab"] [data-testid="stMarkdownContainer"] p {{
+            color: {t["text_primary"]} !important;
+            -webkit-text-fill-color: {t["text_primary"]} !important;
+            font-weight: 800 !important;
+        }}
+        
+        .stTabs [aria-selected="true"],
+        .stTabs [data-baseweb="tab"][aria-selected="true"] {{
+            background-color: {t["accent"]} !important;
+            background: {t["accent"]} !important;
+            border-color: {t["accent"]} !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
+        }}
+        
+        .stTabs [aria-selected="true"] *,
+        .stTabs [aria-selected="true"] p,
+        .stTabs [aria-selected="true"] span,
+        .stTabs [aria-selected="true"] div,
+        .stTabs [aria-selected="true"] [data-testid="stMarkdownContainer"] p {{
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            font-weight: 900 !important;
+        }}
+        
+        /* TARJETAS KPIS FINANCIEROS (IMAGEN 2) */
+        .fin-kpi-container {{
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+            margin-bottom: 14px;
+        }}
+        
+        .fin-kpi-card {{
+            background: {t["bg_card"]};
+            border: 1px solid {t["border_subtle"]};
+            border-radius: 8px;
+            padding: 14px 18px;
+            box-shadow: {t["card_shadow"]};
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }}
+        .fin-kpi-card:hover {{
+            transform: translateY(-2px);
+        }}
+        
+        .fin-kpi-title {{
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #2563eb;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }}
+        
+        .fin-kpi-val {{
+            font-size: 1.85rem;
+            font-weight: 900;
+            color: {t["text_primary"]};
+            line-height: 1.1;
+            font-feature-settings: "tnum";
+            margin-bottom: 4px;
+        }}
 
-    html, body, .stApp, [data-testid="stAppViewContainer"], .main, section.main {{
-        background: var(--bg-app) !important;
-        color: var(--text-primary) !important;
-        font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-    }}
+        .fin-kpi-subtitle {{
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: {t["text_muted"]};
+        }}
 
-    header[data-testid="stHeader"] {{ background: transparent !important; }}
-    .block-container {{
-        padding: 1.15rem clamp(1rem, 2vw, 2.25rem) 2.5rem !important;
-        max-width: 1600px !important;
-    }}
+        /* ENMARCADO HOMOGÉNEO DE IMAGEN PANORÁMICA */
+        .planograma-img-frame {{
+            width: 100%;
+            height: 260px;
+            background: #ffffff;
+            border: 1.5px solid {t["border_subtle"]};
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            margin-bottom: 10px;
+            box-shadow: {t["card_shadow"]};
+        }}
+        .planograma-img-frame img {{
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }}
+        
+        .dash-card {{
+            background: {t["bg_card"]};
+            border: 1px solid {t["border_subtle"]};
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            box-shadow: {t["card_shadow"]};
+        }}
 
-    /* Controles nativos de Streamlit */
-    div[data-baseweb="select"] > div,
-    div[data-baseweb="input"] > div,
-    textarea, input {{
-        border-radius: 9px !important;
-        border-color: var(--border) !important;
-        background: var(--surface) !important;
-    }}
-    div[data-baseweb="select"] > div:focus-within,
-    div[data-baseweb="input"] > div:focus-within,
-    textarea:focus, input:focus {{
-        border-color: var(--primary) !important;
-        box-shadow: 0 0 0 3px rgba(21,94,239,.10) !important;
-    }}
-    label[data-testid="stWidgetLabel"] p {{
-        color: var(--text-secondary) !important;
-        font-size: .76rem !important;
-        font-weight: 700 !important;
-        letter-spacing: .01em;
-    }}
-
-    /* Botones */
-    .stButton > button {{
-        border-radius: 9px !important;
-        border: 1px solid var(--border) !important;
-        font-weight: 700 !important;
-        min-height: 38px !important;
-        transition: all .16s ease !important;
-    }}
-    .stButton > button:hover {{
-        border-color: #b8c7d9 !important;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 10px rgba(16,24,40,.08) !important;
-    }}
-    .stButton > button[kind="primary"] {{
-        background: var(--primary) !important;
-        border-color: var(--primary) !important;
-        color: #fff !important;
-    }}
-
-    /* Tabs: navegación sobria tipo producto SaaS */
-    .stTabs [data-baseweb="tab-list"] {{
-        gap: 2px !important;
-        background: #eef2f7 !important;
-        padding: 4px !important;
-        border: 1px solid var(--border-subtle) !important;
-        border-radius: 11px !important;
-        margin: 8px 0 16px !important;
-    }}
-    .stTabs [data-baseweb="tab"] {{
-        height: 38px !important;
-        padding: 0 15px !important;
-        border-radius: 8px !important;
-        background: transparent !important;
-        border: 0 !important;
-        color: var(--text-muted) !important;
-        font-size: .79rem !important;
-        font-weight: 700 !important;
-        transition: all .16s ease !important;
-    }}
-    .stTabs [data-baseweb="tab"] * {{ color: inherit !important; -webkit-text-fill-color: currentColor !important; }}
-    .stTabs [data-baseweb="tab"]:hover {{ background: rgba(255,255,255,.72) !important; color: var(--text-primary) !important; }}
-    .stTabs [aria-selected="true"], .stTabs [data-baseweb="tab"][aria-selected="true"] {{
-        background: #fff !important;
-        color: var(--text-primary) !important;
-        box-shadow: 0 1px 3px rgba(16,24,40,.10) !important;
-    }}
-    .stTabs [aria-selected="true"]::after {{ background: var(--primary) !important; height: 2px !important; }}
-
-    /* Header */
-    .app-header {{
-        display:flex; align-items:center; justify-content:space-between; gap:20px;
-        padding: 2px 0 18px; margin-bottom: 6px;
-    }}
-    .app-brand {{ display:flex; align-items:center; gap:12px; min-width:0; }}
-    .app-logo {{
-        width:42px; height:42px; border-radius:12px; display:grid; place-items:center;
-        background: var(--primary-soft); color:var(--primary); font-size:20px;
-        border:1px solid #d9e6ff;
-    }}
-    .app-title {{ font-size:1.22rem; line-height:1.15; font-weight:800; letter-spacing:-.02em; color:var(--text-primary); }}
-    .app-subtitle {{ font-size:.76rem; color:var(--text-muted); margin-top:3px; font-weight:600; }}
-    .app-context {{
-        display:inline-flex; align-items:center; gap:6px; margin-left:8px;
-        padding:4px 8px; border-radius:999px; background:#f2f6fb; border:1px solid var(--border-subtle);
-        color:var(--text-secondary); font-size:.64rem; font-weight:800; letter-spacing:.04em;
-    }}
-    .app-meta {{ text-align:right; color:var(--text-muted); font-size:.68rem; line-height:1.45; }}
-    .app-meta strong {{ color:var(--text-secondary); font-weight:700; }}
-
-    /* Gate de filtros */
-    .filter-shell {{
-        background:var(--surface); border:1px solid var(--border-subtle); border-radius:var(--radius-md);
-        padding:15px 16px 12px; margin:0 0 14px; box-shadow:var(--shadow-card);
-    }}
-    .section-eyebrow {{ color:var(--text-muted); font-size:.66rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; margin-bottom:4px; }}
-    .section-title {{ color:var(--text-primary); font-size:.92rem; font-weight:800; margin-bottom:10px; }}
-    .filter-context {{
-        display:inline-flex; align-items:center; gap:6px; padding:5px 9px; margin-top:8px;
-        background:var(--primary-soft); color:#174ea6; border:1px solid #dbe8ff; border-radius:999px;
-        font-size:.69rem; font-weight:700;
-    }}
-
-    /* KPI cards */
-    .fin-kpi-container {{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:0 0 15px; }}
-    .fin-kpi-card {{
-        position:relative; background:var(--surface); border:1px solid var(--border-subtle); border-radius:var(--radius-md);
-        padding:14px 16px; min-height:112px; box-shadow:var(--shadow-card); overflow:hidden;
-        transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
-    }}
-    .fin-kpi-card::before {{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--kpi-accent,var(--primary)); }}
-    .fin-kpi-card:hover {{ transform:translateY(-2px); border-color:#d3ddea; box-shadow:0 8px 20px rgba(16,24,40,.07); }}
-    .fin-kpi-title {{ display:flex; justify-content:space-between; gap:8px; color:var(--text-muted); font-size:.65rem; font-weight:800; letter-spacing:.07em; text-transform:uppercase; }}
-    .fin-kpi-icon {{ width:24px; height:24px; border-radius:7px; display:grid; place-items:center; background:var(--primary-soft); color:var(--primary); font-size:.78rem; }}
-    .fin-kpi-val {{ color:var(--text-primary); font-size:1.58rem; font-weight:800; line-height:1.15; letter-spacing:-.025em; margin:8px 0 4px; font-feature-settings:"tnum"; }}
-    .fin-kpi-subtitle {{ color:var(--text-muted); font-size:.68rem; font-weight:600; line-height:1.35; }}
-
-    .dash-card {{ background:var(--surface); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:14px 16px; margin-bottom:12px; box-shadow:var(--shadow-card); }}
-    .insight-box {{ border-radius:var(--radius-md); padding:13px 15px; line-height:1.5; font-size:.80rem; border:1px solid var(--border-subtle); box-shadow:var(--shadow-card); }}
-
-    @media (max-width: 900px) {{
-        .fin-kpi-container {{ grid-template-columns:repeat(2,minmax(0,1fr)); }}
-        .app-header {{ align-items:flex-start; }}
-        .app-meta {{ display:none; }}
-    }}
-    @media (max-width: 620px) {{
-        .block-container {{ padding-left:.75rem !important; padding-right:.75rem !important; }}
-        .fin-kpi-container {{ grid-template-columns:1fr; }}
-        .app-context {{ display:none; }}
-        .stTabs [data-baseweb="tab"] {{ padding:0 9px !important; font-size:.72rem !important; }}
-    }}
-</style>
+        .insight-box {{
+            border-radius: 8px;
+            padding: 14px 16px;
+            line-height: 1.45;
+            font-size: 0.84rem;
+            box-shadow: {t["card_shadow"]};
+        }}
+    </style>
 """, unsafe_allow_html=True)
 
 # --- FUNCIONES AUXILIARES ---
@@ -623,44 +612,42 @@ def cargar_todas_las_fuentes():
 with st.spinner("Sincronizando fuentes externas en la nube..."):
     df_pasillo_global, df_sku_unico_global, mapa_imagenes_online, info_hora, error_nube = cargar_todas_las_fuentes()
 
-col_head1, col_head2, col_head3 = st.columns([6.4, 1.6, 2.0], vertical_alignment="center")
+col_head1, col_head2, col_head3 = st.columns([6.2, 1.8, 2.0])
 with col_head1:
-    st.markdown("""
-        <div class="app-header">
-            <div class="app-brand">
-                <div class="app-logo">⌘</div>
-                <div>
-                    <div class="app-title">Planograma <span style="color:var(--primary)">2.0</span>
-                        <span class="app-context">CENCOSUD PERÚ</span>
-                    </div>
-                    <div class="app-subtitle">Retail Analytics · Planogram Management &amp; Store Execution</div>
-                </div>
+    st.markdown(f"""
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; color: {t['text_primary']};">
+                🏪 Planograma <span style="color: {t['accent']}; font-weight: 800;">2.0</span>
             </div>
+            <span style="background: {t['accent']}1a; color: {t['accent']}; font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; border: 1px solid {t['accent']}33;">CENCOSUD PERÚ</span>
         </div>
     """, unsafe_allow_html=True)
+
 with col_head2:
-    if st.button("↻  Actualizar", use_container_width=True, help="Volver a cargar las fuentes de datos"):
+    if st.button("🔄 Actualizar Datos", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
+
 with col_head3:
     st.markdown(f"""
-        <div class="app-meta">
-            <div><strong>Desarrollado por Alfredo H.M.</strong></div>
-            <div>Última sincronización · {info_hora if info_hora else 'En línea'}</div>
+        <div style="text-align: right; line-height: 1.3;">
+            <div style="font-size: 0.78rem; font-weight: 800; color: {t['text_primary']};">Desarrollado por <b>Alfredo H.M.</b></div>
+            <div style="font-size: 0.68rem; color: {t['text_muted']};">{info_hora if info_hora else 'En línea'}</div>
         </div>
     """, unsafe_allow_html=True)
 
 if error_nube:
-    st.warning(f"Aviso de conexión a la nube: {error_nube}")
+    st.warning(f"⚠️ Aviso de conexión a la nube: {error_nube}")
 
 # --- COMPUERTA DE BÚSQUEDA (ESTILO SHAREPOINT) ---
 if "busqueda_activa" not in st.session_state:
     st.session_state.busqueda_activa = False
 
 st.markdown("""
-    <div class="filter-shell">
-        <div class="section-eyebrow">Consulta de planograma</div>
-        <div class="section-title">Selecciona el contexto que quieres analizar</div>
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 12px 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
+        <div style="font-size: 0.85rem; font-weight: 800; color: #1e3a8a; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+            🏬 Filtros de Búsqueda de Planogramas
+        </div>
 """, unsafe_allow_html=True)
 
 col_b1, col_b2, col_b3, col_b4 = st.columns([2.5, 2.5, 3.5, 1.5])
@@ -707,7 +694,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 # --- EVALUACIÓN DE LA COMPUERTA ---
 if not st.session_state.busqueda_activa:
-    st.info("Selecciona Tienda, Mundo y Categoría y pulsa **Buscar** para cargar el planograma y sus indicadores.")
+    st.info("👆 **Seleccione la Tienda, Mundo y Categoría y haga clic en 'Buscar' (🔍) para consultar el planograma y sus indicadores.**")
 else:
     df_base = df_pasillo_global.copy()
     
@@ -742,38 +729,122 @@ else:
 
     st.markdown(f"""
         <div class="fin-kpi-container">
-            <div class="fin-kpi-card" style="--kpi-accent:#155eef;">
-                <div class="fin-kpi-title"><span>Ventas planograma</span><span class="fin-kpi-icon">↗</span></div>
-                <div class="fin-kpi-val">S/ {ventas_plano:,.2f}</div>
-                <div class="fin-kpi-subtitle">{pct_vta_tot:.1f}% de la venta total · S/ {tot_vta_cat:,.2f}</div>
+            <div class="fin-kpi-card" style="border-bottom: 4px solid #2563eb;">
+                <div class="fin-kpi-title"><span>VENTAS PLANOGRAMA</span><span>💳</span></div>
+                <div class="fin-kpi-val" style="color: #0f172a;">S/ {ventas_plano:,.2f}</div>
+                <div class="fin-kpi-subtitle">{pct_vta_tot:.1f}% de la venta total (S/ {tot_vta_cat:,.2f})</div>
             </div>
-            <div class="fin-kpi-card" style="--kpi-accent:#16a34a;">
-                <div class="fin-kpi-title"><span>Margen total bruto</span><span class="fin-kpi-icon" style="background:#ecfdf3;color:#16803b">%</span></div>
-                <div class="fin-kpi-val">S/ {margen_bruto:,.2f}</div>
-                <div class="fin-kpi-subtitle">Ganancia monetaria acumulada</div>
+            <div class="fin-kpi-card" style="border-bottom: 4px solid #10b981;">
+                <div class="fin-kpi-title"><span>MARGEN TOTAL BRUTO</span><span>📈</span></div>
+                <div class="fin-kpi-val" style="color: #10b981;">S/ {margen_bruto:,.2f}</div>
+                <div class="fin-kpi-subtitle">Ganancia Monetaria Acumulada</div>
             </div>
-            <div class="fin-kpi-card" style="--kpi-accent:#7c3aed;">
-                <div class="fin-kpi-title"><span>Margen global</span><span class="fin-kpi-icon" style="background:#f3eefe;color:#6d28d9">◌</span></div>
-                <div class="fin-kpi-val">{margen_global_pct:.1f}%</div>
-                <div class="fin-kpi-subtitle">Rentabilidad sobre venta del planograma</div>
+            <div class="fin-kpi-card" style="border-bottom: 4px solid #8b5cf6;">
+                <div class="fin-kpi-title"><span>MARGEN GLOBAL (%)</span><span>📊</span></div>
+                <div class="fin-kpi-val" style="color: #8b5cf6;">{margen_global_pct:.1f}%</div>
+                <div class="fin-kpi-subtitle">Rentabilidad sobre Venta Planograma</div>
             </div>
-            <div class="fin-kpi-card" style="--kpi-accent:#d97706;">
-                <div class="fin-kpi-title"><span>SKUs en planograma</span><span class="fin-kpi-icon" style="background:#fff7ed;color:#c2410c">#</span></div>
-                <div class="fin-kpi-val">{skus_en_plano}</div>
-                <div class="fin-kpi-subtitle">{pct_skus_surtido:.1f}% del surtido · {tot_skus_cat} SKUs</div>
+            <div class="fin-kpi-card" style="border-bottom: 4px solid #f59e0b;">
+                <div class="fin-kpi-title"><span>SKUS EN PLANOGRAMA</span><span>📦</span></div>
+                <div class="fin-kpi-val" style="color: #d97706;">{skus_en_plano}</div>
+                <div class="fin-kpi-subtitle">{pct_skus_surtido:.1f}% del surtido total ({tot_skus_cat} SKUs)</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-    tab_plano, tab_resumen, tab_dash, tab_errores = st.tabs([
-        "Planograma",
-        "Resumen ejecutivo",
-        "Análisis financiero", 
-        "Control de datos"
+    # ORDEN DE PESTAÑAS: RESUMEN EJECUTIVO PRIMERO
+    tab_resumen, tab_plano, tab_dash, tab_errores = st.tabs([
+        "📊 Resumen Ejecutivo",
+        "📐 Planograma Físico Panorámico", 
+        "📈 Dashboard Analítico Financiero", 
+        "⚠️ Errores y Desajustes de Cruce"
     ])
 
     # =========================================================================
-    # --- PESTAÑA 1: PLANOGRAMA FÍSICO CON TARJETAS FILTRO OPERATIVAS (IMAGEN 1) ---
+    # --- PESTAÑA 1: RESUMEN EJECUTIVO (GERENCIA DE OPERACIONES) ---
+    # =========================================================================
+    with tab_resumen:
+        quiebres_df = df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] <= 0)]
+        tot_quiebres = len(quiebres_df)
+        pct_quiebres = (tot_quiebres / skus_en_plano * 100) if skus_en_plano > 0 else 0
+        osa_pct = 100.0 - pct_quiebres
+        bloqueados_df = df_unicos[df_unicos['Estado'].str.strip().str.upper() == 'B']
+        tot_bloqueados = len(bloqueados_df)
+        venta_en_riesgo = quiebres_df['Venta_Num'].sum()
+        
+        df_no_plano = df_sku_unico_global[
+            df_sku_unico_global['Ubicación(es)'].isna() | 
+            (get_clean_series(df_sku_unico_global, 'Ubicación(es)').str.strip() == "") | 
+            (get_clean_series(df_sku_unico_global, 'Ubicación(es)').str.strip() == "SIN DATOS")
+        ].copy()
+        tot_no_plano = len(df_no_plano)
+        ventas_no_plano = df_no_plano['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
+
+        c_a1, c_a2 = st.columns(2)
+        with c_a1:
+            st.markdown(f"""
+                <div class="insight-box" style="background-color: #fee2e2; border-left: 4px solid #dc2626; color: #991b1b;">
+                    <b>🚨 Venta en Riesgo por Quiebres: S/ {venta_en_riesgo:,.2f}</b><br>
+                    Hay <b>{tot_quiebres} SKUs con Stock 0</b> en repisa ({pct_quiebres:.1f}% del surtido) que detienen ventas directas.
+                </div>
+            """, unsafe_allow_html=True)
+        with c_a2:
+            st.markdown(f"""
+                <div class="insight-box" style="background-color: #ffedd5; border-left: 4px solid #ea580c; color: #9a3412;">
+                    <b>⚠️ Venta Fuera de Planograma: S/ {ventas_no_plano:,.2f}</b><br>
+                    Existen <b>{tot_no_plano} SKUs vendidos</b> sin ubicación asignada en el plano.
+                </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+
+        col_g1, col_g2 = st.columns([6.2, 3.8])
+        with col_g1:
+            st.markdown("<b>🔥 Quiebres por Categoría vs % Participación de Ventas</b>", unsafe_allow_html=True)
+            st.markdown('<div class="dash-card">', unsafe_allow_html=True)
+            ventas_por_cat = df_unicos.groupby('Categoría')['Venta_Num'].sum()
+            total_vta_unicos = ventas_por_cat.sum()
+            quiebres_por_cat = quiebres_df.groupby('Categoría')['COD REAL'].count()
+            
+            df_cat_ops = pd.DataFrame({'Quiebres': quiebres_por_cat, 'Venta': ventas_por_cat}).fillna(0).reset_index()
+            df_cat_ops = df_cat_ops[~df_cat_ops['Categoría'].isin(['SIN DATOS', 'S/C', 'nan', ''])].copy()
+            df_cat_ops['Part_Venta'] = (df_cat_ops['Venta'] / total_vta_unicos) if total_vta_unicos > 0 else 0
+            df_cat_ops = df_cat_ops.sort_values(by=['Quiebres', 'Part_Venta'], ascending=[False, False]).head(8)
+            
+            fig_ops = make_subplots(specs=[[{"secondary_y": True}]])
+            fig_ops.add_trace(go.Bar(
+                x=df_cat_ops['Categoría'], y=df_cat_ops['Quiebres'], name="Quiebres (Stock 0)",
+                text=df_cat_ops['Quiebres'].apply(lambda x: f"{int(x)} Q"), textposition='inside',
+                marker=dict(color='#dc2626')
+            ), secondary_y=False)
+            fig_ops.add_trace(go.Scatter(
+                x=df_cat_ops['Categoría'], y=df_cat_ops['Part_Venta'], name="% Participación Venta",
+                mode="lines+markers+text", text=df_cat_ops['Part_Venta'].apply(lambda x: f"{x*100:.1f}%"),
+                textposition='top center', line=dict(color='#2563eb', width=3)
+            ), secondary_y=True)
+            fig_ops.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=20, b=20, l=10, r=10))
+            st.plotly_chart(fig_ops, use_container_width=True, config={'displayModeBar': False})
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+        with col_g2:
+            st.markdown("<b>🎯 Salud del Stock en Góndola</b>", unsafe_allow_html=True)
+            st.markdown('<div class="dash-card">', unsafe_allow_html=True)
+            def get_h(r):
+                if str(r['Estado']).strip().upper() == 'B': return 'Bloqueado (B)'
+                elif r['Stock_Num'] <= 0: return 'Quiebre (0)'
+                elif r['Stock_Num'] <= 5: return 'Alerta Baja (1-5)'
+                else: return 'Stock OK (>5)'
+            df_unicos['H_Estado'] = df_unicos.apply(get_h, axis=1)
+            dh = df_unicos['H_Estado'].value_counts().reset_index()
+            dh.columns = ['Estado', 'Cant']
+            fig_pie_h = px.pie(dh, values='Cant', names='Estado', hole=0.55, 
+                               color='Estado', color_discrete_map={'Stock OK (>5)':'#16a34a', 'Alerta Baja (1-5)':'#facc15', 'Quiebre (0)':'#ea580c', 'Bloqueado (B)':'#dc2626'})
+            fig_pie_h.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=10, b=10, l=10, r=10), showlegend=True)
+            st.plotly_chart(fig_pie_h, use_container_width=True, config={'displayModeBar': False})
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    # =========================================================================
+    # --- PESTAÑA 2: PLANOGRAMA FÍSICO CON LEYENDA Y TARJETAS OPERATIVAS ---
     # =========================================================================
     with tab_plano:
         cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else f"MUNDO {mundo_sel} - PLANOGRAMA INTEGRAL"
@@ -796,7 +867,7 @@ else:
                 </div>
             """, unsafe_allow_html=True)
 
-        # 2. CÁLCULO DE MÉTRICAS PARA LAS TARJETAS OPERATIVAS (IMAGEN 1)
+        # 2. CÁLCULO DE MÉTRICAS OPERATIVAS (IMAGEN 1)
         tot_skus_op = len(df_unicos)
         bloq_op = len(df_unicos[df_unicos['Estado'].str.strip().str.upper() == 'B'])
         quiebre_op = len(df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] <= 0)])
@@ -804,14 +875,14 @@ else:
         stk_ok_op = len(df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] > 5)])
         cob_alta_op = len(df_unicos[df_unicos['Cob_Num'] >= 30])
         
-        # Cálculo de Top Ventas
+        # Top Ventas
         top_n_default = 5
         df_top_vta = df_unicos.sort_values(by='Venta_Num', ascending=False).head(top_n_default)
         monto_top_vta = df_top_vta['Venta_Num'].sum()
         pct_top_vta = (monto_top_vta / ventas_plano * 100) if ventas_plano > 0 else 0
         top_skus_set = set(df_top_vta['COD REAL'].astype(str).str.strip().unique())
 
-        # 3. CONSTRUCCIÓN DE LA ESTRUCTURA DEL PLANOGRAMA PANORÁMICO
+        # 3. CONSTRUCCIÓN DE CUERPOS Y NIVELES CON AUTO-DISTRIBUCIÓN
         bandeja_series = get_clean_series(df_base, 'Bandeja')
         desglose = bandeja_series.apply(desglosar_cuerpo_y_nivel)
         df_base['Cuerpo_Ord'] = [x[0] for x in desglose]
@@ -905,19 +976,12 @@ else:
             """
 
         marcas_unicas = sorted([m for m in df_base['Marca'].dropna().unique() if str(m).strip() not in ['SIN DATOS', 'nan', '']])
-        categorias_unicas = sorted([c for c in df_base['Categoría'].dropna().unique() if str(c).strip() not in ['SIN DATOS', 'nan', '']])
-        pasillos_unicos = sorted([p for p in df_base['PASILLO'].dropna().unique() if str(p).strip() not in ['SIN DATOS', 'nan', '']])
-        laterales_unicos = sorted([l for l in df_base['LATERAL'].dropna().unique() if str(l).strip() not in ['SIN DATOS', 'nan', '']])
-
         options_marca = "".join([f"<option value='{m}'>{m}</option>" for m in marcas_unicas])
-        options_cat = "".join([f"<option value='{c}'>{c}</option>" for c in categorias_unicas])
-        options_pasillo = "".join([f"<option value='{p}'>{p}</option>" for p in pasillos_unicos])
-        options_lateral = "".join([f"<option value='{l}'>{l}</option>" for l in laterales_unicos])
 
         niveles_reales = [x[1] for x in desglose]
         max_niveles_count = max(niveles_reales) if len(niveles_reales) > 0 else 8
         altura_cuerpo_px = max(260, max_niveles_count * 48)
-        altura_iframe = altura_cuerpo_px + 290
+        altura_iframe = altura_cuerpo_px + 300
 
         html_componente_completo = f"""
         <!DOCTYPE html>
@@ -925,73 +989,381 @@ else:
         <head>
           <meta charset="UTF-8">
           <style>
-            * {{ box-sizing:border-box; margin:0; padding:0; }}
-            :root {{ --ink:#172033; --muted:#667085; --line:#d9e2ec; --line-soft:#e7edf4; --primary:#155eef; --surface:#fff; --canvas:#f8fafc; }}
-            body {{ font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:var(--canvas); color:var(--ink); padding:3px; width:100%; }}
-            button,input,select {{ font:inherit; }}
+            * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+            body {{ font-family: 'Inter', sans-serif; background: #ffffff; color: #0f172a; padding: 2px; width: 100%; }}
+            
+            /* FRANJA SUPERIOR RESALTAR TOP VENTAS (IMAGEN 1) */
+            .top-ventas-bar {{
+                background: #ffffff;
+                border: 1.5px solid #cbd5e1;
+                border-radius: 8px;
+                padding: 10px 14px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 10px;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            }}
+            .top-ventas-left {{
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 0.84rem;
+                font-weight: 800;
+                color: #0f172a;
+            }}
+            .top-ventas-input {{
+                width: 70px;
+                padding: 4px 8px;
+                border: 1.5px solid #cbd5e1;
+                border-radius: 6px;
+                text-align: center;
+                font-weight: 800;
+                font-size: 0.88rem;
+                color: #0f172a;
+                outline: none;
+            }}
+            .top-ventas-right {{
+                font-size: 0.84rem;
+                font-weight: 800;
+                color: #2563eb;
+            }}
 
-            .top-ventas-bar {{ background:var(--surface); border:1px solid var(--line-soft); border-radius:12px; padding:10px 13px; display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; box-shadow:0 1px 3px rgba(16,24,40,.04); }}
-            .top-ventas-left {{ display:flex; align-items:center; gap:8px; font-size:.79rem; font-weight:750; color:var(--ink); }}
-            .top-ventas-input {{ width:60px; padding:5px 7px; border:1px solid var(--line); border-radius:7px; text-align:center; font-weight:800; font-size:.82rem; color:var(--ink); background:#fff; outline:none; }}
-            .top-ventas-input:focus {{ border-color:var(--primary); box-shadow:0 0 0 3px rgba(21,94,239,.10); }}
-            .top-ventas-right {{ font-size:.77rem; font-weight:700; color:var(--muted); }}
+            /* FILA DE TARJETAS BOTÓN FILTRO (IMAGEN 1) */
+            .filter-cards-grid {{
+                display: grid;
+                grid-template-columns: repeat(7, 1fr);
+                gap: 8px;
+                margin-bottom: 10px;
+            }}
+            .card-btn {{
+                background: #ffffff;
+                border: 1.5px solid #cbd5e1;
+                border-radius: 8px;
+                padding: 8px 6px;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+                user-select: none;
+            }}
+            .card-btn:hover {{
+                transform: translateY(-2px);
+                box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+            }}
+            .card-btn.active {{
+                outline: 2.5px solid #0f172a !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+                transform: scale(1.02);
+            }}
+            .card-btn-title {{
+                font-size: 0.65rem;
+                font-weight: 800;
+                text-transform: uppercase;
+                margin-bottom: 3px;
+                letter-spacing: 0.3px;
+            }}
+            .card-btn-val {{
+                font-size: 1.55rem;
+                font-weight: 900;
+                line-height: 1;
+            }}
 
-            .filter-cards-grid {{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:7px; margin-bottom:10px; }}
-            .card-btn {{ background:#fff; border:1px solid var(--line-soft); border-radius:10px; padding:9px 6px; text-align:center; cursor:pointer; transition:all .15s ease; box-shadow:0 1px 2px rgba(16,24,40,.03); user-select:none; }}
-            .card-btn:hover {{ transform:translateY(-1px); border-color:#cbd6e2; box-shadow:0 5px 12px rgba(16,24,40,.07); }}
-            .card-btn.active {{ border-color:#b8ccef !important; box-shadow:0 0 0 2px rgba(21,94,239,.12),0 5px 12px rgba(16,24,40,.07) !important; background:#f8fbff; }}
-            .card-btn-title {{ font-size:.60rem; font-weight:800; color:var(--muted); text-transform:uppercase; margin-bottom:4px; letter-spacing:.04em; }}
-            .card-btn-val {{ font-size:1.34rem; font-weight:800; line-height:1; }}
-            .cb-total {{ border-left:3px solid #155eef; }} .cb-total .card-btn-val {{ color:#155eef; }}
-            .cb-bloq {{ border-left:3px solid #dc2626; }} .cb-bloq .card-btn-val {{ color:#dc2626; }}
-            .cb-sinstk {{ border-left:3px solid #ea580c; }} .cb-sinstk .card-btn-val {{ color:#ea580c; }}
-            .cb-stkbajo {{ border-left:3px solid #d97706; }} .cb-stkbajo .card-btn-val {{ color:#b45309; }}
-            .cb-stkok {{ border-left:3px solid #16a34a; }} .cb-stkok .card-btn-val {{ color:#15803d; }}
-            .cb-cobalta {{ border-left:3px solid #c026d3; }} .cb-cobalta .card-btn-val {{ color:#a21caf; }}
-            .cb-topvta {{ border-left:3px solid #7c3aed; }} .cb-topvta .card-btn-val {{ color:#6d28d9; }}
+            /* COLORES POR TARJETA */
+            .cb-total {{ border-bottom: 4px solid #2563eb; }}
+            .cb-total .card-btn-title {{ color: #2563eb; }}
+            .cb-total .card-btn-val {{ color: #0f172a; }}
 
-            .controls-panel {{ background:#fff; border:1px solid var(--line-soft); border-radius:12px; padding:10px 12px; margin-bottom:10px; box-shadow:0 1px 3px rgba(16,24,40,.04); }}
-            .controls-row {{ display:grid; grid-template-columns:2.5fr 1.5fr 1.5fr 1.2fr 1.2fr; gap:8px; margin-bottom:9px; }}
-            .ctrl-group {{ display:flex; flex-direction:column; gap:4px; }}
-            .ctrl-label {{ font-size:.62rem; font-weight:800; color:var(--muted); text-transform:uppercase; display:flex; align-items:center; gap:4px; letter-spacing:.04em; }}
-            .ctrl-input,.ctrl-select {{ width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:8px; font-size:.76rem; font-weight:600; color:var(--ink); background:#fff; outline:none; }}
-            .ctrl-input:focus,.ctrl-select:focus {{ border-color:var(--primary); box-shadow:0 0 0 3px rgba(21,94,239,.10); }}
-            .buttons-actions-row {{ display:flex; justify-content:flex-end; gap:7px; align-items:center; }}
-            .btn-act {{ padding:7px 11px; border-radius:8px; font-size:.72rem; font-weight:750; cursor:pointer; border:1px solid transparent; display:flex; align-items:center; gap:5px; transition:all .15s ease; }}
-            .btn-act:hover {{ transform:translateY(-1px); }}
-            .btn-fullscreen {{ background:#eef4ff; color:#174ea6; border-color:#d9e6ff; }}
-            .btn-reset {{ background:#fff; color:#b42318; border-color:#f3d0cc; }}
-            .btn-print {{ background:#f2faf5; color:#16703c; border-color:#d4eedf; }}
+            .cb-bloq {{ border-bottom: 4px solid #dc2626; }}
+            .cb-bloq .card-btn-title {{ color: #dc2626; }}
+            .cb-bloq .card-btn-val {{ color: #dc2626; }}
 
-            .plano-outer-card {{ border:1px solid #cfd8e3; border-radius:12px; overflow:hidden; background:#fff; width:100%; box-shadow:0 2px 8px rgba(16,24,40,.05); }}
-            .plano-top-header {{ background:#172033; color:#fff; font-size:.80rem; font-weight:800; text-align:left; padding:9px 13px; letter-spacing:.04em; text-transform:uppercase; border-bottom:1px solid #26334a; }}
-            .plano-body-container {{ display:flex; flex-direction:row; width:100%; height:{altura_cuerpo_px}px; background:#f8fafc; }}
-            .plano-cuerpo-col {{ display:flex; flex-direction:column; border-right:1px solid #cfd8e3; min-width:0; height:100%; }}
-            .plano-cuerpo-col:last-child {{ border-right:none; }}
-            .plano-cuerpo-shelves {{ display:flex; flex-direction:column; justify-content:space-between; padding:4px 3px; gap:3px; flex-grow:1; }}
-            .plano-level-row {{ display:flex; flex-direction:column; justify-content:flex-end; flex:1; min-height:0; }}
-            .plano-facings-container {{ display:flex; align-items:stretch; flex:1; min-height:0; overflow:hidden; gap:2px; padding:0 2px; }}
-            .plano-shelf-bar {{ height:5px; background:linear-gradient(#8795a8,#5d6b7e); border-radius:2px; box-shadow:0 1px 0 rgba(0,0,0,.16); flex-shrink:0; }}
-            .plano-rect {{ position:relative; flex:1 1 0; min-width:8px; height:100%; border:1px solid rgba(0,0,0,.16); border-radius:3px 3px 1px 1px; cursor:pointer; display:flex; align-items:center; justify-content:center; overflow:hidden; transition:opacity .15s ease,transform .15s ease,box-shadow .15s ease; }}
-            .plano-rect:hover {{ transform:translateY(-2px); z-index:5; box-shadow:0 4px 10px rgba(16,24,40,.24); }}
-            .plano-rect.dimmed {{ opacity:.12; filter:saturate(.4); }}
-            .plano-rect.highlighted {{ box-shadow:0 0 0 2px #fff,0 0 0 4px var(--primary),0 5px 12px rgba(16,24,40,.18); z-index:6; }}
-            .plano-sap-vertical {{ writing-mode:vertical-rl; transform:rotate(180deg); font-size:.52rem; font-weight:800; letter-spacing:.01em; white-space:nowrap; opacity:.88; user-select:none; }}
-            .plano-cuerpo-footer {{ height:26px; display:flex; align-items:center; justify-content:center; background:#f1f5f9; color:#475467; font-size:.62rem; font-weight:800; border-top:1px solid #d9e2ec; letter-spacing:.04em; }}
+            .cb-sinstk {{ border-bottom: 4px solid #ea580c; }}
+            .cb-sinstk .card-btn-title {{ color: #ea580c; }}
+            .cb-sinstk .card-btn-val {{ color: #ea580c; }}
 
-            .modal-overlay {{ display:none; position:fixed; inset:0; background:rgba(15,23,42,.46); backdrop-filter:blur(3px); z-index:999; align-items:center; justify-content:center; padding:20px; }}
-            .modal-overlay.active {{ display:flex; }}
-            .modal-content {{ position:relative; width:min(520px,96vw); max-height:90vh; overflow:auto; background:#fff; border:1px solid #d9e2ec; border-radius:14px; padding:20px; box-shadow:0 24px 70px rgba(15,23,42,.24); }}
-            .modal-content h4 {{ color:var(--ink); font-size:1rem; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--line-soft); }}
-            .modal-close {{ position:absolute; top:12px; right:14px; width:30px; height:30px; border-radius:8px; display:grid; place-items:center; cursor:pointer; color:#667085; font-size:1.25rem; font-weight:700; }}
-            .modal-close:hover {{ background:#f2f4f7; color:#172033; }}
-            .m-row {{ display:grid; grid-template-columns:150px 1fr; gap:12px; padding:8px 0; border-bottom:1px solid #f0f2f5; font-size:.74rem; }}
-            .m-label {{ color:#667085; font-weight:650; }} .m-val {{ color:#172033; font-weight:750; overflow-wrap:anywhere; }}
-            @media(max-width:850px){{ .filter-cards-grid{{grid-template-columns:repeat(4,minmax(0,1fr));}}.controls-row{{grid-template-columns:1fr 1fr;}} .top-ventas-bar{{align-items:flex-start;flex-direction:column;}} }}
-            @media(max-width:560px){{ .filter-cards-grid{{grid-template-columns:repeat(2,minmax(0,1fr));}}.controls-row{{grid-template-columns:1fr;}}.buttons-actions-row{{flex-wrap:wrap;}}.m-row{{grid-template-columns:1fr;}} }}
+            .cb-stkbajo {{ border-bottom: 4px solid #facc15; }}
+            .cb-stkbajo .card-btn-title {{ color: #ca8a04; }}
+            .cb-stkbajo .card-btn-val {{ color: #ca8a04; }}
+
+            .cb-stkok {{ border-bottom: 4px solid #16a34a; }}
+            .cb-stkok .card-btn-title {{ color: #16a34a; }}
+            .cb-stkok .card-btn-val {{ color: #16a34a; }}
+
+            .cb-cobalta {{ border-bottom: 4px solid #ec4899; }}
+            .cb-cobalta .card-btn-title {{ color: #db2777; }}
+            .cb-cobalta .card-btn-val {{ color: #db2777; }}
+
+            .cb-topvta {{ border-bottom: 4px solid #f59e0b; }}
+            .cb-topvta .card-btn-title {{ color: #d97706; }}
+            .cb-topvta .card-btn-val {{ color: #d97706; }}
+
+            /* CONTROLES SIMPLIFICADOS (SIN PASILLO, LATERAL NI CATEGORÍA) */
+            .controls-panel {{
+                background: #ffffff;
+                border: 1.5px solid #cbd5e1;
+                border-radius: 8px;
+                padding: 10px 14px;
+                margin-bottom: 10px;
+                display: flex;
+                align-items: flex-end;
+                justify-content: space-between;
+                gap: 12px;
+                box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            }}
+            .controls-left {{
+                display: flex;
+                gap: 12px;
+                flex-grow: 1;
+                align-items: flex-end;
+            }}
+            .ctrl-group {{
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+                flex: 1;
+            }}
+            .ctrl-label {{
+                font-size: 0.68rem;
+                font-weight: 800;
+                color: #2563eb;
+                text-transform: uppercase;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }}
+            .ctrl-input, .ctrl-select {{
+                width: 100%;
+                padding: 6px 10px;
+                border: 1.5px solid #cbd5e1;
+                border-radius: 6px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                color: #0f172a;
+                background: #ffffff;
+                outline: none;
+            }}
+            .buttons-actions-row {{
+                display: flex;
+                gap: 8px;
+                align-items: center;
+            }}
+            .btn-act {{
+                padding: 6px 14px;
+                border-radius: 6px;
+                font-size: 0.78rem;
+                font-weight: 800;
+                cursor: pointer;
+                border: 1.5px solid transparent;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                transition: transform 0.15s ease;
+            }}
+            .btn-act:hover {{ transform: translateY(-1px); }}
+            .btn-fullscreen {{ background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }}
+            .btn-reset {{ background: #fee2e2; color: #dc2626; border-color: #fecaca; }}
+            .btn-print {{ background: #ecfdf5; color: #059669; border-color: #a7f3d0; }}
+
+            /* BARRA DE LEYENDA OPERATIVA */
+            .interactive-legend-bar {{
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+                padding: 8px 12px;
+                background: #ffffff;
+                border: 1.5px solid #cbd5e1;
+                border-radius: 6px;
+                margin-bottom: 10px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            }}
+            .legend-label-title {{
+                font-size: 0.72rem;
+                font-weight: 800;
+                color: #2563eb;
+                text-transform: uppercase;
+                letter-spacing: 0.4px;
+                margin-right: 4px;
+            }}
+            .legend-btn {{
+                font-size: 0.72rem;
+                font-weight: 800;
+                padding: 4px 12px;
+                border-radius: 14px;
+                cursor: pointer;
+                border: 2px solid transparent;
+                transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+                user-select: none;
+            }}
+            .legend-btn:hover {{
+                transform: translateY(-1px);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            }}
+            .legend-btn.active {{
+                outline: 2.5px solid #0f172a !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+                transform: scale(1.04);
+            }}
+            .btn-bloq {{ background: #dc2626; color: #ffffff; border-color: #991b1b; }}
+            .btn-sinstk {{ background: #ea580c; color: #ffffff; border-color: #c2410c; }}
+            .btn-bajo {{ background: #facc15; color: #0f172a; border-color: #ca8a04; }}
+            .btn-ok {{ background: #16a34a; color: #ffffff; border-color: #15803d; }}
+            .btn-todos {{ background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }}
+
+            /* PLANOGRAMA CARD */
+            .plano-outer-card {{
+                border: 2px solid #0f172a;
+                border-radius: 4px;
+                overflow: hidden;
+                background: #ffffff;
+                width: 100%;
+            }}
+            .plano-top-header {{
+                background: #facc15;
+                color: #b91c1c;
+                font-size: 1.05rem;
+                font-weight: 900;
+                text-align: center;
+                padding: 6px 10px;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                border-bottom: 2px solid #0f172a;
+            }}
+            .plano-body-container {{
+                display: flex;
+                flex-direction: row;
+                width: 100%;
+                height: {altura_cuerpo_px}px;
+                background: #ffffff;
+            }}
+            .plano-cuerpo-col {{
+                display: flex;
+                flex-direction: column;
+                border-right: 2px solid #0f172a;
+                min-width: 0;
+                height: 100%;
+            }}
+            .plano-cuerpo-col:last-child {{ border-right: none; }}
+            
+            .plano-cuerpo-shelves {{
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                padding: 3px 2px;
+                gap: 2.5px;
+                flex-grow: 1;
+                height: 100%;
+            }}
+            .plano-level-row {{
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                width: 100%;
+                flex: 1 1 0;
+                min-height: 0;
+            }}
+            .plano-facings-container {{
+                display: flex;
+                flex-direction: row;
+                align-items: stretch;
+                gap: 1px;
+                height: 45px;
+                padding: 0 1px;
+                width: 100%;
+            }}
+            .plano-rect {{
+                flex: 1 1 0;
+                min-width: 0;
+                height: 100%;
+                border: 1px solid #000000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                overflow: hidden;
+                position: relative;
+                transition: transform 0.15s ease, opacity 0.2s ease, filter 0.2s ease;
+            }}
+            .plano-rect.dimmed {{
+                opacity: 0.12 !important;
+                filter: grayscale(80%) !important;
+            }}
+            .plano-rect.highlighted {{
+                transform: scale(1.08);
+                z-index: 50;
+                box-shadow: 0 0 0 2px #0f172a, 0 4px 10px rgba(0,0,0,0.4) !important;
+            }}
+            .plano-sap-vertical {{
+                writing-mode: vertical-rl;
+                transform: rotate(180deg);
+                font-size: 0.50rem;
+                font-weight: 900;
+                letter-spacing: -0.3px;
+                line-height: 1;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-height: 40px;
+                font-family: monospace;
+                pointer-events: none;
+                user-select: none;
+            }}
+            .plano-shelf-bar {{
+                height: 4.5px;
+                background: #facc15;
+                border: 1px solid #ca8a04;
+                margin-top: 1px;
+                width: 100%;
+            }}
+            .plano-cuerpo-footer {{
+                background: #ffffff;
+                border-top: 2px solid #0f172a;
+                color: #0f172a;
+                font-size: 0.85rem;
+                font-weight: 900;
+                text-align: center;
+                padding: 4px 0;
+                letter-spacing: 0.5px;
+            }}
+            
+            /* MODAL */
+            .modal-overlay {{ 
+              position: fixed !important; 
+              inset: 0 !important; 
+              width: 100vw !important; 
+              height: 100vh !important; 
+              background: rgba(15, 23, 42, 0.65) !important; 
+              z-index: 99999 !important; 
+              opacity: 0; 
+              pointer-events: none; 
+              transition: opacity 0.2s ease; 
+              display: flex !important; 
+              align-items: center !important; 
+              justify-content: center !important; 
+              padding: 16px !important; 
+              backdrop-filter: blur(4px); 
+            }}
+            .modal-overlay.active {{ opacity: 1 !important; pointer-events: auto !important; }}
+            .modal-content {{ 
+              background: #ffffff !important; 
+              color: #0f172a !important; 
+              padding: 22px !important; 
+              border-radius: 10px !important; 
+              width: 90% !important; 
+              max-width: 440px !important; 
+              border: 2.5px solid #2563eb !important; 
+              box-shadow: 0 20px 40px rgba(0,0,0,0.2) !important; 
+              position: relative !important; 
+            }}
+            .modal-close {{ position: absolute; top: 10px; right: 14px; font-size: 1.4rem; cursor: pointer; color: #64748b; font-weight: 800; }}
+            .modal-close:hover {{ color: #0f172a; }}
+            .m-row {{ border-bottom: 1px solid #e2e8f0; padding: 6px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
+            .m-label {{ font-weight: 600; color: #2563eb; }}
+            .m-val {{ font-weight: 700; text-align: right; }}
           </style>
         </head>
-        <body id="planoContainer">
+        <body>
 
           <!-- 1. FRANJA RESALTAR TOP VENTAS -->
           <div class="top-ventas-bar">
@@ -1005,7 +1377,7 @@ else:
             </div>
           </div>
 
-          <!-- 2. TARJETAS FILTRO OPERATIVAS (IMAGEN 1) -->
+          <!-- 2. TARJETAS BOTÓN FILTRO OPERATIVAS (IMAGEN 1) -->
           <div class="filter-cards-grid">
             <div class="card-btn cb-total active" data-filter="TOTAL">
                 <div class="card-btn-title">TOTAL SKUS</div>
@@ -1037,39 +1409,18 @@ else:
             </div>
           </div>
 
-          <!-- 3. CONTROLES Y BUSCADOR (IMAGEN 1) -->
+          <!-- 3. CONTROLES Y BUSCADOR SIMPLIFICADOS (IMAGEN 1) -->
           <div class="controls-panel">
-            <div class="controls-row">
-                <div class="ctrl-group">
+            <div class="controls-left">
+                <div class="ctrl-group" style="flex: 2;">
                     <span class="ctrl-label">🔍 BUSCAR PRODUCTO</span>
-                    <input type="text" id="busqNombre" class="ctrl-input" placeholder="Nombre o EAN...">
+                    <input type="text" id="busqNombre" class="ctrl-input" placeholder="Nombre, EAN o Código SAP...">
                 </div>
-                <div class="ctrl-group">
+                <div class="ctrl-group" style="flex: 1.2;">
                     <span class="ctrl-label">🏷️ MARCA</span>
                     <select id="selMarca" class="ctrl-select">
-                        <option value="Todas">Todas</option>
+                        <option value="Todas">Todas las Marcas</option>
                         {options_marca}
-                    </select>
-                </div>
-                <div class="ctrl-group">
-                    <span class="ctrl-label">📁 CATEGORÍA</span>
-                    <select id="selCat" class="ctrl-select">
-                        <option value="Todas">Todas</option>
-                        {options_cat}
-                    </select>
-                </div>
-                <div class="ctrl-group">
-                    <span class="ctrl-label">📦 PASILLO</span>
-                    <select id="selPasillo" class="ctrl-select">
-                        <option value="Todos">Todos</option>
-                        {options_pasillo}
-                    </select>
-                </div>
-                <div class="ctrl-group">
-                    <span class="ctrl-label">📊 LATERAL</span>
-                    <select id="selLateral" class="ctrl-select">
-                        <option value="Todos">Todos</option>
-                        {options_lateral}
                     </select>
                 </div>
             </div>
@@ -1080,7 +1431,17 @@ else:
             </div>
           </div>
 
-          <!-- 4. PLANOGRAMA FÍSICO PANORÁMICO -->
+          <!-- 4. BARRA DE LEYENDA OPERATIVA RESTAURADA -->
+          <div class="interactive-legend-bar">
+            <span class="legend-label-title">📍 LEYENDA OPERATIVA:</span>
+            <button type="button" class="legend-btn btn-bloq" data-target="Bloqueado">Bloqueado (B)</button>
+            <button type="button" class="legend-btn btn-sinstk" data-target="Sin Stock">Sin Stock / Quiebre (0)</button>
+            <button type="button" class="legend-btn btn-bajo" data-target="Stock Bajo">Stock Bajo (1 a 5)</button>
+            <button type="button" class="legend-btn btn-ok" data-target="Stock OK">Stock OK (> 5)</button>
+            <button type="button" class="legend-btn btn-todos" id="btnVerTodos" style="margin-left: auto;">Ver Todos</button>
+          </div>
+
+          <!-- 5. PLANOGRAMA FÍSICO PANORÁMICO -->
           <div class="plano-outer-card" id="planoCard">
             <div class="plano-top-header">{cat_actual_titulo}</div>
             <div class="plano-body-container">
@@ -1108,15 +1469,14 @@ else:
           <script>
             let activeFilterType = 'TOTAL';
             const cardButtons = document.querySelectorAll('.card-btn');
+            const legendButtons = document.querySelectorAll('.legend-btn[data-target]');
             const rects = document.querySelectorAll('.plano-rect');
             const busqInput = document.getElementById('busqNombre');
             const selMarca = document.getElementById('selMarca');
-            const selCat = document.getElementById('selCat');
 
             function aplicarFiltrosGlobales() {{
                 const q = busqInput.value.toLowerCase().trim();
                 const m = selMarca.value;
-                const c = selCat.value;
 
                 rects.forEach(r => {{
                     const estado = r.getAttribute('data-estado');
@@ -1126,7 +1486,6 @@ else:
                     const ean = (r.getAttribute('data-ean') || '').toLowerCase();
                     const cod = (r.getAttribute('data-cod') || '').toLowerCase();
                     const brand = r.getAttribute('data-brand') || '';
-                    const cat = r.getAttribute('data-catjer') || '';
 
                     let matchTipo = true;
                     if (activeFilterType === 'BLOQUEADOS') matchTipo = (estado === 'Bloqueado');
@@ -1141,10 +1500,9 @@ else:
                         matchText = name.includes(q) || ean.includes(q) || cod.includes(q);
                     }}
 
-                    let matchMarca = (m === 'Todas' || brand === m);
-                    let matchCat = (c === 'Todas' || cat === c);
+                    let matchMarca = (m === 'Todas' || m === 'Todas las Marcas' || brand === m);
 
-                    if (matchTipo && matchText && matchMarca && matchCat) {{
+                    if (matchTipo && matchText && matchMarca) {{
                         r.classList.remove('dimmed');
                         if (activeFilterType !== 'TOTAL' || q) {{
                             r.classList.add('highlighted');
@@ -1158,26 +1516,53 @@ else:
                 }});
             }}
 
+            // Clic en tarjetas superiores
             cardButtons.forEach(btn => {{
                 btn.addEventListener('click', () => {{
                     cardButtons.forEach(b => b.classList.remove('active'));
+                    legendButtons.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     activeFilterType = btn.getAttribute('data-filter');
                     aplicarFiltrosGlobales();
                 }});
             }});
 
+            // Clic en leyenda operativa
+            legendButtons.forEach(btn => {{
+                btn.addEventListener('click', () => {{
+                    const target = btn.getAttribute('data-target');
+                    legendButtons.forEach(b => b.classList.remove('active'));
+                    cardButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    if (target === 'Bloqueado') activeFilterType = 'BLOQUEADOS';
+                    else if (target === 'Sin Stock') activeFilterType = 'SIN_STOCK';
+                    else if (target === 'Stock Bajo') activeFilterType = 'STOCK_BAJO';
+                    else if (target === 'Stock OK') activeFilterType = 'STOCK_OK';
+                    
+                    aplicarFiltrosGlobales();
+                }});
+            }});
+
+            // Ver todos
+            document.getElementById('btnVerTodos').addEventListener('click', () => {{
+                activeFilterType = 'TOTAL';
+                cardButtons.forEach(b => b.classList.remove('active'));
+                legendButtons.forEach(b => b.classList.remove('active'));
+                document.querySelector('.cb-total').classList.add('active');
+                aplicarFiltrosGlobales();
+            }});
+
             busqInput.addEventListener('input', aplicarFiltrosGlobales);
             selMarca.addEventListener('change', aplicarFiltrosGlobales);
-            selCat.addEventListener('change', aplicarFiltrosGlobales);
 
             document.getElementById('btnResetAll').addEventListener('click', () => {{
                 activeFilterType = 'TOTAL';
                 cardButtons.forEach(b => b.classList.remove('active'));
+                legendButtons.forEach(b => b.classList.remove('active'));
                 document.querySelector('.cb-total').classList.add('active');
                 busqInput.value = '';
-                selMarca.value = 'Todas';
-                selCat.value = 'Todas';
+                selMarca.value = 'Todas las Marcas';
                 aplicarFiltrosGlobales();
             }});
 
@@ -1219,89 +1604,6 @@ else:
         </html>
         """
         components.html(html_componente_completo, height=altura_iframe, scrolling=True)
-
-    # =========================================================================
-    # --- PESTAÑA 2: RESUMEN EJECUTIVO (GERENCIA DE OPERACIONES) ---
-    # =========================================================================
-    with tab_resumen:
-        quiebres_df = df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] <= 0)]
-        tot_quiebres = len(quiebres_df)
-        pct_quiebres = (tot_quiebres / skus_en_plano * 100) if skus_en_plano > 0 else 0
-        osa_pct = 100.0 - pct_quiebres
-        bloqueados_df = df_unicos[df_unicos['Estado'].str.strip().str.upper() == 'B']
-        tot_bloqueados = len(bloqueados_df)
-        venta_en_riesgo = quiebres_df['Venta_Num'].sum()
-        
-        df_no_plano = df_sku_unico_global[
-            df_sku_unico_global['Ubicación(es)'].isna() | 
-            (get_clean_series(df_sku_unico_global, 'Ubicación(es)').str.strip() == "") | 
-            (get_clean_series(df_sku_unico_global, 'Ubicación(es)').str.strip() == "SIN DATOS")
-        ].copy()
-        tot_no_plano = len(df_no_plano)
-        ventas_no_plano = df_no_plano['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
-
-        c_a1, c_a2 = st.columns(2)
-        with c_a1:
-            st.markdown(f"""
-                <div class="insight-box" style="background-color: #fee2e2; border-left: 4px solid #dc2626; color: #991b1b;">
-                    <b>🚨 Venta en Riesgo por Quiebres: S/ {venta_en_riesgo:,.2f}</b><br>
-                    Hay <b>{tot_quiebres} SKUs con Stock 0</b> en repisa ({pct_quiebres:.1f}% del surtido) que detienen ventas directas.
-                </div>
-            """, unsafe_allow_html=True)
-        with c_a2:
-            st.markdown(f"""
-                <div class="insight-box" style="background-color: #ffedd5; border-left: 4px solid #ea580c; color: #9a3412;">
-                    <b>⚠️ Venta Fuera de Planograma: S/ {ventas_no_plano:,.2f}</b><br>
-                    Existen <b>{tot_no_plano} SKUs vendidos</b> sin ubicación asignada en el plano.
-                </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-
-        col_g1, col_g2 = st.columns([6.2, 3.8])
-        with col_g1:
-            st.markdown("<b>🔥 Quiebres por Categoría vs % Participación de Ventas</b>", unsafe_allow_html=True)
-            st.markdown('<div class="dash-card">', unsafe_allow_html=True)
-            ventas_por_cat = df_unicos.groupby('Categoría')['Venta_Num'].sum()
-            total_vta_unicos = ventas_por_cat.sum()
-            quiebres_por_cat = quiebres_df.groupby('Categoría')['COD REAL'].count()
-            
-            df_cat_ops = pd.DataFrame({'Quiebres': quiebres_por_cat, 'Venta': ventas_por_cat}).fillna(0).reset_index()
-            df_cat_ops = df_cat_ops[~df_cat_ops['Categoría'].isin(['SIN DATOS', 'S/C', 'nan', ''])].copy()
-            df_cat_ops['Part_Venta'] = (df_cat_ops['Venta'] / total_vta_unicos) if total_vta_unicos > 0 else 0
-            df_cat_ops = df_cat_ops.sort_values(by=['Quiebres', 'Part_Venta'], ascending=[False, False]).head(8)
-            
-            fig_ops = make_subplots(specs=[[{"secondary_y": True}]])
-            fig_ops.add_trace(go.Bar(
-                x=df_cat_ops['Categoría'], y=df_cat_ops['Quiebres'], name="Quiebres (Stock 0)",
-                text=df_cat_ops['Quiebres'].apply(lambda x: f"{int(x)} Q"), textposition='inside',
-                marker=dict(color='#dc2626')
-            ), secondary_y=False)
-            fig_ops.add_trace(go.Scatter(
-                x=df_cat_ops['Categoría'], y=df_cat_ops['Part_Venta'], name="% Participación Venta",
-                mode="lines+markers+text", text=df_cat_ops['Part_Venta'].apply(lambda x: f"{x*100:.1f}%"),
-                textposition='top center', line=dict(color='#2563eb', width=3)
-            ), secondary_y=True)
-            fig_ops.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=20, b=20, l=10, r=10))
-            st.plotly_chart(fig_ops, use_container_width=True, config={'displayModeBar': False})
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-        with col_g2:
-            st.markdown("<b>🎯 Salud del Stock en Góndola</b>", unsafe_allow_html=True)
-            st.markdown('<div class="dash-card">', unsafe_allow_html=True)
-            def get_h(r):
-                if str(r['Estado']).strip().upper() == 'B': return 'Bloqueado (B)'
-                elif r['Stock_Num'] <= 0: return 'Quiebre (0)'
-                elif r['Stock_Num'] <= 5: return 'Alerta Baja (1-5)'
-                else: return 'Stock OK (>5)'
-            df_unicos['H_Estado'] = df_unicos.apply(get_h, axis=1)
-            dh = df_unicos['H_Estado'].value_counts().reset_index()
-            dh.columns = ['Estado', 'Cant']
-            fig_pie_h = px.pie(dh, values='Cant', names='Estado', hole=0.55, 
-                               color='Estado', color_discrete_map={'Stock OK (>5)':'#16a34a', 'Alerta Baja (1-5)':'#facc15', 'Quiebre (0)':'#ea580c', 'Bloqueado (B)':'#dc2626'})
-            fig_pie_h.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=10, b=10, l=10, r=10), showlegend=True)
-            st.plotly_chart(fig_pie_h, use_container_width=True, config={'displayModeBar': False})
-            st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
     # --- PESTAÑA 3: DASHBOARD ANALÍTICO FINANCIERO ---
@@ -1399,7 +1701,7 @@ else:
     # --- PESTAÑA 4: ERRORES Y DESAJUSTES DE CRUCE ---
     # =========================================================================
     with tab_errores:
-        st.markdown("<div style='font-size: 0.85rem; font-weight: 800; color: #2563eb; margin-bottom: 8px;'>⚠️ CONTROL DE INTEGRIDAD DE DATOS</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size: 0.85rem; font-weight: 800; color: #2563eb; margin-bottom: 8px;'>⚠️ CONTROL DE INTEGRIDAD DE DATOS (DATOST)</div>", unsafe_allow_html=True)
         df_err = df_base[(df_base['Stock'] == -999.0) | (df_base['Venta'] == -999.0) | (df_base['Estado'] == 'SIN DATOS')].copy()
         st.metric("Total de Filas / SKUs con Incongruencias", len(df_err))
         if len(df_err) > 0:
