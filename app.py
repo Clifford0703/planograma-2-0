@@ -254,7 +254,6 @@ def obtener_color_operativo(estado, stock_val):
         return "#64748b", "#334155", "#ffffff", "Desconocido"
 
 def convertir_link_directo_drive(url_str):
-    """Convierte cualquier formato de enlace de Google Drive en una URL de imagen directa."""
     if not url_str or pd.isna(url_str):
         return None
     url_str = str(url_str).strip()
@@ -473,7 +472,6 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             width: 100%;
         }}
         
-        /* ALTURA REDUCIDA EN UN 30%: 45px */
         .plano-facings-container {{
             display: flex;
             flex-direction: row;
@@ -543,7 +541,6 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             letter-spacing: 0.5px;
         }}
         
-        /* MODAL */
         .modal-overlay {{ 
           position: fixed !important; 
           inset: 0 !important; 
@@ -703,7 +700,6 @@ def cargar_todas_las_fuentes():
         url_barras = "https://docs.google.com/spreadsheets/d/1veTjECI6wlFRqOVg1AKmV0yghxyGR5T0j0Im2AooukM/export?format=xlsx"
         url_jerarquia = "https://docs.google.com/spreadsheets/d/1JI4Ef0138lwI-fJsQmX5lz-fqXvemZQD/export?format=xlsx"
         url_fotos = "https://docs.google.com/spreadsheets/d/1y8P_GVLySBrbGkm-1nc0BiTwGCorhVtF/export?format=xlsx"
-        # NUEVO LIBRO DE PLANOGRAMAS E IMÁGENES
         url_cat_imagenes = "https://docs.google.com/spreadsheets/d/1E8B6FIK7XLAp9t-WqWnBU4jL1i3C3EhBmjP0W1_wI38/export?format=xlsx"
 
         def leer_tabla_por_ancla(url, palabra_ancla, sheet_target=0, skiprows_fallback=0):
@@ -841,7 +837,7 @@ def cargar_todas_las_fuentes():
                 df_fotos['Links de fotos'] = get_clean_series(df_fotos_raw, col_link_foto).str.strip()
                 df_fotos = df_fotos[df_fotos['Sku_Foto_Str'] != ""].drop_duplicates(subset=['Sku_Foto_Str'])
 
-        # 6. Jerarquía Comercial SAP
+        # 6. Jerarquía Comercial SAP: MUNDO -> SECCIÓN (3)
         try:
             df_sap_raw = pd.read_excel(url_jerarquia, sheet_name='NuevaJqGA', skiprows=2)
         except Exception:
@@ -852,19 +848,42 @@ def cargar_todas_las_fuentes():
                 
         df_sap_raw = df_sap_raw.loc[:, ~df_sap_raw.columns.duplicated()].copy()
         df_sap = pd.DataFrame()
-        if not df_sap_raw.empty and len(df_sap_raw.columns) >= 11:
-            col_k_codga = df_sap_raw.columns[10]
-            col_d_depto = df_sap_raw.columns[3]
-            col_f_seccion = df_sap_raw.columns[5]
-            col_h_cat = df_sap_raw.columns[7]
-            col_n_ga = df_sap_raw.columns[13] if len(df_sap_raw.columns) > 13 else df_sap_raw.columns[10]
+        
+        if not df_sap_raw.empty:
+            # Buscar columnas por nombre exacto o por posición
+            cols_sap_map = {str(c).strip().upper(): c for c in df_sap_raw.columns}
+            
+            col_ga_sap = cols_sap_map.get('GRUPO ARTÍCULO', cols_sap_map.get('GRUPO ARTICULO', cols_sap_map.get('COD GA', None)))
+            if not col_ga_sap and len(df_sap_raw.columns) >= 11:
+                col_ga_sap = df_sap_raw.columns[10]
 
-            df_sap['CodGA_Str'] = get_clean_series(df_sap_raw, col_k_codga).apply(clean_sku)
-            df_sap['Departamento'] = get_clean_series(df_sap_raw, col_d_depto).fillna('SIN DATOS').str.strip()
-            df_sap['Sección'] = get_clean_series(df_sap_raw, col_f_seccion).fillna('SIN DATOS').str.strip()
-            df_sap['Categoría'] = get_clean_series(df_sap_raw, col_h_cat).fillna('SIN DATOS').str.strip()
-            df_sap['Grupo de Artículo'] = get_clean_series(df_sap_raw, col_n_ga).fillna('SIN DATOS').str.strip()
-            df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
+            col_sec_sap = None
+            for col_cand in df_sap_raw.columns:
+                c_clean = str(col_cand).strip().upper()
+                if 'SECCIÓN' in c_clean or 'SECCION' in c_clean:
+                    col_sec_sap = col_cand
+                    break
+            if not col_sec_sap and len(df_sap_raw.columns) >= 6:
+                col_sec_sap = df_sap_raw.columns[5]
+
+            col_cat_sap = cols_sap_map.get('CATEGORÍA', cols_sap_map.get('CATEGORIA', None))
+            if not col_cat_sap and len(df_sap_raw.columns) >= 8:
+                col_cat_sap = df_sap_raw.columns[7]
+
+            col_dep_sap = cols_sap_map.get('DEPARTAMENTO', None))
+            if not col_dep_sap and len(df_sap_raw.columns) >= 4:
+                col_dep_sap = df_sap_raw.columns[3]
+
+            col_nomga_sap = df_sap_raw.columns[13] if len(df_sap_raw.columns) > 13 else col_ga_sap
+
+            if col_ga_sap:
+                df_sap['CodGA_Str'] = get_clean_series(df_sap_raw, col_ga_sap).apply(clean_sku)
+                df_sap['Mundo'] = get_clean_series(df_sap_raw, col_sec_sap).fillna('SIN DATOS').str.strip().str.upper() if col_sec_sap else 'SIN DATOS'
+                df_sap['Sección'] = df_sap['Mundo']
+                df_sap['Categoría'] = get_clean_series(df_sap_raw, col_cat_sap).fillna('SIN DATOS').str.strip() if col_cat_sap else 'SIN DATOS'
+                df_sap['Departamento'] = get_clean_series(df_sap_raw, col_dep_sap).fillna('SIN DATOS').str.strip() if col_dep_sap else 'SIN DATOS'
+                df_sap['Grupo de Artículo'] = get_clean_series(df_sap_raw, col_nomga_sap).fillna('SIN DATOS').str.strip() if col_nomga_sap else 'SIN DATOS'
+                df_sap = df_sap[df_sap['CodGA_Str'] != ""].drop_duplicates(subset=['CodGA_Str'])
 
         # Cruce seguro en df_pasillo_base
         df_pasillo_base = df_matriz.copy()
@@ -900,13 +919,13 @@ def cargar_todas_las_fuentes():
 
         if not df_sap.empty:
             df_pasillo_base = df_pasillo_base.merge(
-                df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], 
+                df_sap[['CodGA_Str', 'Mundo', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], 
                 left_on='G.A._Str', 
                 right_on='CodGA_Str', 
                 how='left',
                 suffixes=('', '_sap')
             )
-            for col_target in ['Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']:
+            for col_target in ['Mundo', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']:
                 col_sap_name = f"{col_target}_sap"
                 if col_sap_name in df_pasillo_base.columns:
                     target_s = get_clean_series(df_pasillo_base, col_target)
@@ -919,7 +938,7 @@ def cargar_todas_las_fuentes():
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
             sanitizar_columna_num(df_pasillo_base, col, val_def)
 
-        for col, val_def in [('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS'), ('Descripción', 'SIN DATOS'), ('EAN', 'SIN DATOS'), ('PASILLO', '1'), ('LATERAL', 'A')]:
+        for col, val_def in [('Mundo', 'DESAYUNO'), ('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS'), ('Descripción', 'SIN DATOS'), ('EAN', 'SIN DATOS'), ('PASILLO', '1'), ('LATERAL', 'A')]:
             sanitizar_columna_str(df_pasillo_base, col, val_def)
 
         if 'Bandeja' in df_pasillo_base.columns and 'EAN' in df_pasillo_base.columns:
@@ -967,13 +986,13 @@ def cargar_todas_las_fuentes():
 
         if not df_sap.empty:
             df_sku_unico = df_sku_unico.merge(
-                df_sap[['CodGA_Str', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], 
+                df_sap[['CodGA_Str', 'Mundo', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']], 
                 left_on='G.A._Str', 
                 right_on='CodGA_Str', 
                 how='left',
                 suffixes=('', '_sap')
             )
-            for col_target in ['Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']:
+            for col_target in ['Mundo', 'Departamento', 'Sección', 'Categoría', 'Grupo de Artículo']:
                 col_sap_name = f"{col_target}_sap"
                 if col_sap_name in df_sku_unico.columns:
                     target_s = get_clean_series(df_sku_unico, col_target)
@@ -987,7 +1006,7 @@ def cargar_todas_las_fuentes():
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0)]:
             sanitizar_columna_num(df_sku_unico, col, val_def)
 
-        for col, val_def in [('Estado', 'SIN DATOS'), ('Descripción', 'SIN DATOS'), ('EAN', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('Ubicación(es)', pd.NA)]:
+        for col, val_def in [('Mundo', 'DESAYUNO'), ('Estado', 'SIN DATOS'), ('Descripción', 'SIN DATOS'), ('EAN', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('Ubicación(es)', pd.NA)]:
             sanitizar_columna_str(df_sku_unico, col, val_def)
 
         hora_lectura = pd.Timestamp.now('America/Lima').strftime("%d/%m/%Y - %I:%M %p")
@@ -1037,21 +1056,33 @@ col_b1, col_b2, col_b3, col_b4 = st.columns([2.5, 2.5, 3.5, 1.5])
 with col_b1:
     tienda_sel = st.selectbox("Tienda", ["S008 Metro Schell", "S001 Metro Miraflores", "S004 Wong Benavides", "Todas las Tiendas"], key="gate_tienda")
 
+# Obtener mundos disponibles desde la columna 'Mundo' (SECCIÓN 3 de SAP)
+if df_pasillo_global is not None and not df_pasillo_global.empty and 'Mundo' in df_pasillo_global.columns:
+    mundos_disponibles = sorted([m for m in df_pasillo_global['Mundo'].dropna().unique() if str(m).strip() not in ['SIN DATOS', 'S/D', 'nan', '']])
+    if not mundos_disponibles:
+        mundos_disponibles = ["DESAYUNO"]
+else:
+    mundos_disponibles = ["DESAYUNO"]
+
 with col_b2:
-    mundo_sel = st.selectbox("Mundo", ["DESAYUNO", "ABARROTES", "LÁCTEOS Y EMBUTIDOS", "LIMPIEZA"], key="gate_mundo")
+    mundo_sel = st.selectbox("Mundo (Sección SAP)", mundos_disponibles, key="gate_mundo")
+
+# Filtrar categorías pertenecientes a ese Mundo
+if df_pasillo_global is not None and not df_pasillo_global.empty:
+    df_filtrado_mundo = df_pasillo_global[df_pasillo_global['Mundo'] == mundo_sel]
+    cats_encontradas = sorted([c for c in df_filtrado_mundo['Categoría'].dropna().unique() if str(c) not in ['SIN DATOS', 'S/C', 'nan', '']])
+    if not cats_encontradas:
+        cats_encontradas = sorted([c for c in df_pasillo_global['Categoría'].dropna().unique() if str(c) not in ['SIN DATOS', 'S/C', 'nan', '']])
+else:
+    cats_encontradas = [
+        "CAFÉ Y COMPLEMENTOS",
+        "MODIFICADORES DE LECHES / COMPLEMENTOS / SUPLEMENTOS", 
+        "TÉ E INFUSIONES", 
+        "PANES Y TOSTADAS", 
+        "MIELES / JALEAS / SIROPE"
+    ]
 
 with col_b3:
-    if df_pasillo_global is not None and not df_pasillo_global.empty:
-        cats_encontradas = sorted([c for c in df_pasillo_global['Categoría'].dropna().unique() if str(c) not in ['SIN DATOS', 'S/C', 'nan', '']])
-    else:
-        cats_encontradas = [
-            "CAFÉ Y COMPLEMENTOS",
-            "MODIFICADORES DE LECHES / COMPLEMENTOS / SUPLEMENTOS", 
-            "TÉ E INFUSIONES", 
-            "PANES Y TOSTADAS", 
-            "MIELES / JALEAS / SIROPE"
-        ]
-    
     cat_sel = st.selectbox("Categoría", ["Todas las Categorías"] + cats_encontradas, key="gate_cat")
 
 with col_b4:
@@ -1069,6 +1100,11 @@ if not st.session_state.busqueda_activa:
 else:
     df_base = df_pasillo_global.copy()
     
+    # Filtro por Mundo
+    if 'Mundo' in df_base.columns:
+        df_base = df_base[df_base['Mundo'] == mundo_sel].copy()
+
+    # Filtro por Categoría
     if cat_sel != "Todas las Categorías":
         df_base = df_base[df_base['Categoría'] == cat_sel].copy()
 
@@ -1210,17 +1246,16 @@ else:
             st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # --- PESTAÑA 2: NUEVO PLANOGRAMA PANORÁMICO (DESDE GOOGLE SHEET DE IMÁGENES) ---
+    # --- PESTAÑA 2: NUEVO PLANOGRAMA PANORÁMICO (DESDE GOOGLE SHEET) ---
     # =========================================================================
     with tab_plano:
-        cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else "CAFÉS Y COMPLEMENTOS"
+        cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else f"MUNDO {mundo_sel} - PLANOGRAMA INTEGRAL"
         st.markdown(f"<h4 style='color:#0f172a; margin-top: 0;'>{cat_actual_titulo}</h4>", unsafe_allow_html=True)
         
         # 1. IMAGEN OFICIAL DESDE EL GOOGLE SHEET ENLAZADO
         url_sheet_img = None
         cat_key_lookup = cat_actual_titulo.strip().upper()
         
-        # Búsqueda exacta o parcial en el mapa de imágenes
         if cat_key_lookup in mapa_imagenes_online:
             url_sheet_img = mapa_imagenes_online[cat_key_lookup]
         else:
@@ -1232,8 +1267,7 @@ else:
         if url_sheet_img:
             st.image(url_sheet_img, use_container_width=True, caption=f"Planograma Institucional Oficial - {cat_actual_titulo}")
         else:
-            # Fallback opcional si la categoría no estuviera aún en el sheet
-            st.info(f"💡 No se encontró enlace directo para **{cat_actual_titulo}** en el libro de imágenes. Puede agregarlo a la hoja compartida para que cargue automáticamente.")
+            st.info(f"💡 No se encontró imagen asignada para **{cat_actual_titulo}** en el libro maestro. Puedes agregar el link en la hoja compartida.")
 
         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
@@ -1359,5 +1393,3 @@ else:
             st.dataframe(df_err[cols_e], use_container_width=True, hide_index=True)
         else:
             st.success("🎉 ¡Excelente! No se detectaron desajustes de cruce en esta categoría.")
-
-```
