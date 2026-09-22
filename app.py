@@ -2,6 +2,7 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 import io
+import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
@@ -14,8 +15,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- PALETA DESIGN SYSTEM (MODO CLARO FIJO) ---
-es_oscuro = False
+# --- PALETA DESIGN SYSTEM ---
 t = {
     "bg_app": "#f8fafc",
     "bg_surface": "#ffffff",
@@ -26,31 +26,9 @@ t = {
     "text_secondary": "#2563eb",
     "text_muted": "#475569",
     "accent": "#2563eb",
-    "accent_green": "#059669",
-    "accent_purple": "#7c3aed",
-    "accent_amber": "#d97706",
     "grid_color": "rgba(0, 0, 0, 0.06)",
     "card_shadow": "0 2px 6px rgba(0,0,0,0.05)",
-    "plotly_text": "#0f172a",
-    "input_bg": "#ffffff",
-    "input_border": "#cbd5e1",
-    "input_text": "#0f172a",
-    "popover_bg": "#ffffff",
-    "popover_border": "#cbd5e1",
-    "popover_text": "#0f172a",
-    "popover_hover": "#eff6ff",
-    "popover_hover_text": "#2563eb",
-    "btn_bg": "#ffffff",
-    "btn_text": "#0f172a",
-    "tab_container_bg": "#f1f5f9",
-    "tab_inactive_bg": "#e2e8f0",
-    "tab_inactive_text": "#0f172a",
-    "tab_inactive_border": "#cbd5e1",
 }
-
-text_secondary = t["text_secondary"]
-text_primary = t["text_primary"]
-text_muted = t["text_muted"]
 
 # INYECCIÓN CSS CON MÁXIMO CONTRASTE
 st.markdown(f"""
@@ -60,7 +38,7 @@ st.markdown(f"""
         html, body, .stApp, [data-testid="stAppViewContainer"], .main, section.main, [data-testid="stHeader"] {{
             background-color: {t["bg_app"]} !important;
             background: {t["bg_app"]} !important;
-            color: {text_primary} !important;
+            color: {t["text_primary"]} !important;
             font-family: 'Inter', sans-serif !important;
         }}
         
@@ -79,7 +57,7 @@ st.markdown(f"""
         /* PESTAÑAS (TABS) */
         .stTabs [data-baseweb="tab-list"] {{
             gap: 8px !important;
-            background-color: {t["tab_container_bg"]} !important;
+            background-color: #f1f5f9 !important;
             padding: 6px !important;
             border-radius: 8px !important;
             border: 1.5px solid {t["border_subtle"]} !important;
@@ -92,8 +70,8 @@ st.markdown(f"""
             border-radius: 6px !important;
             font-weight: 800 !important;
             font-size: 0.88rem !important;
-            background-color: {t["tab_inactive_bg"]} !important;
-            border: 1.5px solid {t["tab_inactive_border"]} !important;
+            background-color: #e2e8f0 !important;
+            border: 1.5px solid {t["border_subtle"]} !important;
             opacity: 1 !important;
             transition: all 0.2s ease !important;
         }}
@@ -104,8 +82,8 @@ st.markdown(f"""
         .stTabs [data-baseweb="tab"] span,
         .stTabs [data-baseweb="tab"] div,
         .stTabs [data-baseweb="tab"] [data-testid="stMarkdownContainer"] p {{
-            color: {t["tab_inactive_text"]} !important;
-            -webkit-text-fill-color: {t["tab_inactive_text"]} !important;
+            color: {t["text_primary"]} !important;
+            -webkit-text-fill-color: {t["text_primary"]} !important;
             font-weight: 800 !important;
         }}
         
@@ -154,7 +132,7 @@ st.markdown(f"""
         .fin-kpi-title {{
             font-size: 0.68rem;
             font-weight: 800;
-            color: {text_secondary};
+            color: {t["text_secondary"]};
             text-transform: uppercase;
             letter-spacing: 0.5px;
             margin-bottom: 4px;
@@ -166,7 +144,7 @@ st.markdown(f"""
         .fin-kpi-val {{
             font-size: 1.85rem;
             font-weight: 900;
-            color: {text_primary};
+            color: {t["text_primary"]};
             line-height: 1.1;
             font-feature-settings: "tnum";
             margin-bottom: 4px;
@@ -175,7 +153,7 @@ st.markdown(f"""
         .fin-kpi-subtitle {{
             font-size: 0.72rem;
             font-weight: 600;
-            color: {text_muted};
+            color: {t["text_muted"]};
         }}
         
         .dash-card {{
@@ -199,21 +177,11 @@ st.markdown(f"""
         .dash-card-title {{
             font-size: 0.85rem;
             font-weight: 800;
-            color: {text_primary};
+            color: {t["text_primary"]};
             display: flex;
             align-items: center;
             gap: 6px;
         }}
-
-        .chart-scroll-wrapper {{
-            width: 100%;
-            overflow-x: auto;
-            overflow-y: hidden;
-            padding-bottom: 8px;
-        }}
-        .chart-scroll-wrapper::-webkit-scrollbar {{ height: 8px; }}
-        .chart-scroll-wrapper::-webkit-scrollbar-track {{ background: {t["bg_app"]}; border-radius: 4px; }}
-        .chart-scroll-wrapper::-webkit-scrollbar-thumb {{ background: {t["accent"]}; border-radius: 4px; }}
 
         .insight-box {{
             border-radius: 8px;
@@ -249,7 +217,6 @@ def clean_sku(val):
     return s.strip()
 
 def get_clean_series(df, col_name):
-    """Garantiza la extracción de una Serie 1D unidimensional."""
     if col_name not in df.columns:
         return pd.Series([""] * len(df), index=df.index, dtype=str)
     item = df[col_name]
@@ -273,34 +240,46 @@ def sanitizar_columna_num(df, col, default=-999.0):
     else:
         df[col] = default
 
-def obtener_estado_y_color(estado, stock_val):
+# COLORES MÁS FUERTES Y DE ALTO CONTRASTE OPERATIVO
+def obtener_estado_y_color_fuerte(estado, stock_val):
     estado = str(estado).strip().upper()
     if estado == "B": 
-        return "#fee2e2", "#fca5a5", "#991b1b", "Bloqueado"
+        # Bloqueado: Rojo intenso
+        return "#dc2626", "#991b1b", "#ffffff", "Bloqueado"
     elif estado == "SIN DATOS":
-        return "#f1f5f9", "#94a3b8", "#475569", "Sin Datos"
+        return "#64748b", "#334155", "#ffffff", "Sin Datos"
     elif estado == "A":
         if stock_val <= 0: 
-            return "#ffedd5", "#fdba74", "#9a3412", "Sin Stock"
+            # Sin Stock: Naranja vibrante
+            return "#ea580c", "#c2410c", "#ffffff", "Sin Stock"
         elif stock_val <= 5: 
-            return "#fef9c3", "#fde047", "#854d0e", "Stock Bajo"
+            # Stock Bajo: Amarillo oro saturado con texto oscuro
+            return "#facc15", "#ca8a04", "#0f172a", "Stock Bajo"
         else: 
-            return "#dcfce7", "#86efac", "#166534", "Stock OK"
+            # Stock OK: Verde esmeralda vivo
+            return "#16a34a", "#15803d", "#ffffff", "Stock OK"
     else: 
-        return "#f1f5f9", "#cbd5e1", "#475569", "Desconocido"
+        return "#64748b", "#334155", "#ffffff", "Desconocido"
 
 # --- GENERADOR DEL PLANOGRAMA PANORÁMICO COMPACTO EN RECTÁNGULOS ---
 def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
     df = df.copy()
     df['FilaOriginal'] = range(len(df))
-    df['TieneOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').notna()
-    df['NumOrden'] = pd.to_numeric(df.get('N° ORDEN', pd.Series([None]*len(df))), errors='coerce').fillna(999999)
+    
+    col_pos = 'N° ORDEN' if 'N° ORDEN' in df.columns else ('N°' if 'N°' in df.columns else None)
+    if col_pos:
+        df['TieneOrden'] = pd.to_numeric(get_clean_series(df, col_pos), errors='coerce').notna()
+        df['NumOrden'] = pd.to_numeric(get_clean_series(df, col_pos), errors='coerce').fillna(999999)
+    else:
+        df['TieneOrden'] = False
+        df['NumOrden'] = 999999
     
     bandeja_str = get_clean_series(df, 'Bandeja').replace('', '1.1')
     df[['Cuerpo_Ord', 'Nivel_Ord']] = bandeja_str.str.extract(r'(\d+)\.(\d+)')[0:2]
     df['Cuerpo_Ord'] = pd.to_numeric(df['Cuerpo_Ord'], errors='coerce').fillna(1)
     df['Nivel_Num'] = pd.to_numeric(df['Nivel_Ord'], errors='coerce').fillna(1)
 
+    # Orden exacto: Cuerpo (izq a der), Nivel (arriba a abajo), Posición (izq a der)
     df = df.sort_values(
         by=['Cuerpo_Ord', 'Nivel_Num', 'TieneOrden', 'NumOrden', 'FilaOriginal'], 
         ascending=[True, False, False, True, True]
@@ -332,6 +311,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         html_niveles = ""
         for b_nombre in niveles_ordenados:
             items = niveles_dict[b_nombre]
+            nivel_num = str(b_nombre).split(".")[-1] if "." in str(b_nombre) else str(b_nombre)
             
             rects_html = ""
             for it in items:
@@ -341,6 +321,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
                 marca = str(it.get("Marca", "S/M"))
                 estado = str(it.get("Estado", ""))
                 caras = int(it.get("Caras", 1)) if str(it.get("Caras", 1)).isdigit() and int(it.get("Caras", 1)) > 0 else 1
+                pos_val = str(it.get(col_pos, "-")) if col_pos else "-"
 
                 stock_val = safe_float(it.get("Stock", -999.0))
                 cob_val = safe_float(it.get("Cobertura", -999.0))
@@ -352,18 +333,20 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
                 catjer_val = str(it.get("Categoría", "SIN DATOS")).replace('"', '&quot;')
                 ga_val = str(it.get("Grupo de Artículo", "SIN DATOS")).replace('"', '&quot;')
 
-                bg_color, border_color, text_color, cat_leyenda = obtener_estado_y_color(estado, stock_val)
-                texto_etiqueta = marca if (marca and marca != 'S/M') else (nombre[:12] if nombre else cod_real)
+                bg_color, border_color, text_color, cat_leyenda = obtener_estado_y_color_fuerte(estado, stock_val)
 
+                # Generar un rectángulo por cada cara para visualización fiel
                 for c_idx in range(caras):
                     rects_html += f"""
                     <div class="plano-rect" style="background-color: {bg_color}; border-color: {border_color}; color: {text_color};"
                          data-brand="{marca}" data-name="{nombre}" data-ean="{ean}"
                          data-stock="{stock_val:.2f}" data-cob="{cob_val:.2f}" data-venta="{venta_val}" data-part="{format_pct(part_val)}"
-                         data-cod="{cod_real}" data-cat="{cat_leyenda}"
+                         data-cod="{cod_real}" data-cat="{cat_leyenda}" data-pos="{pos_val}" data-nivel="{nivel_num}"
                          data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
-                         title="{nombre} (Stk: {stock_val:.0f})">
-                        <span class="plano-label">{texto_etiqueta}</span>
+                         title="Pos: {pos_val} | SAP: {cod_real} | {nombre} (Stk: {stock_val:.0f})">
+                        <span class="plano-tag-caras">{caras}C</span>
+                        <span class="plano-sap-label">{cod_real}</span>
+                        <span class="plano-brand-sub">{marca[:8]}</span>
                     </div>
                     """
 
@@ -392,11 +375,11 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
       <meta charset="UTF-8">
       <style>
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-        body {{ font-family: 'Inter', sans-serif; background: #ffffff; color: #0f172a; padding: 4px; }}
+        body {{ font-family: 'Inter', sans-serif; background: #ffffff; color: #0f172a; padding: 2px; }}
         
         .plano-outer-card {{
             border: 2px solid #eab308;
-            border-radius: 6px;
+            border-radius: 8px;
             overflow: hidden;
             background: #ffffff;
             box-shadow: 0 4px 10px rgba(0,0,0,0.06);
@@ -405,7 +388,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         
         .plano-top-header {{
             background: #facc15;
-            color: #dc2626;
+            color: #b91c1c;
             font-size: 1.15rem;
             font-weight: 900;
             text-align: center;
@@ -435,7 +418,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             display: flex;
             flex-direction: column;
             padding: 6px 4px;
-            gap: 4px;
+            gap: 5px;
             flex-grow: 1;
         }}
         
@@ -449,8 +432,8 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             display: flex;
             flex-direction: row;
             align-items: flex-end;
-            gap: 1px;
-            min-height: 52px;
+            gap: 1.5px;
+            min-height: 60px;
             padding: 0 1px;
             width: 100%;
         }}
@@ -458,35 +441,58 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         .plano-rect {{
             flex: 1 1 0;
             min-width: 0;
-            height: 52px;
-            border: 1px solid #000000;
+            height: 60px;
+            border: 1px solid rgba(0,0,0,0.85);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             overflow: hidden;
             position: relative;
+            padding: 2px 0;
             transition: transform 0.15s ease, box-shadow 0.15s ease;
         }}
         .plano-rect:hover {{
-            transform: scale(1.04);
-            z-index: 20;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            transform: scale(1.06);
+            z-index: 50;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
         }}
         
-        .plano-label {{
+        .plano-tag-caras {{
+            position: absolute;
+            top: 1px;
+            font-size: 0.45rem;
+            font-weight: 900;
+            opacity: 0.85;
+            line-height: 1;
+        }}
+        
+        .plano-sap-label {{
             writing-mode: vertical-rl;
             transform: rotate(180deg);
-            font-size: 0.52rem;
-            font-weight: 800;
-            letter-spacing: -0.3px;
+            font-size: 0.58rem;
+            font-weight: 900;
+            letter-spacing: -0.4px;
             line-height: 1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-height: 48px;
+            max-height: 46px;
+            font-family: monospace;
             pointer-events: none;
             user-select: none;
+        }}
+        
+        .plano-brand-sub {{
+            position: absolute;
+            bottom: 1px;
+            font-size: 0.42rem;
+            font-weight: 800;
+            opacity: 0.85;
+            white-space: nowrap;
+            overflow: hidden;
+            max-width: 100%;
         }}
         
         .plano-shelf-bar {{
@@ -515,7 +521,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
           inset: 0 !important; 
           width: 100vw !important; 
           height: 100vh !important; 
-          background: rgba(15, 23, 42, 0.6) !important; 
+          background: rgba(15, 23, 42, 0.65) !important; 
           z-index: 99999 !important; 
           opacity: 0; 
           pointer-events: none; 
@@ -534,14 +540,14 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
           padding: 22px !important; 
           border-radius: 10px !important; 
           width: 90% !important; 
-          max-width: 420px !important; 
+          max-width: 440px !important; 
           border: 2px solid #2563eb !important; 
-          box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important; 
+          box-shadow: 0 20px 40px rgba(0,0,0,0.2) !important; 
           position: relative !important; 
         }}
         .modal-close {{ position: absolute; top: 10px; right: 14px; font-size: 1.4rem; cursor: pointer; color: #64748b; font-weight: 800; }}
         .modal-close:hover {{ color: #0f172a; }}
-        .m-row {{ border-bottom: 1px solid #e2e8f0; padding: 6px 0; display: flex; justify-content: space-between; font-size: 0.80rem; }}
+        .m-row {{ border-bottom: 1px solid #e2e8f0; padding: 6px 0; display: flex; justify-content: space-between; font-size: 0.82rem; }}
         .m-label {{ font-weight: 600; color: #2563eb; }}
         .m-val {{ font-weight: 700; text-align: right; }}
       </style>
@@ -559,7 +565,8 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
         <div class="modal-content">
           <span class="modal-close">&times;</span>
           <h4 id="m-name" style="margin-bottom: 8px; color: #0f172a; border-bottom: 2px solid #2563eb; padding-bottom: 6px;">Producto</h4>
-          <div class="m-row"><span class="m-label">Cód. Real:</span><span class="m-val" id="m-cod"></span></div>
+          <div class="m-row"><span class="m-label">Código SAP / Real:</span><span class="m-val" id="m-cod" style="font-family: monospace; font-size: 0.95rem; font-weight: 900;"></span></div>
+          <div class="m-row"><span class="m-label">Ubicación (Nivel / Pos):</span><span class="m-val" id="m-pos"></span></div>
           <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
           <div class="m-row"><span class="m-label">Marca:</span><span class="m-val" id="m-brand"></span></div>
           <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
@@ -578,6 +585,7 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
             rect.addEventListener('click', () => {{
                 document.getElementById('m-name').textContent = rect.getAttribute('data-name');
                 document.getElementById('m-cod').textContent = rect.getAttribute('data-cod');
+                document.getElementById('m-pos').textContent = "Nivel " + rect.getAttribute('data-nivel') + " • Posición " + rect.getAttribute('data-pos');
                 document.getElementById('m-ean').textContent = rect.getAttribute('data-ean');
                 document.getElementById('m-brand').textContent = rect.getAttribute('data-brand');
                 document.getElementById('m-catjer').textContent = rect.getAttribute('data-catjer');
@@ -597,13 +605,13 @@ def generar_html_planograma_panoramico(df, titulo_categoria="PLANOGRAMA"):
     </html>
     """
 
-# --- MAPA DE IMÁGENES INSTITUCIONALES DE PLANOGRAMAS (MUNDO DESAYUNO) ---
+# --- MAPA DE PLANOGRAMAS INSTITUCIONALES (MUNDO DESAYUNO) ---
 MAPA_PLANOGRAMAS_IMG = {
-    "PANES Y TOSTADAS": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png", # Reemplazar con URL real o local
-    "MIELES / JALEAS / SIROPE": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png",
-    "TÉ E INFUSIONES": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png",
-    "MODIFICADORES DE LECHES / COMPLEMENTOS / SUPLEMENTOS": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png",
-    "CAFÉ Y COMPLEMENTOS": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png",
+    "PANES Y TOSTADAS": "panes_y_tostadas.jpg",
+    "MIELES / JALEAS / SIROPE": "mieles_jaleas_sirope.jpg",
+    "TÉ E INFUSIONES": "te_e_infusiones.jpg",
+    "MODIFICADORES DE LECHES / COMPLEMENTOS / SUPLEMENTOS": "modificadores_leches.jpg",
+    "CAFÉ Y COMPLEMENTOS": "cafes_y_complementos.jpg",
 }
 
 # --- CARGA INTEGRADA DE FUENTES Y LIMPIEZA TOTAL ---
@@ -893,7 +901,7 @@ col_head1, col_head3 = st.columns([7.5, 2.5])
 with col_head1:
     st.markdown(f"""
         <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; color: {text_primary};">
+            <div style="font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; color: {t['text_primary']};">
                 🏪 Planograma <span style="color: {t['accent']}; font-weight: 800;">2.0</span>
             </div>
             <span style="background: {t['accent']}1a; color: {t['accent']}; font-size: 0.65rem; font-weight: 800; padding: 2px 8px; border-radius: 12px; border: 1px solid {t['accent']}33;">CENCOSUD PERÚ</span>
@@ -903,8 +911,8 @@ with col_head1:
 with col_head3:
     st.markdown(f"""
         <div style="text-align: right; line-height: 1.3;">
-            <div style="font-size: 0.78rem; font-weight: 800; color: {text_primary};">Desarrollado por <b>Alfredo H.M.</b></div>
-            <div style="font-size: 0.68rem; color: {text_muted};">{info_hora if info_hora else 'En línea'}</div>
+            <div style="font-size: 0.78rem; font-weight: 800; color: {t['text_primary']};">Desarrollado por <b>Alfredo H.M.</b></div>
+            <div style="font-size: 0.68rem; color: {t['text_muted']};">{info_hora if info_hora else 'En línea'}</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -934,7 +942,13 @@ with col_b3:
     if df_pasillo_global is not None and not df_pasillo_global.empty:
         cats_encontradas = sorted([c for c in df_pasillo_global['Categoría'].dropna().unique() if str(c) not in ['SIN DATOS', 'S/C', 'nan', '']])
     else:
-        cats_encontradas = ["MODIFICADORES DE LECHES / COMPLEMENTOS / SUPLEMENTOS", "CAFÉ Y COMPLEMENTOS", "TÉ E INFUSIONES", "PANES Y TOSTADAS", "MIELES / JALEAS / SIROPE"]
+        cats_encontradas = [
+            "MODIFICADORES DE LECHES / COMPLEMENTOS / SUPLEMENTOS", 
+            "CAFÉ Y COMPLEMENTOS", 
+            "TÉ E INFUSIONES", 
+            "PANES Y TOSTADAS", 
+            "MIELES / JALEAS / SIROPE"
+        ]
     
     cat_sel = st.selectbox("Categoría", ["Todas las Categorías"] + cats_encontradas, key="gate_cat")
 
@@ -953,7 +967,7 @@ if not st.session_state.busqueda_activa:
 else:
     df_base = df_pasillo_global.copy()
     
-    # Filtro dinámico según la categoría elegida en la compuerta
+    # Filtrar según la categoría elegida en la compuerta
     if cat_sel != "Todas las Categorías":
         df_base = df_base[df_base['Categoría'] == cat_sel].copy()
 
@@ -1004,12 +1018,12 @@ else:
             <div class="fin-kpi-container">
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #10b981;">
                     <div class="fin-kpi-title"><span>Nivel de Servicio (OSA)</span><span>🎯</span></div>
-                    <div class="fin-kpi-val" style="color: {'#10b981' if osa_pct >= 95 else ('#f59e0b' if osa_pct >= 90 else '#ef4444')};">{osa_pct:.1f}%</div>
+                    <div class="fin-kpi-val" style="color: {'#10b981' if osa_pct >= 95 else ('#ea580c' if osa_pct >= 90 else '#dc2626')};">{osa_pct:.1f}%</div>
                     <div class="fin-kpi-subtitle">Disponibilidad en góndola (Meta &gt; 95%)</div>
                 </div>
-                <div class="fin-kpi-card" style="border-bottom: 4px solid #ef4444;">
+                <div class="fin-kpi-card" style="border-bottom: 4px solid #dc2626;">
                     <div class="fin-kpi-title"><span>Quiebres de Stock (0)</span><span>🚨</span></div>
-                    <div class="fin-kpi-val" style="color: #ef4444;">{tot_quiebres}</div>
+                    <div class="fin-kpi-val" style="color: #dc2626;">{tot_quiebres}</div>
                     <div class="fin-kpi-subtitle"><b>{pct_quiebres:.1f}%</b> del surtido quebrado</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #64748b;">
@@ -1017,9 +1031,9 @@ else:
                     <div class="fin-kpi-val" style="color: #64748b;">{tot_bloqueados}</div>
                     <div class="fin-kpi-subtitle">Espacio a depurar en góndola</div>
                 </div>
-                <div class="fin-kpi-card" style="border-bottom: 4px solid #f59e0b;">
+                <div class="fin-kpi-card" style="border-bottom: 4px solid #ea580c;">
                     <div class="fin-kpi-title"><span>Venta sin Planograma</span><span>📦</span></div>
-                    <div class="fin-kpi-val" style="color: #d97706;">{tot_no_plano}</div>
+                    <div class="fin-kpi-val" style="color: #ea580c;">{tot_no_plano}</div>
                     <div class="fin-kpi-subtitle">SKUs huérfanos con venta activa</div>
                 </div>
                 <div class="fin-kpi-card" style="border-bottom: 4px solid #2563eb;">
@@ -1033,14 +1047,14 @@ else:
         c_a1, c_a2 = st.columns(2)
         with c_a1:
             st.markdown(f"""
-                <div class="insight-box" style="background-color: #fee2e2; border-left: 4px solid #ef4444; color: #991b1b;">
+                <div class="insight-box" style="background-color: #fee2e2; border-left: 4px solid #dc2626; color: #991b1b;">
                     <b>🚨 Venta en Riesgo por Quiebres: S/ {venta_en_riesgo:,.2f}</b><br>
                     Hay <b>{tot_quiebres} SKUs con Stock 0</b> en repisa que detienen ventas directas en esta categoría.
                 </div>
             """, unsafe_allow_html=True)
         with c_a2:
             st.markdown(f"""
-                <div class="insight-box" style="background-color: #fef3c7; border-left: 4px solid #f59e0b; color: #78350f;">
+                <div class="insight-box" style="background-color: #ffedd5; border-left: 4px solid #ea580c; color: #9a3412;">
                     <b>⚠️ Venta Fuera de Planograma: S/ {ventas_no_plano:,.2f}</b><br>
                     Existen <b>{tot_no_plano} SKUs vendidos</b> que no tienen una posición física registrada en el plano.
                 </div>
@@ -1066,7 +1080,7 @@ else:
             fig_ops.add_trace(go.Bar(
                 x=df_cat_ops['Categoría'], y=df_cat_ops['Quiebres'], name="Quiebres (Stock 0)",
                 text=df_cat_ops['Quiebres'].apply(lambda x: f"{int(x)} Q"), textposition='inside',
-                marker=dict(color='#ef4444')
+                marker=dict(color='#dc2626')
             ), secondary_y=False)
             fig_ops.add_trace(go.Scatter(
                 x=df_cat_ops['Categoría'], y=df_cat_ops['Part_Venta'], name="% Participación Venta",
@@ -1089,41 +1103,48 @@ else:
             dh = df_unicos['H_Estado'].value_counts().reset_index()
             dh.columns = ['Estado', 'Cant']
             fig_pie_h = px.pie(dh, values='Cant', names='Estado', hole=0.55, 
-                               color='Estado', color_discrete_map={'Stock OK (>5)':'#10b981', 'Alerta Baja (1-5)':'#f59e0b', 'Quiebre (0)':'#ef4444', 'Bloqueado (B)':'#64748b'})
+                               color='Estado', color_discrete_map={'Stock OK (>5)':'#16a34a', 'Alerta Baja (1-5)':'#facc15', 'Quiebre (0)':'#ea580c', 'Bloqueado (B)':'#dc2626'})
             fig_pie_h.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=10, b=10, l=10, r=10), showlegend=True)
             st.plotly_chart(fig_pie_h, use_container_width=True, config={'displayModeBar': False})
             st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # --- PESTAÑA 2: NUEVO PLANOGRAMA PANORÁMICO (RECTÁNGULOS COMPACTOS) ---
+    # --- PESTAÑA 2: NUEVO PLANOGRAMA PANORÁMICO (CÓDIGO SAP EN CADA FACING) ---
     # =========================================================================
     with tab_plano:
         cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else "MUNDO DESAYUNO - PLANOGRAMA INTEGRAL"
         st.markdown(f"<h4 style='color:#0f172a; margin-top: 0;'>{cat_actual_titulo}</h4>", unsafe_allow_html=True)
         
-        # 1. IMAGEN DEL PLANOGRAMA OFICIAL ARRIBA
-        url_img_oficial = MAPA_PLANOGRAMAS_IMG.get(cat_sel, None)
-        if url_img_oficial:
-            st.markdown("<b>📸 Imagen Oficial del Planograma Institucional:</b>", unsafe_allow_html=True)
-            st.image(url_img_oficial, use_container_width=True, caption=f"Planograma de Referencia - {cat_sel}")
-            st.markdown("<hr style='border-color: #cbd5e1; margin: 12px 0;'>", unsafe_allow_html=True)
+        # 1. CARGA O SELECCIÓN DE LA IMAGEN INSTITUCIONAL
+        nombre_archivo_img = MAPA_PLANOGRAMAS_IMG.get(cat_sel, None)
+        
+        expander_img = st.expander("📸 Ver / Vincular Imagen Oficial del Planograma Institucional", expanded=True)
+        with expander_img:
+            # Si el archivo existe localmente en el directorio de la app
+            if nombre_archivo_img and os.path.exists(nombre_archivo_img):
+                st.image(nombre_archivo_img, use_container_width=True, caption=f"Planograma Oficial - {cat_actual_titulo}")
+            else:
+                st.markdown(f"<p style='color: #475569; font-size: 0.84rem;'>Para ver la imagen oficial de <b>{cat_actual_titulo}</b>, puedes colocar el archivo <code>{nombre_archivo_img}</code> en la raíz del proyecto o subirlo aquí directamente:</p>", unsafe_allow_html=True)
+                uploaded_img = st.file_uploader(f"Cargar imagen de planograma para {cat_actual_titulo}", type=["jpg", "png", "jpeg"], key=f"uploader_{cat_sel}")
+                if uploaded_img:
+                    st.image(uploaded_img, use_container_width=True, caption=f"Planograma Oficial Cargado - {cat_actual_titulo}")
 
-        # 2. LEYENDA CLARA PASTEL DIRECTA
+        # 2. LEYENDA CON COLORES FUERTES DE ALTO CONTRASTE
         st.markdown("""
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; font-size: 0.72rem; font-weight: 700;">
-                <span style="font-weight: 800; color: #2563eb;">📍 ESTADO:</span>
-                <span style="background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 2px 10px; border-radius: 12px;">Bloqueado</span>
-                <span style="background: #ffedd5; border: 1px solid #fdba74; color: #9a3412; padding: 2px 10px; border-radius: 12px;">Sin Stock (0)</span>
-                <span style="background: #fef9c3; border: 1px solid #fde047; color: #854d0e; padding: 2px 10px; border-radius: 12px;">Stock 1 a 5</span>
-                <span style="background: #dcfce7; border: 1px solid #86efac; color: #166534; padding: 2px 10px; border-radius: 12px;">Stock > 5</span>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; margin-bottom: 12px; align-items: center; font-size: 0.75rem; font-weight: 800;">
+                <span style="color: #2563eb; text-transform: uppercase;">📍 LEYENDA DE ESTADO:</span>
+                <span style="background: #dc2626; border: 1.5px solid #991b1b; color: #ffffff; padding: 3px 12px; border-radius: 12px;">Bloqueado (B)</span>
+                <span style="background: #ea580c; border: 1.5px solid #c2410c; color: #ffffff; padding: 3px 12px; border-radius: 12px;">Sin Stock / Quiebre (0)</span>
+                <span style="background: #facc15; border: 1.5px solid #ca8a04; color: #0f172a; padding: 3px 12px; border-radius: 12px;">Stock Bajo (1 a 5)</span>
+                <span style="background: #16a34a; border: 1.5px solid #15803d; color: #ffffff; padding: 3px 12px; border-radius: 12px;">Stock OK (> 5)</span>
             </div>
         """, unsafe_allow_html=True)
 
-        # 3. DIAGRAMA PANORÁMICO AUTO-AJUSTADO AL ANCHO DE LA PANTALLA
+        # 3. DIAGRAMA PANORÁMICO AUTO-AJUSTADO AL ANCHO TOTAL CON CÓDIGOS SAP
         bandeja_series = get_clean_series(df_base, 'Bandeja').replace('', '1.1')
         niveles_extraidos = bandeja_series.str.extract(r'(\d+)\.(\d+)')[1]
         max_niveles_count = int(pd.to_numeric(niveles_extraidos, errors='coerce').fillna(6).max())
-        altura_plano = max(550, 120 + max_niveles_count * 75)
+        altura_plano = max(600, 130 + max_niveles_count * 82)
 
         html_plano_rect = generar_html_planograma_panoramico(df_base, titulo_categoria=cat_actual_titulo)
         components.html(html_plano_rect, height=altura_plano, scrolling=True)
@@ -1150,7 +1171,7 @@ else:
             
             fig_c = make_subplots(specs=[[{"secondary_y": True}]])
             fig_c.add_trace(go.Bar(x=vc['Label'], y=vc['Venta_Total'], name="Venta (S/)", marker_color='#2563eb'), secondary_y=False)
-            fig_c.add_trace(go.Scatter(x=vc['Label'], y=vc['Margen_Pct'], name="Margen %", mode="lines+markers", line=dict(color='#059669', width=3)), secondary_y=True)
+            fig_c.add_trace(go.Scatter(x=vc['Label'], y=vc['Margen_Pct'], name="Margen %", mode="lines+markers", line=dict(color='#16a34a', width=3)), secondary_y=True)
             fig_c.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=20, b=20, l=10, r=10))
             st.plotly_chart(fig_c, use_container_width=True, config={'displayModeBar': False})
             
@@ -1193,7 +1214,7 @@ else:
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], y=df_fs['Pct_Ventas'], name="% Ventas (Monto S/)",
                 text=df_fs['Pct_Ventas'].apply(lambda x: f"{x*100:.1f}%"), textposition='inside',
-                marker_color='#059669',
+                marker_color='#16a34a',
                 hovertemplate="<b>%{x}</b><br>% Ventas: %{y:.1%}<br>SKUs Únicos: %{customdata}<extra></extra>",
                 customdata=df_fs['SKUs_Activos']
             ))
