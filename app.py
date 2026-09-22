@@ -106,7 +106,7 @@ st.markdown(f"""
             font-weight: 900 !important;
         }}
 
-        /* TARJETAS KPIS CON VALORES CENTRADOS (P1 Y P3) */
+        /* TARJETAS KPIS CON VALORES CENTRADOS */
         .kpi-cards-grid {{
             display: grid;
             gap: 12px;
@@ -114,6 +114,19 @@ st.markdown(f"""
         }}
         .grid-5-col {{ grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }}
         .grid-4-col {{ grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }}
+
+        @media (max-width: 768px) {{
+            .grid-5-col, .grid-4-col {{
+                grid-template-columns: repeat(3, 1fr) !important;
+                gap: 8px !important;
+            }}
+        }}
+
+        @media (max-width: 480px) {{
+            .grid-5-col, .grid-4-col {{
+                grid-template-columns: repeat(2, 1fr) !important;
+            }}
+        }}
 
         .kpi-card-lux {{
             background: {t["bg_card"]};
@@ -158,26 +171,6 @@ st.markdown(f"""
             color: {t["text_muted"]};
             text-align: center;
             line-height: 1.3;
-        }}
-
-        /* ENMARCADO PANORÁMICO HOMOGÉNEO DE IMAGEN (260px) */
-        .planograma-img-frame {{
-            width: 100%;
-            height: 260px;
-            background: #ffffff;
-            border: 1.5px solid {t["border_subtle"]};
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            margin-bottom: 12px;
-            box-shadow: {t["card_shadow"]};
-        }}
-        .planograma-img-frame img {{
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
         }}
 
         .dash-card {{
@@ -858,12 +851,12 @@ else:
             st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # --- PESTAÑA 2: PLANOGRAMA FÍSICO PANORÁMICO (ORDEN: PANEL -> FOTO -> LEYENDA -> PLANOGRAMA) ---
+    # --- PESTAÑA 2: PLANOGRAMA FÍSICO PANORÁMICO (RESPONSIVE + FULLSCREEN INMERSIVO) ---
     # =========================================================================
     with tab_plano:
         cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else f"MUNDO {mundo_sel} - PLANOGRAMA INTEGRAL"
         
-        # 1. CÁLCULO DE MÉTRICAS OPERATIVAS (TARJETAS FILTRO)
+        # 1. CÁLCULO DE MÉTRICAS OPERATIVAS (6 TARJETAS EXACTAS, SIN TOP VENTAS)
         tot_skus_op = len(df_unicos)
         bloq_op = len(df_unicos[df_unicos['Estado'].str.strip().str.upper() == 'B'])
         quiebre_op = len(df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] <= 0)])
@@ -989,13 +982,12 @@ else:
                     break
         
         img_html_block = f"""
-            <div class="planograma-img-frame">
+            <div class="planograma-img-frame" id="fullImgFrame">
                 <img src="{url_sheet_img}" alt="Planograma Oficial {cat_actual_titulo}">
             </div>
         """ if url_sheet_img else ""
 
-        # Altura calculada total para que no requiera scroll el iframe
-        altura_iframe = altura_cuerpo_px + (300 if not url_sheet_img else 570)
+        altura_iframe = altura_cuerpo_px + (280 if not url_sheet_img else 550)
 
         html_componente_completo = f"""
         <!DOCTYPE html>
@@ -1043,21 +1035,28 @@ else:
                 color: #2563eb;
             }}
 
-            /* 2. TARJETAS FILTRO CON VALORES CENTRADOS */
+            /* 2. TARJETAS INFORMATIVAS (EXACTAMENTE 6 TARJETAS, SIN TOP VENTAS, NO CLICABLES) */
             .filter-cards-grid {{
                 display: grid;
-                grid-template-columns: repeat(7, 1fr);
+                grid-template-columns: repeat(6, 1fr);
                 gap: 8px;
                 margin-bottom: 12px;
             }}
-            .card-btn {{
+            
+            /* REGLA RESPONSIVE ESTRICTA: MÁXIMO 3 COLUMNAS EN CELULAR / PANTALLAS ESTRECHAS */
+            @media (max-width: 900px) {{
+                .filter-cards-grid {{
+                    grid-template-columns: repeat(3, 1fr) !important;
+                    gap: 6px !important;
+                }}
+            }}
+            
+            .card-static {{
                 background: #ffffff;
                 border: 1.5px solid #cbd5e1;
                 border-radius: 8px;
                 padding: 10px 6px;
                 text-align: center;
-                cursor: pointer;
-                transition: transform 0.15s ease, box-shadow 0.15s ease;
                 box-shadow: 0 1px 3px rgba(0,0,0,0.04);
                 user-select: none;
                 display: flex;
@@ -1065,16 +1064,7 @@ else:
                 justify-content: center;
                 align-items: center;
             }}
-            .card-btn:hover {{
-                transform: translateY(-2px);
-                box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-            }}
-            .card-btn.active {{
-                outline: 2.5px solid #0f172a !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
-                transform: scale(1.02);
-            }}
-            .card-btn-title {{
+            .card-static-title {{
                 font-size: 0.65rem;
                 font-weight: 800;
                 text-transform: uppercase;
@@ -1082,7 +1072,7 @@ else:
                 letter-spacing: 0.4px;
                 text-align: center;
             }}
-            .card-btn-val {{
+            .card-static-val {{
                 font-size: 1.65rem;
                 font-weight: 900;
                 line-height: 1;
@@ -1091,34 +1081,30 @@ else:
             }}
 
             .cb-total {{ border-bottom: 4px solid #2563eb; }}
-            .cb-total .card-btn-title {{ color: #2563eb; }}
-            .cb-total .card-btn-val {{ color: #0f172a; }}
+            .cb-total .card-static-title {{ color: #2563eb; }}
+            .cb-total .card-static-val {{ color: #0f172a; }}
 
             .cb-bloq {{ border-bottom: 4px solid #dc2626; }}
-            .cb-bloq .card-btn-title {{ color: #dc2626; }}
-            .cb-bloq .card-btn-val {{ color: #dc2626; }}
+            .cb-bloq .card-static-title {{ color: #dc2626; }}
+            .cb-bloq .card-static-val {{ color: #dc2626; }}
 
             .cb-sinstk {{ border-bottom: 4px solid #ea580c; }}
-            .cb-sinstk .card-btn-title {{ color: #ea580c; }}
-            .cb-sinstk .card-btn-val {{ color: #ea580c; }}
+            .cb-sinstk .card-static-title {{ color: #ea580c; }}
+            .cb-sinstk .card-static-val {{ color: #ea580c; }}
 
             .cb-stkbajo {{ border-bottom: 4px solid #facc15; }}
-            .cb-stkbajo .card-btn-title {{ color: #ca8a04; }}
-            .cb-stkbajo .card-btn-val {{ color: #ca8a04; }}
+            .cb-stkbajo .card-static-title {{ color: #ca8a04; }}
+            .cb-stkbajo .card-static-val {{ color: #ca8a04; }}
 
             .cb-stkok {{ border-bottom: 4px solid #16a34a; }}
-            .cb-stkok .card-btn-title {{ color: #16a34a; }}
-            .cb-stkok .card-btn-val {{ color: #16a34a; }}
+            .cb-stkok .card-static-title {{ color: #16a34a; }}
+            .cb-stkok .card-static-val {{ color: #16a34a; }}
 
             .cb-cobalta {{ border-bottom: 4px solid #ec4899; }}
-            .cb-cobalta .card-btn-title {{ color: #db2777; }}
-            .cb-cobalta .card-btn-val {{ color: #db2777; }}
+            .cb-cobalta .card-static-title {{ color: #db2777; }}
+            .cb-cobalta .card-static-val {{ color: #db2777; }}
 
-            .cb-topvta {{ border-bottom: 4px solid #f59e0b; }}
-            .cb-topvta .card-btn-title {{ color: #d97706; }}
-            .cb-topvta .card-btn-val {{ color: #d97706; }}
-
-            /* 3. BUSCADOR Y ACCIONES */
+            /* 3. BUSCADOR Y ACCIONES COMPACTAS (ICONOS) */
             .controls-panel {{
                 background: #ffffff;
                 border: 1.5px solid #cbd5e1;
@@ -1128,12 +1114,12 @@ else:
                 display: flex;
                 align-items: flex-end;
                 justify-content: space-between;
-                gap: 12px;
+                gap: 10px;
                 box-shadow: 0 1px 4px rgba(0,0,0,0.03);
             }}
             .controls-left {{
                 display: flex;
-                gap: 12px;
+                gap: 10px;
                 flex-grow: 1;
                 align-items: flex-end;
             }}
@@ -1165,25 +1151,67 @@ else:
             }}
             .buttons-actions-row {{
                 display: flex;
-                gap: 8px;
+                gap: 6px;
                 align-items: center;
             }}
-            .btn-act {{
-                padding: 7px 14px;
+            .btn-icon-act {{
+                width: 36px;
+                height: 36px;
                 border-radius: 6px;
-                font-size: 0.78rem;
-                font-weight: 800;
+                font-size: 1.15rem;
+                font-weight: 900;
                 cursor: pointer;
                 border: 1.5px solid transparent;
                 display: flex;
                 align-items: center;
-                gap: 6px;
-                transition: transform 0.15s ease;
+                justify-content: center;
+                transition: transform 0.15s ease, background 0.15s ease;
             }}
-            .btn-act:hover {{ transform: translateY(-1px); }}
-            .btn-fullscreen {{ background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }}
-            .btn-reset {{ background: #fee2e2; color: #dc2626; border-color: #fecaca; }}
-            .btn-print {{ background: #ecfdf5; color: #059669; border-color: #a7f3d0; }}
+            .btn-icon-act:hover {{ transform: translateY(-1px); }}
+            .btn-fullscreen-icon {{ background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }}
+            .btn-reset-icon {{ background: #fee2e2; color: #dc2626; border-color: #fecaca; }}
+
+            /* CONTENEDOR DE AUDITORÍA EN PANTALLA COMPLETA */
+            #fullscreenAuditor {{
+                position: relative;
+                background: #ffffff;
+                width: 100%;
+            }}
+
+            #fullscreenAuditor:fullscreen {{
+                padding: 16px;
+                overflow-y: auto;
+                background: #ffffff;
+            }}
+
+            /* BOTÓN CÓMODO '✕ SALIR' (SOLO VISIBLE EN FULLSCREEN) */
+            .exit-fullscreen-btn {{
+                display: none;
+                position: fixed;
+                top: 14px;
+                right: 14px;
+                z-index: 999999;
+                background: #0f172a;
+                color: #ffffff;
+                border: 2px solid #ffffff;
+                border-radius: 20px;
+                padding: 6px 14px;
+                font-size: 0.82rem;
+                font-weight: 800;
+                cursor: pointer;
+                box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+                transition: transform 0.15s ease, background 0.15s ease;
+            }}
+            .exit-fullscreen-btn:hover {{
+                background: #dc2626;
+                transform: scale(1.05);
+            }}
+
+            #fullscreenAuditor:fullscreen .exit-fullscreen-btn {{
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }}
 
             /* FOTO DEL PLANOGRAMA */
             .planograma-img-frame {{
@@ -1205,18 +1233,22 @@ else:
                 object-fit: contain;
             }}
 
-            /* BARRA DE LEYENDA OPERATIVA */
+            /* BARRA DE LEYENDA OPERATIVA INTERACTIVA (STICKY / FLOTANTE EN FULLSCREEN) */
             .interactive-legend-bar {{
                 display: flex;
                 align-items: center;
                 gap: 8px;
                 flex-wrap: wrap;
                 padding: 8px 12px;
-                background: #ffffff;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(8px);
                 border: 1.5px solid #cbd5e1;
                 border-radius: 6px;
                 margin-bottom: 10px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+                position: sticky;
+                top: 0;
+                z-index: 1000;
             }}
             .legend-label-title {{
                 font-size: 0.72rem;
@@ -1417,39 +1449,35 @@ else:
             </div>
           </div>
 
-          <!-- 2. TARJETAS FILTRO OPERATIVAS CENTRADAS -->
+          <!-- 2. TARJETAS INFORMATIVAS (EXACTAMENTE 6 TARJETAS, SIN TOP VENTAS, NO CLICABLES) -->
           <div class="filter-cards-grid">
-            <div class="card-btn cb-total active" data-filter="TOTAL">
-                <div class="card-btn-title">TOTAL SKUS</div>
-                <div class="card-btn-val">{tot_skus_op}</div>
+            <div class="card-static cb-total">
+                <div class="card-static-title">TOTAL SKUS</div>
+                <div class="card-static-val">{tot_skus_op}</div>
             </div>
-            <div class="card-btn cb-bloq" data-filter="BLOQUEADOS">
-                <div class="card-btn-title">BLOQUEADOS</div>
-                <div class="card-btn-val">{bloq_op}</div>
+            <div class="card-static cb-bloq">
+                <div class="card-static-title">BLOQUEADOS</div>
+                <div class="card-static-val">{bloq_op}</div>
             </div>
-            <div class="card-btn cb-sinstk" data-filter="SIN_STOCK">
-                <div class="card-btn-title">SIN STOCK (0)</div>
-                <div class="card-btn-val">{quiebre_op}</div>
+            <div class="card-static cb-sinstk">
+                <div class="card-static-title">SIN STOCK (0)</div>
+                <div class="card-static-val">{quiebre_op}</div>
             </div>
-            <div class="card-btn cb-stkbajo" data-filter="STOCK_BAJO">
-                <div class="card-btn-title">STOCK BAJO (1-5)</div>
-                <div class="card-btn-val">{stk_bajo_op}</div>
+            <div class="card-static cb-stkbajo">
+                <div class="card-static-title">STOCK BAJO (1-5)</div>
+                <div class="card-static-val">{stk_bajo_op}</div>
             </div>
-            <div class="card-btn cb-stkok" data-filter="STOCK_OK">
-                <div class="card-btn-title">STOCK OK (>5)</div>
-                <div class="card-btn-val">{stk_ok_op}</div>
+            <div class="card-static cb-stkok">
+                <div class="card-static-title">STOCK OK (>5)</div>
+                <div class="card-static-val">{stk_ok_op}</div>
             </div>
-            <div class="card-btn cb-cobalta" data-filter="COB_ALTA">
-                <div class="card-btn-title">COB. ALTA (≥30)</div>
-                <div class="card-btn-val">{cob_alta_op}</div>
-            </div>
-            <div class="card-btn cb-topvta" data-filter="TOP_VENTAS">
-                <div class="card-btn-title">★ TOP VENTAS</div>
-                <div class="card-btn-val">{top_n_default}</div>
+            <div class="card-static cb-cobalta">
+                <div class="card-static-title">COB. ALTA (≥30)</div>
+                <div class="card-static-val">{cob_alta_op}</div>
             </div>
           </div>
 
-          <!-- 3. CONTROLES Y BUSCADOR SIMPLIFICADOS -->
+          <!-- 3. BUSCADOR Y ACCIONES COMPACTAS -->
           <div class="controls-panel">
             <div class="controls-left">
                 <div class="ctrl-group" style="flex: 2;">
@@ -1465,30 +1493,37 @@ else:
                 </div>
             </div>
             <div class="buttons-actions-row">
-                <button type="button" class="btn-act btn-fullscreen" id="btnFullscreen">⛶ Pantalla Completa</button>
-                <button type="button" class="btn-act btn-reset" id="btnResetAll">Restablecer</button>
-                <button type="button" class="btn-act btn-print" onclick="window.print()">🖨️ Imprimir</button>
+                <button type="button" class="btn-icon-act btn-fullscreen-icon" id="btnFullscreen" title="Pantalla Completa">⛶</button>
+                <button type="button" class="btn-icon-act btn-reset-icon" id="btnResetAll" title="Restablecer Filtros">↺</button>
             </div>
           </div>
 
-          <!-- 4. FOTO OFICIAL DEL PLANOGRAMA (HOMOGÉNEA) -->
-          {img_html_block}
+          <!-- 4. CONTENEDOR INMERSIVO DE AUDITORÍA (FULLSCREEN) -->
+          <div id="fullscreenAuditor">
+            <!-- BOTÓN CÓMODO '✕ SALIR' -->
+            <button type="button" class="exit-fullscreen-btn" id="btnExitFullscreen">
+                ✕ Salir de Pantalla Completa
+            </button>
 
-          <!-- 5. BARRA DE LEYENDA OPERATIVA INTERACTIVA -->
-          <div class="interactive-legend-bar">
-            <span class="legend-label-title">📍 LEYENDA OPERATIVA:</span>
-            <button type="button" class="legend-btn btn-bloq" data-target="Bloqueado">Bloqueado (B)</button>
-            <button type="button" class="legend-btn btn-sinstk" data-target="Sin Stock">Sin Stock / Quiebre (0)</button>
-            <button type="button" class="legend-btn btn-bajo" data-target="Stock Bajo">Stock Bajo (1 a 5)</button>
-            <button type="button" class="legend-btn btn-ok" data-target="Stock OK">Stock OK (> 5)</button>
-            <button type="button" class="legend-btn btn-todos" id="btnVerTodos" style="margin-left: auto;">Ver Todos</button>
-          </div>
+            <!-- A. FOTO OFICIAL DEL PLANOGRAMA -->
+            {img_html_block}
 
-          <!-- 6. DIAGRAMA PANORÁMICO -->
-          <div class="plano-outer-card" id="planoCard">
-            <div class="plano-top-header">{cat_actual_titulo}</div>
-            <div class="plano-body-container">
-                {html_cuerpos}
+            <!-- B. BARRA DE LEYENDA OPERATIVA (STICKY / FLOTANTE) -->
+            <div class="interactive-legend-bar">
+                <span class="legend-label-title">📍 LEYENDA OPERATIVA:</span>
+                <button type="button" class="legend-btn btn-bloq" data-target="Bloqueado">Bloqueado (B)</button>
+                <button type="button" class="legend-btn btn-sinstk" data-target="Sin Stock">Sin Stock / Quiebre (0)</button>
+                <button type="button" class="legend-btn btn-bajo" data-target="Stock Bajo">Stock Bajo (1 a 5)</button>
+                <button type="button" class="legend-btn btn-ok" data-target="Stock OK">Stock OK (> 5)</button>
+                <button type="button" class="legend-btn btn-todos" id="btnVerTodos" style="margin-left: auto;">Ver Todos</button>
+            </div>
+
+            <!-- C. DIAGRAMA PANORÁMICO -->
+            <div class="plano-outer-card" id="planoCard">
+                <div class="plano-top-header">{cat_actual_titulo}</div>
+                <div class="plano-body-container">
+                    {html_cuerpos}
+                </div>
             </div>
           </div>
 
@@ -1511,7 +1546,6 @@ else:
 
           <script>
             let activeFilterType = 'TOTAL';
-            const cardButtons = document.querySelectorAll('.card-btn');
             const legendButtons = document.querySelectorAll('.legend-btn[data-target]');
             const rects = document.querySelectorAll('.plano-rect');
             const busqInput = document.getElementById('busqNombre');
@@ -1559,37 +1593,28 @@ else:
                 }});
             }}
 
-            cardButtons.forEach(btn => {{
-                btn.addEventListener('click', () => {{
-                    cardButtons.forEach(b => b.classList.remove('active'));
-                    legendButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    activeFilterType = btn.getAttribute('data-filter');
-                    aplicarFiltrosGlobales();
-                }});
-            }});
-
+            // INTERACTIVIDAD EXCLUSIVA EN LEYENDA OPERATIVA
             legendButtons.forEach(btn => {{
                 btn.addEventListener('click', () => {{
                     const target = btn.getAttribute('data-target');
-                    legendButtons.forEach(b => b.classList.remove('active'));
-                    cardButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    
-                    if (target === 'Bloqueado') activeFilterType = 'BLOQUEADOS';
-                    else if (target === 'Sin Stock') activeFilterType = 'SIN_STOCK';
-                    else if (target === 'Stock Bajo') activeFilterType = 'STOCK_BAJO';
-                    else if (target === 'Stock OK') activeFilterType = 'STOCK_OK';
-                    
+                    if (btn.classList.contains('active')) {{
+                        btn.classList.remove('active');
+                        activeFilterType = 'TOTAL';
+                    }} else {{
+                        legendButtons.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        if (target === 'Bloqueado') activeFilterType = 'BLOQUEADOS';
+                        else if (target === 'Sin Stock') activeFilterType = 'SIN_STOCK';
+                        else if (target === 'Stock Bajo') activeFilterType = 'STOCK_BAJO';
+                        else if (target === 'Stock OK') activeFilterType = 'STOCK_OK';
+                    }}
                     aplicarFiltrosGlobales();
                 }});
             }});
 
             document.getElementById('btnVerTodos').addEventListener('click', () => {{
                 activeFilterType = 'TOTAL';
-                cardButtons.forEach(b => b.classList.remove('active'));
                 legendButtons.forEach(b => b.classList.remove('active'));
-                document.querySelector('.cb-total').classList.add('active');
                 aplicarFiltrosGlobales();
             }});
 
@@ -1598,19 +1623,17 @@ else:
 
             document.getElementById('btnResetAll').addEventListener('click', () => {{
                 activeFilterType = 'TOTAL';
-                cardButtons.forEach(b => b.classList.remove('active'));
                 legendButtons.forEach(b => b.classList.remove('active'));
-                document.querySelector('.cb-total').classList.add('active');
                 busqInput.value = '';
                 selMarca.value = 'Todas';
                 aplicarFiltrosGlobales();
             }});
 
-            // PANTALLA COMPLETA
+            // PANTALLA COMPLETA INMERSIVA (FOTO + PLANOGRAMA + LEYENDA FLOTANTE)
+            const fullAuditor = document.getElementById('fullscreenAuditor');
             document.getElementById('btnFullscreen').addEventListener('click', () => {{
-                const elem = document.getElementById('planoCard');
                 if (!document.fullscreenElement) {{
-                    elem.requestFullscreen().catch(err => {{
+                    fullAuditor.requestFullscreen().catch(err => {{
                         alert("No se pudo iniciar el modo pantalla completa.");
                     }});
                 }} else {{
@@ -1618,7 +1641,13 @@ else:
                 }}
             }});
 
-            // MODAL
+            document.getElementById('btnExitFullscreen').addEventListener('click', () => {{
+                if (document.fullscreenElement) {{
+                    document.exitFullscreen();
+                }}
+            }});
+
+            // MODAL DE DETALLE
             const modal = document.getElementById('pModal');
             const closeBtn = document.querySelector('.modal-close');
             rects.forEach(rect => {{
