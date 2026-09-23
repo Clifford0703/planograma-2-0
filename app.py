@@ -3,6 +3,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import io
 import re
+import json
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import plotly.express as px
@@ -1019,6 +1020,15 @@ else:
         stk_ok_op = df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] > 5)]['COD REAL'].nunique()
         cob_alta_op = df_unicos[df_unicos['Cob_Num'] >= 30]['COD REAL'].nunique()
         
+        # Base ordenada de todos los SKUs para Top Ventas dinámico en JS
+        df_top_ranking = df_unicos[['COD REAL', 'Venta_Num']].sort_values(by='Venta_Num', ascending=False)
+        lista_skus_ventas_json = json.dumps([
+            {"cod": str(row['COD REAL']), "vta": float(row['Venta_Num'])}
+            for _, row in df_top_ranking.iterrows()
+        ])
+        
+        total_venta_plano_float = float(ventas_tot_plano) if ventas_tot_plano > 0 else 1.0
+
         top_n_default = 5
         df_top_vta = df_unicos.sort_values(by='Venta_Num', ascending=False).head(top_n_default)
         monto_top_vta = df_top_vta['Venta_Num'].sum()
@@ -1386,7 +1396,7 @@ else:
                 gap: 8px;
                 flex-wrap: wrap;
                 padding: 8px 12px;
-                background: rgba(255, 255, 255, 0.96);
+                background: rgba(255, 255, 255, 0.98);
                 backdrop-filter: blur(8px);
                 border: 1.5px solid #cbd5e1;
                 border-radius: 6px;
@@ -1395,6 +1405,7 @@ else:
                 position: sticky;
                 top: 0;
                 z-index: 1000;
+                width: 100%;
             }}
             .legend-label-title {{
                 font-size: 0.72rem;
@@ -1407,12 +1418,15 @@ else:
             .legend-btn {{
                 font-size: 0.72rem;
                 font-weight: 800;
-                padding: 4px 12px;
+                padding: 5px 13px;
                 border-radius: 14px;
                 cursor: pointer;
                 border: 2px solid transparent;
                 transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
                 user-select: none;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
             }}
             .legend-btn:hover {{
                 transform: translateY(-1px);
@@ -1423,12 +1437,12 @@ else:
                 box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
                 transform: scale(1.04);
             }}
-            .btn-bloq {{ background: #dc2626; color: #ffffff; border-color: #991b1b; }}
-            .btn-sinstk {{ background: #ea580c; color: #ffffff; border-color: #c2410c; }}
-            .btn-bajo {{ background: #facc15; color: #0f172a; border-color: #ca8a04; }}
-            .btn-ok {{ background: #16a34a; color: #ffffff; border-color: #15803d; }}
-            .btn-topvta {{ background: #8b5cf6; color: #ffffff; border-color: #7c3aed; }}
-            .btn-todos {{ background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }}
+            .btn-bloq {{ background: #dc2626 !important; color: #ffffff !important; border-color: #991b1b !important; }}
+            .btn-sinstk {{ background: #ea580c !important; color: #ffffff !important; border-color: #c2410c !important; }}
+            .btn-bajo {{ background: #facc15 !important; color: #0f172a !important; border-color: #ca8a04 !important; }}
+            .btn-ok {{ background: #16a34a !important; color: #ffffff !important; border-color: #15803d !important; }}
+            .btn-topvta {{ background: #8b5cf6 !important; color: #ffffff !important; border-color: #6d28d9 !important; }}
+            .btn-todos {{ background: #f1f5f9 !important; color: #0f172a !important; border-color: #cbd5e1 !important; }}
 
             .plano-outer-card {{
                 border: 2px solid #0f172a;
@@ -1658,7 +1672,7 @@ else:
           <div class="top-ventas-bar">
             <div class="top-ventas-left">
                 <span>🏆 RESALTAR TOP VENTAS:</span>
-                <input type="number" id="inputTopVentas" class="top-ventas-input" value="{top_n_default}" min="1" max="50">
+                <input type="number" id="inputTopVentas" class="top-ventas-input" value="{top_n_default}" min="1" max="{len(df_top_ranking)}">
                 <span style="color: #2563eb;">SKUs</span>
             </div>
             <div class="top-ventas-right" id="labelTopInfo">
@@ -1726,7 +1740,7 @@ else:
                 <button type="button" class="legend-btn btn-sinstk" data-target="Sin Stock">Sin Stock / Quiebre (0)</button>
                 <button type="button" class="legend-btn btn-bajo" data-target="Stock Bajo">Stock Bajo (1 a 5)</button>
                 <button type="button" class="legend-btn btn-ok" data-target="Stock OK">Stock OK (> 5)</button>
-                <button type="button" class="legend-btn btn-topvta" data-target="Top Ventas">Top Ventas (🏆)</button>
+                <button type="button" class="legend-btn btn-topvta" data-target="Top Ventas">🏆 Top Ventas</button>
                 <button type="button" class="legend-btn btn-todos" id="btnVerTodos" style="margin-left: auto;">Ver Todos</button>
             </div>
 
@@ -1766,6 +1780,40 @@ else:
             const busqInput = document.getElementById('busqNombre');
             const selMarca = document.getElementById('selMarca');
             const topInput = document.getElementById('inputTopVentas');
+            const topLabel = document.getElementById('labelTopInfo');
+
+            // Data de ranking para Top Ventas en tiempo real
+            const rankingVentas = {lista_skus_ventas_json};
+            const totalVentaPlano = {total_venta_plano_float};
+
+            function actualizarTopVentasDinamico() {{
+                let n = parseInt(topInput.value) || 1;
+                if (n < 1) n = 1;
+                if (n > rankingVentas.length) n = rankingVentas.length;
+
+                const topSlice = rankingVentas.slice(0, n);
+                const codigosTop = new Set(topSlice.map(item => String(item.cod).trim().toLowerCase()));
+                const sumaVentaTop = topSlice.reduce((acc, cur) => acc + (cur.vta > 0 ? cur.vta : 0), 0);
+                const pctTop = totalVentaPlano > 0 ? (sumaVentaTop / totalVentaPlano * 100) : 0;
+
+                // Actualizar texto en tiempo real
+                topLabel.innerHTML = `TOP ${{n}} concentra el <span style="color: #16a34a;">${{pctTop.toFixed(1)}}%</span> de la venta (S/ ${{sumaVentaTop.toLocaleString('en-US', {{minimumFractionDigits: 2, maximumFractionDigits: 2}})}}).`;
+
+                // Actualizar dataset en cada rect del planograma
+                rects.forEach(r => {{
+                    const cod = (r.getAttribute('data-cod') || '').trim().toLowerCase();
+                    if (codigosTop.has(cod)) {{
+                        r.setAttribute('data-topvta', '1');
+                    }} else {{
+                        r.setAttribute('data-topvta', '0');
+                    }}
+                }});
+
+                // Si el filtro actual es TOP_VENTAS, re-aplicar resaltado visual
+                if (activeFilterType === 'TOP_VENTAS') {{
+                    aplicarFiltrosGlobales();
+                }}
+            }}
 
             function aplicarFiltrosGlobales() {{
                 const q = busqInput.value.toLowerCase().trim();
@@ -1809,6 +1857,28 @@ else:
                 }});
             }}
 
+            // Evento para actualizar Top Ventas en tiempo real al escribir o dar Enter
+            topInput.addEventListener('input', () => {{
+                actualizarTopVentasDinamico();
+            }});
+            topInput.addEventListener('change', () => {{
+                actualizarTopVentasDinamico();
+            }});
+            topInput.addEventListener('keydown', (e) => {{
+                if (e.key === 'Enter') {{
+                    e.preventDefault();
+                    actualizarTopVentasDinamico();
+                    // Al pulsar enter, activa automáticamente el modo Top Ventas
+                    const btnTop = document.querySelector('.legend-btn[data-target="Top Ventas"]');
+                    if (btnTop) {{
+                        legendButtons.forEach(b => b.classList.remove('active'));
+                        btnTop.classList.add('active');
+                        activeFilterType = 'TOP_VENTAS';
+                        aplicarFiltrosGlobales();
+                    }}
+                }}
+            }});
+
             legendButtons.forEach(btn => {{
                 btn.addEventListener('click', () => {{
                     const target = btn.getAttribute('data-target');
@@ -1822,7 +1892,10 @@ else:
                         else if (target === 'Sin Stock') activeFilterType = 'SIN_STOCK';
                         else if (target === 'Stock Bajo') activeFilterType = 'STOCK_BAJO';
                         else if (target === 'Stock OK') activeFilterType = 'STOCK_OK';
-                        else if (target === 'Top Ventas') activeFilterType = 'TOP_VENTAS';
+                        else if (target === 'Top Ventas') {{
+                            actualizarTopVentasDinamico();
+                            activeFilterType = 'TOP_VENTAS';
+                        }}
                     }}
                     aplicarFiltrosGlobales();
                 }});
@@ -1842,6 +1915,8 @@ else:
                 legendButtons.forEach(b => b.classList.remove('active'));
                 busqInput.value = '';
                 selMarca.value = 'Todas';
+                topInput.value = '{top_n_default}';
+                actualizarTopVentasDinamico();
                 aplicarFiltrosGlobales();
             }});
 
@@ -1892,6 +1967,9 @@ else:
             }});
             closeBtn.addEventListener('click', () => modal.classList.remove('active'));
             window.addEventListener('click', (e) => {{ if(e.target === modal) modal.classList.remove('active'); }});
+
+            // Inicialización al cargar la vista
+            actualizarTopVentasDinamico();
           </script>
         </body>
         </html>
@@ -1967,7 +2045,6 @@ else:
             bandeja_series = get_clean_series(df_base, 'Bandeja')
             df_base['Cuerpo_Num'] = [desglosar_cuerpo_y_nivel(v)[0] for v in bandeja_series]
             
-            # --- CÁLCULO PONDERADO DE VENTAS Y MARGEN POR CUERPO ---
             df_sku_cuerpo_caras = df_base.groupby(['COD REAL', 'Cuerpo_Num'])['Caras_Num'].sum().reset_index()
             df_sku_total_caras = df_base.groupby('COD REAL')['Caras_Num'].sum().reset_index().rename(columns={'Caras_Num': 'Caras_Total_SKU'})
             
@@ -2120,7 +2197,6 @@ else:
             custom_data_matrix['Pct_Margen'] = custom_data_matrix['Pct_Margen'] * 100
 
             fig_fs = go.Figure()
-            # Barra 1: % Caras (Espacio Físico)
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Espacio'], 
@@ -2131,7 +2207,6 @@ else:
                 customdata=custom_data_matrix.values,
                 hovertemplate=hover_template_fs
             ))
-            # Barra 2: % Ventas (Monto S/)
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Ventas'], 
@@ -2141,7 +2216,6 @@ else:
                 marker_color='#10b981',
                 hoverinfo='skip'
             ))
-            # Barra 3: % Margen (Ganancia S/)
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Margen'], 
