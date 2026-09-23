@@ -871,24 +871,17 @@ else:
                 if cats_en_este_lateral:
                     df_universo_cob = df_universo_cob[df_universo_cob['Categoría'].isin(cats_en_este_lateral)].copy()
 
-            # Base de Activos ('A') en Coberturas y en Planograma
             df_cob_activos_base = df_universo_cob[df_universo_cob['Estado'].astype(str).str.strip().str.upper() == 'A'].copy()
             df_plano_activos_base = df_unicos[df_unicos['Estado'].astype(str).str.strip().str.upper() == 'A'].copy()
-
-            # Conteo de Bloqueados en Góndola para transparentar espacio ocioso
             skus_bloqueados_plano = df_unicos[df_unicos['Estado'].astype(str).str.strip().str.upper() == 'B']['COD REAL'].nunique()
 
             if modo_gauge == "Con Stock":
-                # Numerador: Activos en Plano con Stock > 0
                 numerador_gauge = df_plano_activos_base[df_plano_activos_base['Stock_Num'] > 0]['COD REAL'].nunique()
-                # Denominador: Activos en Coberturas con Stock > 0
                 denominador_gauge = df_cob_activos_base[df_cob_activos_base['Stock'] > 0]['COD REAL'].nunique()
                 label_modo_gauge = "Activos con Stock (>0)"
                 bar_color_gauge = "#16a34a"
             else:
-                # Numerador: Todos los Activos en Plano (con o sin stock)
                 numerador_gauge = df_plano_activos_base['COD REAL'].nunique()
-                # Denominador: Todos los Activos en Coberturas (con o sin stock)
                 denominador_gauge = df_cob_activos_base['COD REAL'].nunique()
                 label_modo_gauge = "Todos los Activos (con o sin stock)"
                 bar_color_gauge = "#2563eb"
@@ -1434,6 +1427,7 @@ else:
             .btn-sinstk {{ background: #ea580c; color: #ffffff; border-color: #c2410c; }}
             .btn-bajo {{ background: #facc15; color: #0f172a; border-color: #ca8a04; }}
             .btn-ok {{ background: #16a34a; color: #ffffff; border-color: #15803d; }}
+            .btn-topvta {{ background: #8b5cf6; color: #ffffff; border-color: #7c3aed; }}
             .btn-todos {{ background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }}
 
             .plano-outer-card {{
@@ -1732,6 +1726,7 @@ else:
                 <button type="button" class="legend-btn btn-sinstk" data-target="Sin Stock">Sin Stock / Quiebre (0)</button>
                 <button type="button" class="legend-btn btn-bajo" data-target="Stock Bajo">Stock Bajo (1 a 5)</button>
                 <button type="button" class="legend-btn btn-ok" data-target="Stock OK">Stock OK (> 5)</button>
+                <button type="button" class="legend-btn btn-topvta" data-target="Top Ventas">Top Ventas (🏆)</button>
                 <button type="button" class="legend-btn btn-todos" id="btnVerTodos" style="margin-left: auto;">Ver Todos</button>
             </div>
 
@@ -1770,6 +1765,7 @@ else:
             const rects = document.querySelectorAll('.plano-rect');
             const busqInput = document.getElementById('busqNombre');
             const selMarca = document.getElementById('selMarca');
+            const topInput = document.getElementById('inputTopVentas');
 
             function aplicarFiltrosGlobales() {{
                 const q = busqInput.value.toLowerCase().trim();
@@ -1826,6 +1822,7 @@ else:
                         else if (target === 'Sin Stock') activeFilterType = 'SIN_STOCK';
                         else if (target === 'Stock Bajo') activeFilterType = 'STOCK_BAJO';
                         else if (target === 'Stock OK') activeFilterType = 'STOCK_OK';
+                        else if (target === 'Top Ventas') activeFilterType = 'TOP_VENTAS';
                     }}
                     aplicarFiltrosGlobales();
                 }});
@@ -2123,6 +2120,7 @@ else:
             custom_data_matrix['Pct_Margen'] = custom_data_matrix['Pct_Margen'] * 100
 
             fig_fs = go.Figure()
+            # Barra 1: % Caras (Espacio Físico)
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Espacio'], 
@@ -2133,6 +2131,7 @@ else:
                 customdata=custom_data_matrix.values,
                 hovertemplate=hover_template_fs
             ))
+            # Barra 2: % Ventas (Monto S/)
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Ventas'], 
@@ -2142,6 +2141,7 @@ else:
                 marker_color='#10b981',
                 hoverinfo='skip'
             ))
+            # Barra 3: % Margen (Ganancia S/)
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Margen'], 
