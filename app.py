@@ -637,7 +637,7 @@ with col_head3:
 if error_nube:
     st.warning(f"⚠️ Aviso de conexión a la nube: {error_nube}")
 
-# --- COMPUERTA DE BÚSQUEDA ---
+# --- COMPUERTA DE BÚSQUEDA INTELIGENTE CON LATERAL ---
 if "busqueda_activa" not in st.session_state:
     st.session_state.busqueda_activa = False
 
@@ -648,7 +648,7 @@ st.markdown("""
         </div>
 """, unsafe_allow_html=True)
 
-col_b1, col_b2, col_b3, col_b4 = st.columns([2.5, 2.5, 3.5, 1.5])
+col_b1, col_b2, col_b3, col_b4, col_b5 = st.columns([2.2, 2.2, 3.0, 1.8, 1.3])
 
 with col_b1:
     tiendas_lista = ["S003 Metro Aramburú", "S008 Metro Schell", "S001 Metro Miraflores", "S004 Wong Benavides", "Todas las Tiendas"]
@@ -682,6 +682,20 @@ with col_b3:
     cat_sel = st.selectbox("Categoría", ["Todas las Categorías"] + cats_encontradas, key="gate_cat")
 
 with col_b4:
+    lateral_opciones = ["Lateral A", "Lateral B"]
+    if cat_sel != "Todas las Categorías":
+        # Detección automática según la categoría
+        df_cat_check = df_pasillo_global[(df_pasillo_global['Mundo'] == mundo_sel) & (df_pasillo_global['Categoría'] == cat_sel)]
+        lats_cat = df_cat_check['LATERAL'].dropna().unique()
+        lat_sugerido = str(lats_cat[0]) if len(lats_cat) > 0 else "Lateral A"
+        if lat_sugerido not in lateral_opciones:
+            lat_sugerido = "Lateral A"
+        lateral_sel = st.selectbox("Lateral (Auto)", [lat_sugerido], disabled=True, key="gate_lat_auto")
+    else:
+        # Selección obligatoria A/B si son todas las categorías
+        lateral_sel = st.selectbox("Lateral (Obligatorio)", lateral_opciones, index=0, key="gate_lat_manual")
+
+with col_b5:
     st.markdown("<div style='margin-top: 28px;'>", unsafe_allow_html=True)
     if st.button("🔍 Buscar", use_container_width=True, type="primary"):
         st.session_state.busqueda_activa = True
@@ -692,7 +706,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 # --- EVALUACIÓN DE LA COMPUERTA ---
 if not st.session_state.busqueda_activa:
-    st.info("👆 **Seleccione la Tienda, Mundo y Categoría y haga clic en 'Buscar' (🔍) para consultar el planograma y sus indicadores.**")
+    st.info("👆 **Seleccione la Tienda, Mundo, Categoría y Lateral, y haga clic en 'Buscar' (🔍) para consultar el planograma y sus indicadores.**")
 else:
     df_base = df_pasillo_global.copy()
     
@@ -701,6 +715,11 @@ else:
 
     if cat_sel != "Todas las Categorías":
         df_base = df_base[df_base['Categoría'] == cat_sel].copy()
+    
+    # Filtrado por Lateral seleccionado (automático o manual A/B)
+    lat_filtrar = lateral_sel
+    if 'LATERAL' in df_base.columns:
+        df_base = df_base[df_base['LATERAL'].astype(str).str.strip().str.upper() == str(lat_filtrar).strip().upper()].copy()
 
     df_base['Venta_Num'] = df_base['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
@@ -724,10 +743,10 @@ else:
     # --- PESTAÑA 1: RESUMEN EJECUTIVO (AUDITORÍA OPERATIVA EN GÓNDOLA) ---
     # =========================================================================
     with tab_resumen:
-        st.markdown("""
+        st.markdown(f"""
             <div style="margin-bottom: 14px;">
                 <h3 style="font-size: 1.45rem; font-weight: 900; color: #0f172a; margin: 0 0 4px 0; letter-spacing: -0.3px;">
-                    Radiografía Operativa y Comercial de la Tienda
+                    Radiografía Operativa y Comercial de la Tienda ({lat_filtrar})
                 </h3>
                 <p style="font-size: 0.82rem; font-weight: 500; color: #64748b; margin: 0;">
                     Control de servicio en góndola (OSA), impacto financiero de quiebres y calidad del surtido exhibido.
@@ -850,12 +869,11 @@ else:
             st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
-    # --- PESTAÑA 2: PLANOGRAMA FÍSICO PANORÁMICO (MODAL AL FRENTE + FOTO SKU) ---
+    # --- PESTAÑA 2: PLANOGRAMA FÍSICO PANORÁMICO ---
     # =========================================================================
     with tab_plano:
-        cat_actual_titulo = cat_sel if cat_sel != "Todas las Categorías" else f"MUNDO {mundo_sel} - PLANOGRAMA INTEGRAL"
+        cat_actual_titulo = f"{cat_sel} ({lat_filtrar})" if cat_sel != "Todas las Categorías" else f"MUNDO {mundo_sel} - {lat_filtrar}"
         
-        # 1. CÁLCULO DE MÉTRICAS OPERATIVAS (6 TARJETAS EXACTAS)
         tot_skus_op = len(df_unicos)
         bloq_op = len(df_unicos[df_unicos['Estado'].str.strip().str.upper() == 'B'])
         quiebre_op = len(df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] <= 0)])
@@ -869,7 +887,6 @@ else:
         pct_top_vta = (monto_top_vta / ventas_tot_plano * 100) if ventas_tot_plano > 0 else 0
         top_skus_set = set(df_top_vta['COD REAL'].astype(str).str.strip().unique())
 
-        # 2. CONSTRUCCIÓN DE CUERPOS Y NIVELES (DISTRIBUCIÓN VERTICAL DINÁMICA)
         bandeja_series = get_clean_series(df_base, 'Bandeja')
         desglose = bandeja_series.apply(desglosar_cuerpo_y_nivel)
         df_base['Cuerpo_Ord'] = [x[0] for x in desglose]
@@ -974,7 +991,6 @@ else:
         max_niveles_count = max(niveles_reales) if len(niveles_reales) > 0 else 8
         altura_cuerpo_px = max(260, max_niveles_count * 48)
 
-        # 3. IMAGEN OFICIAL DEL PLANOGRAMA
         url_sheet_img = None
         cat_key_lookup = cat_actual_titulo.strip().upper()
         if cat_key_lookup in mapa_imagenes_online:
@@ -1001,8 +1017,6 @@ else:
           <meta charset="UTF-8">
           <style>
             * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-            
-            /* BLOQUEO TOTAL DE SCROLLBAR VERTICAL INTERNA */
             html, body {{
                 font-family: 'Plus Jakarta Sans', sans-serif;
                 background: #ffffff;
@@ -1012,8 +1026,6 @@ else:
                 overflow-y: hidden !important;
                 height: auto !important;
             }}
-            
-            /* 1. RESALTAR TOP VENTAS */
             .top-ventas-bar {{
                 background: #ffffff;
                 border: 1.5px solid #cbd5e1;
@@ -1049,22 +1061,18 @@ else:
                 font-weight: 800;
                 color: #2563eb;
             }}
-
-            /* 2. TARJETAS INFORMATIVAS */
             .filter-cards-grid {{
                 display: grid;
                 grid-template-columns: repeat(6, 1fr);
                 gap: 8px;
                 margin-bottom: 12px;
             }}
-            
             @media (max-width: 900px) {{
                 .filter-cards-grid {{
                     grid-template-columns: repeat(3, 1fr) !important;
                     gap: 6px !important;
                 }}
             }}
-            
             .card-static {{
                 background: #ffffff;
                 border: 1.5px solid #cbd5e1;
@@ -1093,32 +1101,25 @@ else:
                 text-align: center;
                 font-feature-settings: "tnum";
             }}
-
             .cb-total {{ border-bottom: 4px solid #2563eb; }}
             .cb-total .card-static-title {{ color: #2563eb; }}
             .cb-total .card-static-val {{ color: #0f172a; }}
-
             .cb-bloq {{ border-bottom: 4px solid #dc2626; }}
             .cb-bloq .card-static-title {{ color: #dc2626; }}
             .cb-bloq .card-static-val {{ color: #dc2626; }}
-
             .cb-sinstk {{ border-bottom: 4px solid #ea580c; }}
             .cb-sinstk .card-static-title {{ color: #ea580c; }}
             .cb-sinstk .card-static-val {{ color: #ea580c; }}
-
             .cb-stkbajo {{ border-bottom: 4px solid #facc15; }}
             .cb-stkbajo .card-static-title {{ color: #ca8a04; }}
             .cb-stkbajo .card-static-val {{ color: #ca8a04; }}
-
             .cb-stkok {{ border-bottom: 4px solid #16a34a; }}
             .cb-stkok .card-static-title {{ color: #16a34a; }}
             .cb-stkok .card-static-val {{ color: #16a34a; }}
-
             .cb-cobalta {{ border-bottom: 4px solid #ec4899; }}
             .cb-cobalta .card-static-title {{ color: #db2777; }}
             .cb-cobalta .card-static-val {{ color: #db2777; }}
 
-            /* 3. BUSCADOR Y ACCIONES COMPACTAS */
             .controls-panel {{
                 background: #ffffff;
                 border: 1.5px solid #cbd5e1;
@@ -1185,20 +1186,16 @@ else:
             .btn-fullscreen-icon {{ background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }}
             .btn-reset-icon {{ background: #fee2e2; color: #dc2626; border-color: #fecaca; }}
 
-            /* CONTENEDOR DE AUDITORÍA EN PANTALLA COMPLETA */
             #fullscreenAuditor {{
                 position: relative;
                 background: #ffffff;
                 width: 100%;
             }}
-
             #fullscreenAuditor:fullscreen {{
                 padding: 16px;
                 overflow-y: auto !important;
                 background: #ffffff;
             }}
-
-            /* BOTÓN SALIR */
             .exit-fullscreen-btn {{
                 display: none;
                 position: fixed;
@@ -1220,14 +1217,12 @@ else:
                 background: #dc2626;
                 transform: scale(1.05);
             }}
-
             #fullscreenAuditor:fullscreen .exit-fullscreen-btn {{
                 display: flex;
                 align-items: center;
                 gap: 6px;
             }}
 
-            /* FOTO DEL PLANOGRAMA */
             .planograma-img-frame {{
                 width: 100%;
                 height: 260px;
@@ -1247,7 +1242,6 @@ else:
                 object-fit: contain;
             }}
 
-            /* BARRA DE LEYENDA OPERATIVA INTERACTIVA */
             .interactive-legend-bar {{
                 display: flex;
                 align-items: center;
@@ -1297,7 +1291,6 @@ else:
             .btn-ok {{ background: #16a34a; color: #ffffff; border-color: #15803d; }}
             .btn-todos {{ background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }}
 
-            /* PLANOGRAMA CARD */
             .plano-outer-card {{
                 border: 2px solid #0f172a;
                 border-radius: 6px;
@@ -1331,7 +1324,6 @@ else:
                 height: 100%;
             }}
             .plano-cuerpo-col:last-child {{ border-right: none; }}
-            
             .plano-cuerpo-shelves {{
                 display: flex;
                 flex-direction: column;
@@ -1412,15 +1404,14 @@ else:
                 padding: 4px 0;
                 letter-spacing: 0.5px;
             }}
-            
-            /* MODAL DE INFORMACIÓN (CORREGIDO PARA MOSTRARSE SIEMPRE AL FRENTE EN FULLSCREEN) */
+
             .modal-overlay {{ 
               position: fixed !important; 
               inset: 0 !important; 
               width: 100vw !important; 
               height: 100vh !important; 
               background: rgba(15, 23, 42, 0.72) !important; 
-              z-index: 2147483647 !important; /* Máximo z-index posible en el navegador */
+              z-index: 2147483647 !important; 
               opacity: 0; 
               pointer-events: none; 
               transition: opacity 0.2s ease; 
@@ -1453,8 +1444,6 @@ else:
               line-height: 1;
             }}
             .modal-close:hover {{ color: #dc2626; }}
-
-            /* CONTENEDOR DE FOTO DEL SKU EN MODAL */
             .m-header-box {{
                 display: flex;
                 gap: 12px;
@@ -1513,7 +1502,6 @@ else:
                 text-transform: uppercase;
                 letter-spacing: 0.4px;
             }}
-
             .m-row {{ 
               border-bottom: 1px solid #f1f5f9; 
               padding: 5px 0; 
@@ -1528,7 +1516,6 @@ else:
         </head>
         <body>
 
-          <!-- 1. RESALTAR TOP VENTAS -->
           <div class="top-ventas-bar">
             <div class="top-ventas-left">
                 <span>🏆 RESALTAR TOP VENTAS:</span>
@@ -1540,7 +1527,6 @@ else:
             </div>
           </div>
 
-          <!-- 2. TARJETAS INFORMATIVAS (EXACTAMENTE 6) -->
           <div class="filter-cards-grid">
             <div class="card-static cb-total">
                 <div class="card-static-title">TOTAL SKUS</div>
@@ -1568,7 +1554,6 @@ else:
             </div>
           </div>
 
-          <!-- 3. BUSCADOR Y ACCIONES COMPACTAS -->
           <div class="controls-panel">
             <div class="controls-left">
                 <div class="ctrl-group" style="flex: 2;">
@@ -1589,17 +1574,13 @@ else:
             </div>
           </div>
 
-          <!-- 4. CONTENEDOR INMERSIVO DE AUDITORÍA -->
           <div id="fullscreenAuditor">
-            <!-- BOTÓN SALIR DE PANTALLA COMPLETA -->
             <button type="button" class="exit-fullscreen-btn" id="btnExitFullscreen">
                 ✕ Salir de Pantalla Completa
             </button>
 
-            <!-- FOTO OFICIAL DEL PLANOGRAMA -->
             {img_html_block}
 
-            <!-- BARRA DE LEYENDA OPERATIVA INTERACTIVA -->
             <div class="interactive-legend-bar">
                 <span class="legend-label-title">📍 LEYENDA OPERATIVA:</span>
                 <button type="button" class="legend-btn btn-bloq" data-target="Bloqueado">Bloqueado (B)</button>
@@ -1609,7 +1590,6 @@ else:
                 <button type="button" class="legend-btn btn-todos" id="btnVerTodos" style="margin-left: auto;">Ver Todos</button>
             </div>
 
-            <!-- DIAGRAMA PANORÁMICO -->
             <div class="plano-outer-card" id="planoCard">
                 <div class="plano-top-header">{cat_actual_titulo}</div>
                 <div class="plano-body-container">
@@ -1617,21 +1597,16 @@ else:
                 </div>
             </div>
 
-            <!-- MODAL DE AUDITORÍA DENTRO DEL CONTENEDOR FULLSCREEN (AL FRENTE) -->
             <div id="pModal" class="modal-overlay">
               <div class="modal-content">
                 <span class="modal-close">&times;</span>
-                
                 <div class="m-header-box">
-                  <div class="m-img-wrapper" id="m-img-wrapper">
-                    <!-- Dinámico con JS -->
-                  </div>
+                  <div class="m-img-wrapper" id="m-img-wrapper"></div>
                   <div class="m-header-info">
                     <span class="m-header-badge" id="m-brand"></span>
                     <h4 class="m-header-title" id="m-name">Producto</h4>
                   </div>
                 </div>
-
                 <div class="m-row"><span class="m-label">Código SAP / Cód. Real:</span><span class="m-val" id="m-cod" style="font-family: monospace; font-size: 0.95rem; font-weight: 900;"></span></div>
                 <div class="m-row"><span class="m-label">Ubicación (Nivel / Pos):</span><span class="m-val" id="m-pos"></span></div>
                 <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
@@ -1693,7 +1668,6 @@ else:
                 }});
             }}
 
-            // INTERACTIVIDAD EXCLUSIVA EN LA LEYENDA OPERATIVA
             legendButtons.forEach(btn => {{
                 btn.addEventListener('click', () => {{
                     const target = btn.getAttribute('data-target');
@@ -1729,7 +1703,6 @@ else:
                 aplicarFiltrosGlobales();
             }});
 
-            // PANTALLA COMPLETA NATIVA INMERSIVA
             const fullAuditor = document.getElementById('fullscreenAuditor');
             document.getElementById('btnFullscreen').addEventListener('click', () => {{
                 if (!document.fullscreenElement) {{
@@ -1747,7 +1720,6 @@ else:
                 }}
             }});
 
-            // MODAL CON IMAGEN DE PRODUCTO
             const modal = document.getElementById('pModal');
             const closeBtn = document.querySelector('.modal-close');
             const imgWrapper = document.getElementById('m-img-wrapper');
@@ -1766,7 +1738,6 @@ else:
                     const v = parseFloat(rect.getAttribute('data-venta')) || 0;
                     document.getElementById('m-venta').textContent = v === -999 ? "SIN DATOS" : "S/ " + v.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}});
 
-                    // Renderizado de Imagen de Producto
                     const fotoUrl = rect.getAttribute('data-foto');
                     if (fotoUrl && fotoUrl.trim() !== '') {{
                         imgWrapper.innerHTML = `<img src="${{fotoUrl}}" alt="Producto" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'m-no-img\\'><span style=\\'font-size:1.4rem;\\'>🖼️</span><span>Sin foto</span></div>';">`;
@@ -1786,7 +1757,7 @@ else:
         components.html(html_componente_completo, height=altura_iframe, scrolling=False)
 
     # =========================================================================
-    # --- PESTAÑA 3: DASHBOARD ANALÍTICO FINANCIERO (TARJETAS FINANCIERAS) ---
+    # --- PESTAÑA 3: DASHBOARD ANALÍTICO FINANCIERO (CON ETIQUETAS Y FAIR SHARE HOVER) ---
     # =========================================================================
     with tab_dash:
         ventas_plano = df_unicos['Venta_Num'].sum()
@@ -1826,7 +1797,7 @@ else:
 
         col_g_cuerpos, col_g_mix = st.columns([7, 3])
         with col_g_cuerpos:
-            st.markdown("<b>📈 Rendimiento por Pasillo / Lateral / Cuerpo <span style='font-size:0.75rem; color:#2563eb;'>(VENTAS vs MARGEN)</span></b>", unsafe_allow_html=True)
+            st.markdown(f"<b>📈 Rendimiento por Pasillo / Lateral / Cuerpo ({lat_filtrar}) <span style='font-size:0.75rem; color:#2563eb;'>(VENTAS vs MARGEN)</span></b>", unsafe_allow_html=True)
             bandeja_series = get_clean_series(df_base, 'Bandeja')
             df_base['Cuerpo_Num'] = [desglosar_cuerpo_y_nivel(v)[0] for v in bandeja_series]
             
@@ -1838,10 +1809,28 @@ else:
             vc['Margen_Pct'] = [r['Margen_Total']/r['Venta_Total'] if r['Venta_Total']>0 else 0 for _, r in vc.iterrows()]
             vc['Label'] = [f"Cuerpo {int(r['Cuerpo_Num']):02d}" for _, r in vc.iterrows()]
             
+            # GRÁFICO CON ETIQUETAS VISIBLES DE VALORES
             fig_c = make_subplots(specs=[[{"secondary_y": True}]])
-            fig_c.add_trace(go.Bar(x=vc['Label'], y=vc['Venta_Total'], name="Ventas Totales (S/)", marker_color='#2563eb'), secondary_y=False)
-            fig_c.add_trace(go.Scatter(x=vc['Label'], y=vc['Margen_Pct'], name="Margen %", mode="lines+markers", line=dict(color='#10b981', width=3)), secondary_y=True)
-            fig_c.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=20, b=20, l=10, r=10))
+            fig_c.add_trace(go.Bar(
+                x=vc['Label'], 
+                y=vc['Venta_Total'], 
+                name="Ventas Totales (S/)", 
+                marker_color='#2563eb',
+                text=vc['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
+                textposition='inside'
+            ), secondary_y=False)
+            
+            fig_c.add_trace(go.Scatter(
+                x=vc['Label'], 
+                y=vc['Margen_Pct'], 
+                name="Margen %", 
+                mode="lines+markers+text", 
+                text=vc['Margen_Pct'].apply(lambda x: f"{x*100:.1f}%"),
+                textposition="top center",
+                line=dict(color='#10b981', width=3)
+            ), secondary_y=True)
+            
+            fig_c.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=25, b=20, l=10, r=10))
             st.plotly_chart(fig_c, use_container_width=True, config={'displayModeBar': False})
             
         with col_g_mix:
@@ -1851,7 +1840,7 @@ else:
             fig_pm.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=10, b=10, l=10, r=10), showlegend=False)
             st.plotly_chart(fig_pm, use_container_width=True, config={'displayModeBar': False})
 
-        # FAIR SHARE
+        # FAIR SHARE CON INFORMACIÓN COMPLETA EN HOVER
         st.markdown("<hr style='border-color: #cbd5e1; margin: 14px 0;'>", unsafe_allow_html=True)
         st.markdown("<b>⚖️ Fair Share: Espacio (% Caras) vs % Ventas y Margen</b>", unsafe_allow_html=True)
         df_esp_cat = df_base.groupby('Categoría').agg(Caras_Total=('Caras_Num', 'sum')).reset_index()
@@ -1870,18 +1859,52 @@ else:
         if tot_caras > 0 and tot_vta > 0:
             df_fs['Pct_Espacio'] = df_fs['Caras_Total'] / tot_caras
             df_fs['Pct_Ventas'] = df_fs['Ventas_Total'] / tot_vta
+            
+            # Plantilla completa de datos al pasar el cursor
+            hover_template_fs = (
+                "<b>Categoría:</b> %{x}<br>" +
+                "<b>Espacio:</b> %{customdata[0]:.1f}% (%{customdata[1]} Caras)<br>" +
+                "<b>Ventas:</b> %{customdata[2]:.1f}% (S/ %{customdata[3]:,.2f})<br>" +
+                "<b>Margen Total:</b> S/ %{customdata[4]:,.2f}<br>" +
+                "<b>SKUs Activos:</b> %{customdata[5]} SKUs" +
+                "<extra></extra>"
+            )
+
+            # Matriz de metadatos para el hover
+            custom_data_matrix = df_fs[[
+                'Pct_Espacio', 'Caras_Total', 'Pct_Ventas', 'Ventas_Total', 'Margen_Total', 'SKUs_Activos'
+            ]].copy()
+            custom_data_matrix['Pct_Espacio'] = custom_data_matrix['Pct_Espacio'] * 100
+            custom_data_matrix['Pct_Ventas'] = custom_data_matrix['Pct_Ventas'] * 100
+
             fig_fs = go.Figure()
             fig_fs.add_trace(go.Bar(
-                x=df_fs['Categoría'], y=df_fs['Pct_Espacio'], name="% Caras (Espacio)",
-                text=df_fs['Pct_Espacio'].apply(lambda x: f"{x*100:.1f}%"), textposition='inside',
-                marker_color='#2563eb'
+                x=df_fs['Categoría'], 
+                y=df_fs['Pct_Espacio'], 
+                name="% Caras (Espacio)",
+                text=df_fs['Pct_Espacio'].apply(lambda x: f"{x*100:.1f}%"), 
+                textposition='inside',
+                marker_color='#2563eb',
+                customdata=custom_data_matrix.values,
+                hovertemplate=hover_template_fs
             ))
             fig_fs.add_trace(go.Bar(
-                x=df_fs['Categoría'], y=df_fs['Pct_Ventas'], name="% Ventas (Monto S/)",
-                text=df_fs['Pct_Ventas'].apply(lambda x: f"{x*100:.1f}%"), textposition='inside',
-                marker_color='#10b981'
+                x=df_fs['Categoría'], 
+                y=df_fs['Pct_Ventas'], 
+                name="% Ventas (Monto S/)",
+                text=df_fs['Pct_Ventas'].apply(lambda x: f"{x*100:.1f}%"), 
+                textposition='inside',
+                marker_color='#10b981',
+                customdata=custom_data_matrix.values,
+                hovertemplate=hover_template_fs
             ))
-            fig_fs.update_layout(barmode='group', paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=20, b=20, l=10, r=10))
+            fig_fs.update_layout(
+                barmode='group', 
+                hovermode='x unified',  # Muestra la información comparada en el centro
+                paper_bgcolor='rgba(0,0,0,0)', 
+                plot_bgcolor='rgba(0,0,0,0)', 
+                margin=dict(t=20, b=20, l=10, r=10)
+            )
             st.plotly_chart(fig_fs, use_container_width=True, config={'displayModeBar': False})
 
         # TABLA DETALLE Y EXPORTADOR
