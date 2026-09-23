@@ -860,7 +860,6 @@ else:
                     key="switch_gauge_ops"
                 )
 
-            # 1. Universo de Coberturas de Referencia (Catálogo Comercial Activo 'A')
             df_universo_cob = df_sku_unico_global.copy()
             if 'Mundo' in df_universo_cob.columns:
                 df_universo_cob = df_universo_cob[df_universo_cob['Mundo'] == mundo_sel].copy()
@@ -1020,11 +1019,9 @@ else:
         stk_ok_op = df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] > 5)]['COD REAL'].nunique()
         cob_alta_op = df_unicos[df_unicos['Cob_Num'] >= 30]['COD REAL'].nunique()
         
-        # Mapeo de ranking de ventas (1, 2, 3...) y caras por SKU
         df_top_ranking = df_unicos[['COD REAL', 'Venta_Num']].sort_values(by='Venta_Num', ascending=False).reset_index(drop=True)
         df_top_ranking['Rank'] = df_top_ranking.index + 1
         mapa_ranking = df_top_ranking.set_index('COD REAL')['Rank'].to_dict()
-        
         mapa_caras_totales = df_base.groupby('COD REAL')['Caras_Num'].sum().to_dict()
 
         lista_skus_ventas_json = json.dumps([
@@ -1097,7 +1094,6 @@ else:
                     margen_val = safe_float(it.get("Monto Margen", -999.0))
                     part_val = safe_float(it.get("% Part", -999.0))
 
-                    # Cálculos analíticos de SKU
                     rank_pos = mapa_ranking.get(cod_real, "-")
                     pct_venta_gondola = (venta_val / total_venta_plano_float * 100) if (venta_val > 0 and total_venta_plano_float > 0) else 0.0
                     margen_pct_sku = (margen_val / venta_val * 100) if (venta_val > 0 and margen_val != -999.0) else 0.0
@@ -2068,7 +2064,6 @@ else:
             with col_titulo_c:
                 st.markdown(f"<b>📈 Rendimiento por Cuerpo (Lateral {lat_letra_activa})</b>", unsafe_allow_html=True)
             with col_btn_orden:
-                # SE INCORPORÓ EL BOTÓN "Por Margen (S/)" JUNTO A "Por Margen %"
                 orden_sel = st.segmented_control(
                     "Ordenar por:",
                     ["Secuencial", "Por Venta", "Por Margen (S/)", "Por Margen %"],
@@ -2105,7 +2100,6 @@ else:
             vc['Label'] = [f"Cuerpo {int(r['Cuerpo_Num']):02d}" for _, r in vc.iterrows()]
             vc['Part_Venta_Gondola'] = [(r['Venta_Total'] / ventas_plano * 100) if ventas_plano > 0 else 0 for _, r in vc.iterrows()]
             
-            # ORDENAMIENTO CONDICIONAL INCLUYENDO "Por Margen (S/)"
             if orden_sel == "Por Venta":
                 vc = vc.sort_values(by='Venta_Total', ascending=False)
             elif orden_sel == "Por Margen (S/)":
@@ -2140,6 +2134,7 @@ else:
                 hovertemplate=hover_template_cuerpo
             ), secondary_y=False)
             
+            # LÍNEA CURVA (SPLINE) PARA EL MARGEN %
             fig_c.add_trace(go.Scatter(
                 x=vc['Label'], 
                 y=vc['Margen_Pct'], 
@@ -2147,7 +2142,7 @@ else:
                 mode="lines+markers+text", 
                 text=vc['Margen_Pct'].apply(lambda x: f"{x*100:.1f}%"),
                 textposition="top center",
-                line=dict(color='#10b981', width=3),
+                line=dict(color='#10b981', width=3, shape='spline', smoothing=1.3),
                 hoverinfo='skip'
             ), secondary_y=True)
             
