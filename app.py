@@ -361,7 +361,7 @@ def cargar_todas_las_fuentes():
         else:
             df_matriz['PASILLO'] = get_clean_series(df_matriz, 'PASILLO').apply(clean_sku)
 
-        # NORMALIZACIÓN ROBUSTA DE LATERAL: Se asegura de guardar exclusivamente 'A' o 'B'
+        # NORMALIZACIÓN ROBUSTA DE LATERAL: Guarda exclusivamente 'A' o 'B'
         if 'LATERAL' in df_matriz.columns:
             df_matriz['LATERAL'] = get_clean_series(df_matriz, 'LATERAL').str.extract(r'([ABab])')[0].str.upper().fillna('A')
         else:
@@ -688,12 +688,10 @@ with col_b3:
     cat_sel = st.selectbox("Categoría", ["Todas las Categorías"] + cats_encontradas, key="gate_cat")
 
 with col_b4:
-    # DETECCIÓN INTELIGENTE DE LATERAL EN BASE A LA HOJA FACTPLANO
     lateral_display_map = {"A": "Lateral A", "B": "Lateral B"}
     reverse_lateral_map = {"Lateral A": "A", "Lateral B": "B"}
     
     if cat_sel != "Todas las Categorías":
-        # Consultar la letra directa 'A' o 'B' que tiene asignada esta categoría en factPlano
         df_cat_check = df_pasillo_global[(df_pasillo_global['Mundo'] == mundo_sel) & (df_pasillo_global['Categoría'] == cat_sel)]
         lats_detectados = [str(x).strip().upper() for x in df_cat_check['LATERAL'].dropna().unique() if str(x).strip().upper() in ['A', 'B']]
         letra_detectada = lats_detectados[0] if len(lats_detectados) > 0 else 'A'
@@ -701,7 +699,6 @@ with col_b4:
         lateral_sel_label = st.selectbox("Lateral (Auto)", [label_auto], disabled=True, key="gate_lat_auto")
         lat_letra_activa = reverse_lateral_map.get(lateral_sel_label, "A")
     else:
-        # Si selecciona "Todas las Categorías", se obliga a seleccionar Lateral A o Lateral B
         lateral_sel_label = st.selectbox("Lateral (Obligatorio)", ["Lateral A", "Lateral B"], index=0, key="gate_lat_manual")
         lat_letra_activa = reverse_lateral_map.get(lateral_sel_label, "A")
 
@@ -729,7 +726,6 @@ else:
     # FILTRADO EXACTO POR LETRA DE LATERAL ('A' o 'B')
     if 'LATERAL' in df_base.columns:
         df_filtrado_lat = df_base[df_base['LATERAL'].astype(str).str.strip().str.upper() == lat_letra_activa].copy()
-        # Fallback de seguridad: si por algún motivo quedara en 0, no dejar la pantalla en blanco
         if not df_filtrado_lat.empty:
             df_base = df_filtrado_lat
         else:
@@ -742,6 +738,7 @@ else:
     df_base['Cob_Num'] = df_base['Cobertura'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     df_base['Caras_Num'] = df_base['Caras'].apply(lambda x: safe_float(x, default=1.0))
 
+    # Base estricta de SKUs únicos para evitar duplicar productos por facings
     df_unicos = df_base.drop_duplicates(subset=['COD REAL']).copy()
     df_unicos = df_unicos[df_unicos['COD REAL'].astype(str).str.strip() != ""]
 
@@ -768,13 +765,13 @@ else:
             </div>
         """, unsafe_allow_html=True)
 
-        tot_skus_plano = len(df_unicos)
+        tot_skus_plano = df_unicos['COD REAL'].nunique()
         quiebres_df = df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] <= 0)]
-        tot_quiebres = len(quiebres_df)
+        tot_quiebres = quiebres_df['COD REAL'].nunique()
         pct_quiebres = (tot_quiebres / tot_skus_plano * 100) if tot_skus_plano > 0 else 0
         osa_pct = 100.0 - pct_quiebres
         bloqueados_df = df_unicos[df_unicos['Estado'].str.strip().str.upper() == 'B']
-        tot_bloqueados = len(bloqueados_df)
+        tot_bloqueados = bloqueados_df['COD REAL'].nunique()
         
         ventas_tot_plano = df_unicos['Venta_Num'].sum()
         margen_tot_plano = df_unicos['Margen_Num'].sum()
@@ -786,7 +783,7 @@ else:
             (get_clean_series(df_sku_unico_global, 'Ubicación(es)').str.strip() == "") | 
             (get_clean_series(df_sku_unico_global, 'Ubicación(es)').str.strip() == "SIN DATOS")
         ].copy()
-        tot_no_plano = len(df_no_plano)
+        tot_no_plano = df_no_plano['COD REAL'].nunique()
         ventas_no_plano = df_no_plano['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
 
         st.markdown(f"""
@@ -843,7 +840,8 @@ else:
             st.markdown('<div class="dash-card">', unsafe_allow_html=True)
             ventas_por_cat = df_unicos.groupby('Categoría')['Venta_Num'].sum()
             total_vta_unicos = ventas_por_cat.sum()
-            quiebres_por_cat = quiebres_df.groupby('Categoría')['COD REAL'].count()
+            # Conteo de SKUs únicos quebrados por categoría
+            quiebres_por_cat = quiebres_df.groupby('Categoría')['COD REAL'].nunique()
             
             df_cat_ops = pd.DataFrame({'Quiebres': quiebres_por_cat, 'Venta': ventas_por_cat}).fillna(0).reset_index()
             df_cat_ops = df_cat_ops[~df_cat_ops['Categoría'].isin(['SIN DATOS', 'S/C', 'nan', ''])].copy()
@@ -874,7 +872,7 @@ else:
                 elif r['Stock_Num'] <= 5: return 'Alerta Baja (1-5)'
                 else: return 'Stock OK (>5)'
             df_unicos['H_Estado'] = df_unicos.apply(get_h, axis=1)
-            dh = df_unicos['H_Estado'].value_counts().reset_index()
+            dh = df_unicos.groupby('H_Estado')['COD REAL'].nunique().reset_index()
             dh.columns = ['Estado', 'Cant']
             fig_pie_h = px.pie(dh, values='Cant', names='Estado', hole=0.55, 
                                color='Estado', color_discrete_map={'Stock OK (>5)':'#16a34a', 'Alerta Baja (1-5)':'#facc15', 'Quiebre (0)':'#ea580c', 'Bloqueado (B)':'#dc2626'})
@@ -888,12 +886,12 @@ else:
     with tab_plano:
         cat_actual_titulo = f"{cat_sel} (Lateral {lat_letra_activa})" if cat_sel != "Todas las Categorías" else f"MUNDO {mundo_sel} - LATERAL {lat_letra_activa}"
         
-        tot_skus_op = len(df_unicos)
-        bloq_op = len(df_unicos[df_unicos['Estado'].str.strip().str.upper() == 'B'])
-        quiebre_op = len(df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] <= 0)])
-        stk_bajo_op = len(df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] > 0) & (df_unicos['Stock_Num'] <= 5)])
-        stk_ok_op = len(df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] > 5)])
-        cob_alta_op = len(df_unicos[df_unicos['Cob_Num'] >= 30])
+        tot_skus_op = df_unicos['COD REAL'].nunique()
+        bloq_op = df_unicos[df_unicos['Estado'].str.strip().str.upper() == 'B']['COD REAL'].nunique()
+        quiebre_op = df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] <= 0)]['COD REAL'].nunique()
+        stk_bajo_op = df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] > 0) & (df_unicos['Stock_Num'] <= 5)]['COD REAL'].nunique()
+        stk_ok_op = df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] > 5)]['COD REAL'].nunique()
+        cob_alta_op = df_unicos[df_unicos['Cob_Num'] >= 30]['COD REAL'].nunique()
         
         top_n_default = 5
         df_top_vta = df_unicos.sort_values(by='Venta_Num', ascending=False).head(top_n_default)
@@ -1771,17 +1769,18 @@ else:
         components.html(html_componente_completo, height=altura_iframe, scrolling=False)
 
     # =========================================================================
-    # --- PESTAÑA 3: DASHBOARD ANALÍTICO FINANCIERO (CON ETIQUETAS Y FAIR SHARE HOVER) ---
+    # --- PESTAÑA 3: DASHBOARD ANALÍTICO FINANCIERO (CON CONTEO ÚNICO DE SKUS) ---
     # =========================================================================
     with tab_dash:
         ventas_plano = df_unicos['Venta_Num'].sum()
         margen_bruto = df_unicos['Margen_Num'].sum()
         margen_global_pct = (margen_bruto / ventas_plano * 100) if ventas_plano > 0 else 0
-        skus_en_plano = len(df_unicos)
+        # Conteo estricto de SKUs únicos en el planograma
+        skus_en_plano = df_unicos['COD REAL'].nunique()
         
         tot_vta_cat = df_sku_unico_global['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
         pct_vta_tot = (ventas_plano / tot_vta_cat * 100) if tot_vta_cat > 0 else 100.0
-        tot_skus_cat = len(df_sku_unico_global)
+        tot_skus_cat = df_sku_unico_global['COD REAL'].nunique()
         pct_skus_surtido = (skus_en_plano / tot_skus_cat * 100) if tot_skus_cat > 0 else 100.0
 
         st.markdown(f"""
@@ -1815,15 +1814,15 @@ else:
             bandeja_series = get_clean_series(df_base, 'Bandeja')
             df_base['Cuerpo_Num'] = [desglosar_cuerpo_y_nivel(v)[0] for v in bandeja_series]
             
-            vc = df_base.drop_duplicates(subset=['COD REAL', 'Cuerpo_Num']).groupby('Cuerpo_Num').agg(
+            # Agrupación garantizando SKUs únicos ('nunique') por cuerpo
+            vc = df_base.groupby('Cuerpo_Num').agg(
                 Venta_Total=('Venta_Num', 'sum'),
                 Margen_Total=('Margen_Num', 'sum'),
-                SKUs=('COD REAL', 'count')
+                SKUs=('COD REAL', 'nunique')
             ).reset_index()
             vc['Margen_Pct'] = [r['Margen_Total']/r['Venta_Total'] if r['Venta_Total']>0 else 0 for _, r in vc.iterrows()]
             vc['Label'] = [f"Cuerpo {int(r['Cuerpo_Num']):02d}" for _, r in vc.iterrows()]
             
-            # GRÁFICO CON ETIQUETAS VISIBLES DE VALORES
             fig_c = make_subplots(specs=[[{"secondary_y": True}]])
             fig_c.add_trace(go.Bar(
                 x=vc['Label'], 
@@ -1831,7 +1830,9 @@ else:
                 name="Ventas Totales (S/)", 
                 marker_color='#2563eb',
                 text=vc['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
-                textposition='inside'
+                textposition='inside',
+                customdata=vc['SKUs'],
+                hovertemplate="<b>%{x}</b><br>Venta: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata}<extra></extra>"
             ), secondary_y=False)
             
             fig_c.add_trace(go.Scatter(
@@ -1841,7 +1842,8 @@ else:
                 mode="lines+markers+text", 
                 text=vc['Margen_Pct'].apply(lambda x: f"{x*100:.1f}%"),
                 textposition="top center",
-                line=dict(color='#10b981', width=3)
+                line=dict(color='#10b981', width=3),
+                hovertemplate="Margen: %{y:.1%}<extra></extra>"
             ), secondary_y=True)
             
             fig_c.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=25, b=20, l=10, r=10))
@@ -1854,14 +1856,15 @@ else:
             fig_pm.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=10, b=10, l=10, r=10), showlegend=False)
             st.plotly_chart(fig_pm, use_container_width=True, config={'displayModeBar': False})
 
-        # FAIR SHARE CON INFORMACIÓN COMPLETA EN HOVER
+        # FAIR SHARE CON CONTEO ÚNICO DE SKUS ACTIVOS
         st.markdown("<hr style='border-color: #cbd5e1; margin: 14px 0;'>", unsafe_allow_html=True)
         st.markdown("<b>⚖️ Fair Share: Espacio (% Caras) vs % Ventas y Margen</b>", unsafe_allow_html=True)
         df_esp_cat = df_base.groupby('Categoría').agg(Caras_Total=('Caras_Num', 'sum')).reset_index()
+        # Conteo garantizado con 'nunique' para SKUs únicos por categoría
         df_fin_cat = df_unicos.groupby('Categoría').agg(
             Ventas_Total=('Venta_Num', 'sum'),
             Margen_Total=('Margen_Num', 'sum'),
-            SKUs_Activos=('COD REAL', 'count')
+            SKUs_Activos=('COD REAL', 'nunique')
         ).reset_index()
         
         df_fs = pd.merge(df_esp_cat, df_fin_cat, on='Categoría', how='outer').fillna(0)
@@ -1879,7 +1882,7 @@ else:
                 "<b>Espacio:</b> %{customdata[0]:.1f}% (%{customdata[1]} Caras)<br>" +
                 "<b>Ventas:</b> %{customdata[2]:.1f}% (S/ %{customdata[3]:,.2f})<br>" +
                 "<b>Margen Total:</b> S/ %{customdata[4]:,.2f}<br>" +
-                "<b>SKUs Activos:</b> %{customdata[5]} SKUs" +
+                "<b>SKUs Únicos:</b> %{customdata[5]} SKUs" +
                 "<extra></extra>"
             )
 
@@ -1952,7 +1955,7 @@ else:
     with tab_errores:
         st.markdown("<div style='font-size: 0.85rem; font-weight: 800; color: #2563eb; margin-bottom: 8px;'>⚠️ CONTROL DE INTEGRIDAD DE DATOS (DATOST)</div>", unsafe_allow_html=True)
         df_err = df_base[(df_base['Stock'] == -999.0) | (df_base['Venta'] == -999.0) | (df_base['Estado'] == 'SIN DATOS')].copy()
-        st.metric("Total de Filas / SKUs con Incongruencias", len(df_err))
+        st.metric("Total de Filas / SKUs con Incongruencias", df_err['COD REAL'].nunique() if not df_err.empty else 0)
         if len(df_err) > 0:
             cols_e = [c for c in ['COD REAL', 'EAN', 'Descripción', 'Bandeja', 'Stock', 'Venta', 'Estado'] if c in df_err.columns]
             cols_e = list(dict.fromkeys(cols_e))
