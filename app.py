@@ -361,7 +361,6 @@ def cargar_todas_las_fuentes():
         else:
             df_matriz['PASILLO'] = get_clean_series(df_matriz, 'PASILLO').apply(clean_sku)
 
-        # NORMALIZACIÓN ROBUSTA DE LATERAL: Guarda exclusivamente 'A' o 'B'
         if 'LATERAL' in df_matriz.columns:
             df_matriz['LATERAL'] = get_clean_series(df_matriz, 'LATERAL').str.extract(r'([ABab])')[0].str.upper().fillna('A')
         else:
@@ -1780,7 +1779,6 @@ else:
             df_universo_cat = df_universo_cat[df_universo_cat['Categoría'] == cat_sel].copy()
             label_contexto = f"categoría {cat_sel}"
         else:
-            # Si se seleccionan todas las categorías, se restringe a las categorías que pertenecen físicamente a este Lateral
             cats_en_este_lateral = [c for c in df_base['Categoría'].dropna().unique() if str(c) not in ['SIN DATOS', 'S/C', 'nan', '']]
             if cats_en_este_lateral:
                 df_universo_cat = df_universo_cat[df_universo_cat['Categoría'].isin(cats_en_este_lateral)].copy()
@@ -1838,15 +1836,29 @@ else:
             bandeja_series = get_clean_series(df_base, 'Bandeja')
             df_base['Cuerpo_Num'] = [desglosar_cuerpo_y_nivel(v)[0] for v in bandeja_series]
             
-            vc = df_base.groupby('Cuerpo_Num').agg(
-                Venta_Total=('Venta_Num', 'sum'),
-                Margen_Total=('Margen_Num', 'sum'),
+            # --- CÁLCULO PONDERADO DE VENTAS Y MARGEN POR CUERPO (EVITA MULTIPLICAR POR FACINGS) ---
+            # 1. Total de caras del SKU por cuerpo
+            df_sku_cuerpo_caras = df_base.groupby(['COD REAL', 'Cuerpo_Num'])['Caras_Num'].sum().reset_index()
+            # 2. Total de caras del SKU en todo el planograma filtrado
+            df_sku_total_caras = df_base.groupby('COD REAL')['Caras_Num'].sum().reset_index().rename(columns={'Caras_Num': 'Caras_Total_SKU'})
+            
+            df_pesos = pd.merge(df_sku_cuerpo_caras, df_sku_total_caras, on='COD REAL', how='left')
+            df_pesos['Factor_Ponderacion'] = df_pesos['Caras_Num'] / df_pesos['Caras_Total_SKU']
+            
+            # 3. Cruzar con ventas y margen unitario del SKU
+            df_pesos = pd.merge(df_pesos, df_unicos[['COD REAL', 'Venta_Num', 'Margen_Num']], on='COD REAL', how='left')
+            df_pesos['Venta_Ponderada'] = df_pesos['Venta_Num'] * df_pesos['Factor_Ponderacion']
+            df_pesos['Margen_Ponderado'] = df_pesos['Margen_Num'] * df_pesos['Factor_Ponderacion']
+            
+            # 4. Agrupación por Cuerpo exacta que suma exactamente el total de la góndola
+            vc = df_pesos.groupby('Cuerpo_Num').agg(
+                Venta_Total=('Venta_Ponderada', 'sum'),
+                Margen_Total=('Margen_Ponderado', 'sum'),
                 SKUs=('COD REAL', 'nunique')
             ).reset_index()
+
             vc['Margen_Pct'] = [r['Margen_Total']/r['Venta_Total'] if r['Venta_Total']>0 else 0 for _, r in vc.iterrows()]
             vc['Label'] = [f"Cuerpo {int(r['Cuerpo_Num']):02d}" for _, r in vc.iterrows()]
-            
-            # Cálculo de % Venta del Cuerpo respecto a la góndola completa
             vc['Part_Venta_Gondola'] = [(r['Venta_Total'] / ventas_plano * 100) if ventas_plano > 0 else 0 for _, r in vc.iterrows()]
             
             if orden_sel == "Por Venta":
@@ -1856,8 +1868,6 @@ else:
             else:
                 vc = vc.sort_values(by='Cuerpo_Num', ascending=True)
 
-            # Matriz de metadatos para tooltip completo en Rendimiento por Cuerpo
-            # [Venta_Total, Part_Venta_Gondola, Margen_Total, Margen_Pct, SKUs]
             c_meta = vc[['Venta_Total', 'Part_Venta_Gondola', 'Margen_Total', 'Margen_Pct', 'SKUs']].copy()
 
             hover_template_cuerpo = (
@@ -1890,7 +1900,7 @@ else:
                 text=vc['Margen_Pct'].apply(lambda x: f"{x*100:.1f}%"),
                 textposition="top center",
                 line=dict(color='#10b981', width=3),
-                hoverinfo='skip'  # Evita duplicar el tooltip sobre el mismo punto
+                hoverinfo='skip'
             ), secondary_y=True)
             
             fig_c.update_layout(
@@ -1930,7 +1940,6 @@ else:
             df_fs['Pct_Ventas'] = df_fs['Ventas_Total'] / tot_vta
             df_fs['Pct_Margen'] = (df_fs['Margen_Total'] / tot_mgn) if tot_mgn > 0 else 0.0
             
-            # Plantilla única consolidada que no se duplica
             hover_template_fs = (
                 "<b>%{x}</b><br><br>" +
                 "📐 <b>Espacio (% Caras):</b> %{customdata[0]:.1f}% (%{customdata[1]} Caras)<br>" +
@@ -1940,7 +1949,6 @@ else:
                 "<extra></extra>"
             )
 
-            # Matriz de datos para el hover consolidado
             custom_data_matrix = df_fs[[
                 'Pct_Espacio', 'Caras_Total', 'Pct_Ventas', 'Ventas_Total', 'Pct_Margen', 'Margen_Total', 'SKUs_Activos'
             ]].copy()
@@ -1949,7 +1957,7 @@ else:
             custom_data_matrix['Pct_Margen'] = custom_data_matrix['Pct_Margen'] * 100
 
             fig_fs = go.Figure()
-            # Barra 1: % Caras (Espacio Físico) - Contiene el hover unificado
+            # Barra 1: % Caras (Espacio Físico)
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Espacio'], 
@@ -1960,7 +1968,7 @@ else:
                 customdata=custom_data_matrix.values,
                 hovertemplate=hover_template_fs
             ))
-            # Barra 2: % Ventas (Monto S/) - Omite hover para no duplicar datos
+            # Barra 2: % Ventas (Monto S/)
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Ventas'], 
@@ -1970,7 +1978,7 @@ else:
                 marker_color='#10b981',
                 hoverinfo='skip'
             ))
-            # Barra 3: % Margen (Contribución a la Ganancia) - Omite hover para no duplicar
+            # Barra 3: % Margen (Ganancia S/)
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Margen'], 
