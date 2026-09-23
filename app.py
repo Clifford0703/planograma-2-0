@@ -1768,10 +1768,10 @@ else:
         components.html(html_componente_completo, height=altura_iframe, scrolling=False)
 
     # =========================================================================
-    # --- PESTAÑA 3: DASHBOARD ANALÍTICO FINANCIERO (KPIS CONTEXTUALES Y CONTROLES) ---
+    # --- PESTAÑA 3: DASHBOARD ANALÍTICO FINANCIERO (CONSOLIDADO EXACTO) ---
     # =========================================================================
     with tab_dash:
-        # 1. Definición del Universo de Referencia según la Categoría Seleccionada
+        # 1. Definición del Universo de Referencia Contextual (Categoría o Lateral Activo)
         df_universo_cat = df_sku_unico_global.copy()
         if 'Mundo' in df_universo_cat.columns:
             df_universo_cat = df_universo_cat[df_universo_cat['Mundo'] == mundo_sel].copy()
@@ -1780,14 +1780,17 @@ else:
             df_universo_cat = df_universo_cat[df_universo_cat['Categoría'] == cat_sel].copy()
             label_contexto = f"categoría {cat_sel}"
         else:
-            label_contexto = f"mundo {mundo_sel}"
+            # Si se seleccionan todas las categorías, se restringe a las categorías que pertenecen físicamente a este Lateral
+            cats_en_este_lateral = [c for c in df_base['Categoría'].dropna().unique() if str(c) not in ['SIN DATOS', 'S/C', 'nan', '']]
+            if cats_en_este_lateral:
+                df_universo_cat = df_universo_cat[df_universo_cat['Categoría'].isin(cats_en_este_lateral)].copy()
+            label_contexto = f"Lateral {lat_letra_activa} ({len(cats_en_este_lateral)} categorías)"
 
         ventas_plano = df_unicos['Venta_Num'].sum()
         margen_bruto = df_unicos['Margen_Num'].sum()
         margen_global_pct = (margen_bruto / ventas_plano * 100) if ventas_plano > 0 else 0.0
         skus_en_plano = df_unicos['COD REAL'].nunique()
 
-        # Denominadores filtrados de forma contextual
         tot_vta_universo = df_universo_cat['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0)).sum()
         pct_vta_tot = (ventas_plano / tot_vta_universo * 100) if tot_vta_universo > 0 else 100.0
         tot_skus_universo = df_universo_cat['COD REAL'].nunique()
@@ -1843,13 +1846,29 @@ else:
             vc['Margen_Pct'] = [r['Margen_Total']/r['Venta_Total'] if r['Venta_Total']>0 else 0 for _, r in vc.iterrows()]
             vc['Label'] = [f"Cuerpo {int(r['Cuerpo_Num']):02d}" for _, r in vc.iterrows()]
             
-            # Aplicar orden dinámico seleccionado
+            # Cálculo de % Venta del Cuerpo respecto a la góndola completa
+            vc['Part_Venta_Gondola'] = [(r['Venta_Total'] / ventas_plano * 100) if ventas_plano > 0 else 0 for _, r in vc.iterrows()]
+            
             if orden_sel == "Por Venta":
                 vc = vc.sort_values(by='Venta_Total', ascending=False)
             elif orden_sel == "Por Margen":
                 vc = vc.sort_values(by='Margen_Pct', ascending=False)
             else:
                 vc = vc.sort_values(by='Cuerpo_Num', ascending=True)
+
+            # Matriz de metadatos para tooltip completo en Rendimiento por Cuerpo
+            # [Venta_Total, Part_Venta_Gondola, Margen_Total, Margen_Pct, SKUs]
+            c_meta = vc[['Venta_Total', 'Part_Venta_Gondola', 'Margen_Total', 'Margen_Pct', 'SKUs']].copy()
+
+            hover_template_cuerpo = (
+                "<b>%{x}</b><br><br>" +
+                "💳 <b>Venta Total:</b> S/ %{customdata[0]:,.2f}<br>" +
+                "📊 <b>% Venta Góndola:</b> %{customdata[1]:.1f}%<br>" +
+                "📈 <b>Margen Monetario:</b> S/ %{customdata[2]:,.2f}<br>" +
+                "🎯 <b>Margen Comercial:</b> %{customdata[3]:.1%}<br>" +
+                "📦 <b>SKUs Únicos:</b> %{customdata[4]} SKUs" +
+                "<extra></extra>"
+            )
 
             fig_c = make_subplots(specs=[[{"secondary_y": True}]])
             fig_c.add_trace(go.Bar(
@@ -1859,8 +1878,8 @@ else:
                 marker_color='#2563eb',
                 text=vc['Venta_Total'].apply(lambda x: f"S/ {x:,.0f}"),
                 textposition='inside',
-                customdata=vc['SKUs'],
-                hovertemplate="<b>%{x}</b><br>Venta: S/ %{y:,.2f}<br>SKUs Únicos: %{customdata}<extra></extra>"
+                customdata=c_meta.values,
+                hovertemplate=hover_template_cuerpo
             ), secondary_y=False)
             
             fig_c.add_trace(go.Scatter(
@@ -1871,10 +1890,15 @@ else:
                 text=vc['Margen_Pct'].apply(lambda x: f"{x*100:.1f}%"),
                 textposition="top center",
                 line=dict(color='#10b981', width=3),
-                hovertemplate="Margen: %{y:.1%}<extra></extra>"
+                hoverinfo='skip'  # Evita duplicar el tooltip sobre el mismo punto
             ), secondary_y=True)
             
-            fig_c.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=25, b=20, l=10, r=10))
+            fig_c.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)', 
+                plot_bgcolor='rgba(0,0,0,0)', 
+                margin=dict(t=25, b=20, l=10, r=10),
+                hovermode='closest'
+            )
             st.plotly_chart(fig_c, use_container_width=True, config={'displayModeBar': False})
             
         with col_g_mix:
@@ -1884,9 +1908,9 @@ else:
             fig_pm.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=10, b=10, l=10, r=10), showlegend=False)
             st.plotly_chart(fig_pm, use_container_width=True, config={'displayModeBar': False})
 
-        # FAIR SHARE CON HOVER CONSOLIDADO SIN DUPLICIDAD
+        # FAIR SHARE CON 3 BARRAS (% ESPACIO, % VENTAS, % MARGEN) Y TOOLTIP CONSOLIDADO
         st.markdown("<hr style='border-color: #cbd5e1; margin: 14px 0;'>", unsafe_allow_html=True)
-        st.markdown("<b>⚖️ Fair Share: Espacio (% Caras) vs % Ventas y Margen</b>", unsafe_allow_html=True)
+        st.markdown("<b>⚖️ Fair Share: Espacio (% Caras) vs % Ventas y % Margen</b>", unsafe_allow_html=True)
         df_esp_cat = df_base.groupby('Categoría').agg(Caras_Total=('Caras_Num', 'sum')).reset_index()
         df_fin_cat = df_unicos.groupby('Categoría').agg(
             Ventas_Total=('Venta_Num', 'sum'),
@@ -1899,29 +1923,33 @@ else:
         
         tot_caras = df_fs['Caras_Total'].sum()
         tot_vta = df_fs['Ventas_Total'].sum()
+        tot_mgn = df_fs['Margen_Total'].sum()
         
         if tot_caras > 0 and tot_vta > 0:
             df_fs['Pct_Espacio'] = df_fs['Caras_Total'] / tot_caras
             df_fs['Pct_Ventas'] = df_fs['Ventas_Total'] / tot_vta
+            df_fs['Pct_Margen'] = (df_fs['Margen_Total'] / tot_mgn) if tot_mgn > 0 else 0.0
             
             # Plantilla única consolidada que no se duplica
             hover_template_fs = (
                 "<b>%{x}</b><br><br>" +
                 "📐 <b>Espacio (% Caras):</b> %{customdata[0]:.1f}% (%{customdata[1]} Caras)<br>" +
                 "💰 <b>Ventas:</b> %{customdata[2]:.1f}% (S/ %{customdata[3]:,.2f})<br>" +
-                "📈 <b>Margen Total:</b> S/ %{customdata[4]:,.2f}<br>" +
-                "📦 <b>SKUs Únicos:</b> %{customdata[5]} SKUs" +
+                "📈 <b>Margen:</b> %{customdata[4]:.1f}% (S/ %{customdata[5]:,.2f})<br>" +
+                "📦 <b>SKUs Únicos:</b> %{customdata[6]} SKUs" +
                 "<extra></extra>"
             )
 
+            # Matriz de datos para el hover consolidado
             custom_data_matrix = df_fs[[
-                'Pct_Espacio', 'Caras_Total', 'Pct_Ventas', 'Ventas_Total', 'Margen_Total', 'SKUs_Activos'
+                'Pct_Espacio', 'Caras_Total', 'Pct_Ventas', 'Ventas_Total', 'Pct_Margen', 'Margen_Total', 'SKUs_Activos'
             ]].copy()
             custom_data_matrix['Pct_Espacio'] = custom_data_matrix['Pct_Espacio'] * 100
             custom_data_matrix['Pct_Ventas'] = custom_data_matrix['Pct_Ventas'] * 100
+            custom_data_matrix['Pct_Margen'] = custom_data_matrix['Pct_Margen'] * 100
 
             fig_fs = go.Figure()
-            # La traza 1 contiene toda la información consolidada
+            # Barra 1: % Caras (Espacio Físico) - Contiene el hover unificado
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Espacio'], 
@@ -1932,7 +1960,7 @@ else:
                 customdata=custom_data_matrix.values,
                 hovertemplate=hover_template_fs
             ))
-            # La traza 2 omite hover para no duplicar datos
+            # Barra 2: % Ventas (Monto S/) - Omite hover para no duplicar datos
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Ventas'], 
@@ -1942,12 +1970,24 @@ else:
                 marker_color='#10b981',
                 hoverinfo='skip'
             ))
+            # Barra 3: % Margen (Contribución a la Ganancia) - Omite hover para no duplicar
+            fig_fs.add_trace(go.Bar(
+                x=df_fs['Categoría'], 
+                y=df_fs['Pct_Margen'], 
+                name="% Margen (Ganancia S/)",
+                text=df_fs['Pct_Margen'].apply(lambda x: f"{x*100:.1f}%"), 
+                textposition='inside',
+                marker_color='#8b5cf6',
+                hoverinfo='skip'
+            ))
+            
             fig_fs.update_layout(
                 barmode='group', 
                 hovermode='closest',
                 paper_bgcolor='rgba(0,0,0,0)', 
                 plot_bgcolor='rgba(0,0,0,0)', 
-                margin=dict(t=20, b=20, l=10, r=10)
+                margin=dict(t=20, b=20, l=10, r=10),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             st.plotly_chart(fig_fs, use_container_width=True, config={'displayModeBar': False})
 
