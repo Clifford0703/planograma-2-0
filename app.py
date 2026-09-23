@@ -346,7 +346,7 @@ def cargar_todas_las_fuentes():
         except Exception:
             pass
 
-        # 1. Matriz de Planos
+        # 1. Matriz de Planos (factPlano)
         df_matriz = leer_tabla_por_ancla(url_planos, "COD REAL", sheet_target=0, skiprows_fallback=3)
         if "COD REAL" not in df_matriz.columns:
             df_matriz = pd.read_excel(url_planos, sheet_name=0, skiprows=2)
@@ -357,9 +357,15 @@ def cargar_todas_las_fuentes():
         df_matriz['COD REAL'] = df_matriz['COD_REAL_Str']
 
         if 'PASILLO' not in df_matriz.columns:
-            df_matriz['PASILLO'] = "Pasillo 6"
-        if 'LATERAL' not in df_matriz.columns:
-            df_matriz['LATERAL'] = "Lateral A"
+            df_matriz['PASILLO'] = "6"
+        else:
+            df_matriz['PASILLO'] = get_clean_series(df_matriz, 'PASILLO').apply(clean_sku)
+
+        # NORMALIZACIÓN ROBUSTA DE LATERAL: Se asegura de guardar exclusivamente 'A' o 'B'
+        if 'LATERAL' in df_matriz.columns:
+            df_matriz['LATERAL'] = get_clean_series(df_matriz, 'LATERAL').str.extract(r'([ABab])')[0].str.upper().fillna('A')
+        else:
+            df_matriz['LATERAL'] = "A"
 
         # 2. Coberturas y Stock
         df_cob_raw = leer_tabla_por_ancla(url_coberturas, "Material", sheet_target=0, skiprows_fallback=3)
@@ -530,7 +536,7 @@ def cargar_todas_las_fuentes():
         for col, val_def in [('Stock', -999.0), ('Cobertura', -999.0), ('Venta', -999.0), ('Monto Margen', -999.0), ('% Part', -999.0)]:
             sanitizar_columna_num(df_pasillo_base, col, val_def)
 
-        for col, val_def in [('Mundo', 'DESAYUNO'), ('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS'), ('Descripción', 'SIN DATOS'), ('EAN', 'SIN DATOS'), ('PASILLO', 'Pasillo 6'), ('LATERAL', 'Lateral A')]:
+        for col, val_def in [('Mundo', 'DESAYUNO'), ('Estado', 'SIN DATOS'), ('Departamento', 'SIN DATOS'), ('Sección', 'SIN DATOS'), ('Categoría', 'SIN DATOS'), ('Grupo de Artículo', 'SIN DATOS'), ('G.A.', 'SIN DATOS'), ('Links de fotos', 'SIN DATOS'), ('Descripción', 'SIN DATOS'), ('EAN', 'SIN DATOS'), ('PASILLO', '6'), ('LATERAL', 'A')]:
             sanitizar_columna_str(df_pasillo_base, col, val_def)
 
         if 'Bandeja' in df_pasillo_base.columns and 'EAN' in df_pasillo_base.columns:
@@ -637,7 +643,7 @@ with col_head3:
 if error_nube:
     st.warning(f"⚠️ Aviso de conexión a la nube: {error_nube}")
 
-# --- COMPUERTA DE BÚSQUEDA INTELIGENTE CON LATERAL ---
+# --- COMPUERTA DE BÚSQUEDA INTELIGENTE CON LATERAL (A / B) ---
 if "busqueda_activa" not in st.session_state:
     st.session_state.busqueda_activa = False
 
@@ -682,18 +688,22 @@ with col_b3:
     cat_sel = st.selectbox("Categoría", ["Todas las Categorías"] + cats_encontradas, key="gate_cat")
 
 with col_b4:
-    lateral_opciones = ["Lateral A", "Lateral B"]
+    # DETECCIÓN INTELIGENTE DE LATERAL EN BASE A LA HOJA FACTPLANO
+    lateral_display_map = {"A": "Lateral A", "B": "Lateral B"}
+    reverse_lateral_map = {"Lateral A": "A", "Lateral B": "B"}
+    
     if cat_sel != "Todas las Categorías":
-        # Detección automática según la categoría
+        # Consultar la letra directa 'A' o 'B' que tiene asignada esta categoría en factPlano
         df_cat_check = df_pasillo_global[(df_pasillo_global['Mundo'] == mundo_sel) & (df_pasillo_global['Categoría'] == cat_sel)]
-        lats_cat = df_cat_check['LATERAL'].dropna().unique()
-        lat_sugerido = str(lats_cat[0]) if len(lats_cat) > 0 else "Lateral A"
-        if lat_sugerido not in lateral_opciones:
-            lat_sugerido = "Lateral A"
-        lateral_sel = st.selectbox("Lateral (Auto)", [lat_sugerido], disabled=True, key="gate_lat_auto")
+        lats_detectados = [str(x).strip().upper() for x in df_cat_check['LATERAL'].dropna().unique() if str(x).strip().upper() in ['A', 'B']]
+        letra_detectada = lats_detectados[0] if len(lats_detectados) > 0 else 'A'
+        label_auto = lateral_display_map.get(letra_detectada, "Lateral A")
+        lateral_sel_label = st.selectbox("Lateral (Auto)", [label_auto], disabled=True, key="gate_lat_auto")
+        lat_letra_activa = reverse_lateral_map.get(lateral_sel_label, "A")
     else:
-        # Selección obligatoria A/B si son todas las categorías
-        lateral_sel = st.selectbox("Lateral (Obligatorio)", lateral_opciones, index=0, key="gate_lat_manual")
+        # Si selecciona "Todas las Categorías", se obliga a seleccionar Lateral A o Lateral B
+        lateral_sel_label = st.selectbox("Lateral (Obligatorio)", ["Lateral A", "Lateral B"], index=0, key="gate_lat_manual")
+        lat_letra_activa = reverse_lateral_map.get(lateral_sel_label, "A")
 
 with col_b5:
     st.markdown("<div style='margin-top: 28px;'>", unsafe_allow_html=True)
@@ -716,10 +726,14 @@ else:
     if cat_sel != "Todas las Categorías":
         df_base = df_base[df_base['Categoría'] == cat_sel].copy()
     
-    # Filtrado por Lateral seleccionado (automático o manual A/B)
-    lat_filtrar = lateral_sel
+    # FILTRADO EXACTO POR LETRA DE LATERAL ('A' o 'B')
     if 'LATERAL' in df_base.columns:
-        df_base = df_base[df_base['LATERAL'].astype(str).str.strip().str.upper() == str(lat_filtrar).strip().upper()].copy()
+        df_filtrado_lat = df_base[df_base['LATERAL'].astype(str).str.strip().str.upper() == lat_letra_activa].copy()
+        # Fallback de seguridad: si por algún motivo quedara en 0, no dejar la pantalla en blanco
+        if not df_filtrado_lat.empty:
+            df_base = df_filtrado_lat
+        else:
+            st.warning(f"⚠️ Aviso: No se encontraron registros con Lateral '{lat_letra_activa}'. Mostrando registros disponibles.")
 
     df_base['Venta_Num'] = df_base['Venta'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
     df_base['Margen_Num'] = df_base['Monto Margen'].apply(lambda x: 0.0 if safe_float(x, -999.0) == -999.0 else safe_float(x, 0.0))
@@ -746,7 +760,7 @@ else:
         st.markdown(f"""
             <div style="margin-bottom: 14px;">
                 <h3 style="font-size: 1.45rem; font-weight: 900; color: #0f172a; margin: 0 0 4px 0; letter-spacing: -0.3px;">
-                    Radiografía Operativa y Comercial de la Tienda ({lat_filtrar})
+                    Radiografía Operativa y Comercial de la Tienda (Lateral {lat_letra_activa})
                 </h3>
                 <p style="font-size: 0.82rem; font-weight: 500; color: #64748b; margin: 0;">
                     Control de servicio en góndola (OSA), impacto financiero de quiebres y calidad del surtido exhibido.
@@ -872,7 +886,7 @@ else:
     # --- PESTAÑA 2: PLANOGRAMA FÍSICO PANORÁMICO ---
     # =========================================================================
     with tab_plano:
-        cat_actual_titulo = f"{cat_sel} ({lat_filtrar})" if cat_sel != "Todas las Categorías" else f"MUNDO {mundo_sel} - {lat_filtrar}"
+        cat_actual_titulo = f"{cat_sel} (Lateral {lat_letra_activa})" if cat_sel != "Todas las Categorías" else f"MUNDO {mundo_sel} - LATERAL {lat_letra_activa}"
         
         tot_skus_op = len(df_unicos)
         bloq_op = len(df_unicos[df_unicos['Estado'].str.strip().str.upper() == 'B'])
@@ -1797,7 +1811,7 @@ else:
 
         col_g_cuerpos, col_g_mix = st.columns([7, 3])
         with col_g_cuerpos:
-            st.markdown(f"<b>📈 Rendimiento por Pasillo / Lateral / Cuerpo ({lat_filtrar}) <span style='font-size:0.75rem; color:#2563eb;'>(VENTAS vs MARGEN)</span></b>", unsafe_allow_html=True)
+            st.markdown(f"<b>📈 Rendimiento por Pasillo / Lateral / Cuerpo (Lateral {lat_letra_activa}) <span style='font-size:0.75rem; color:#2563eb;'>(VENTAS vs MARGEN)</span></b>", unsafe_allow_html=True)
             bandeja_series = get_clean_series(df_base, 'Bandeja')
             df_base['Cuerpo_Num'] = [desglosar_cuerpo_y_nivel(v)[0] for v in bandeja_series]
             
@@ -1860,7 +1874,6 @@ else:
             df_fs['Pct_Espacio'] = df_fs['Caras_Total'] / tot_caras
             df_fs['Pct_Ventas'] = df_fs['Ventas_Total'] / tot_vta
             
-            # Plantilla completa de datos al pasar el cursor
             hover_template_fs = (
                 "<b>Categoría:</b> %{x}<br>" +
                 "<b>Espacio:</b> %{customdata[0]:.1f}% (%{customdata[1]} Caras)<br>" +
@@ -1870,7 +1883,6 @@ else:
                 "<extra></extra>"
             )
 
-            # Matriz de metadatos para el hover
             custom_data_matrix = df_fs[[
                 'Pct_Espacio', 'Caras_Total', 'Pct_Ventas', 'Ventas_Total', 'Margen_Total', 'SKUs_Activos'
             ]].copy()
@@ -1900,7 +1912,7 @@ else:
             ))
             fig_fs.update_layout(
                 barmode='group', 
-                hovermode='x unified',  # Muestra la información comparada en el centro
+                hovermode='x unified',
                 paper_bgcolor='rgba(0,0,0,0)', 
                 plot_bgcolor='rgba(0,0,0,0)', 
                 margin=dict(t=20, b=20, l=10, r=10)
