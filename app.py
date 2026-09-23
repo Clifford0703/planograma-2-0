@@ -746,7 +746,7 @@ else:
     ])
 
     # =========================================================================
-    # --- PESTAÑA 1: RESUMEN EJECUTIVO (GERENCIA DE OPERACIONES) ---
+    # --- PESTAÑA 1: RESUMEN EJECUTIVO (GERENCIA DE OPERACIONES CON VELOCÍMETRO) ---
     # =========================================================================
     with tab_resumen:
         st.markdown(f"""
@@ -755,7 +755,7 @@ else:
                     Control de Gestión Operativa en Góndola (Lateral {lat_letra_activa})
                 </h3>
                 <p style="font-size: 0.82rem; font-weight: 500; color: #64748b; margin: 0;">
-                    Disponibilidad en góndola (OSA), impacto financiero de quiebres, riesgo de merma y cuadrante de abastecimiento.
+                    Disponibilidad en góndola (OSA), impacto financiero de quiebres y cumplimiento de catálogo activo.
                 </p>
             </div>
         """, unsafe_allow_html=True)
@@ -811,7 +811,6 @@ else:
             </div>
         """, unsafe_allow_html=True)
 
-        # Acciones y Alertas Ejecutivas con Botón de Exportar Quiebres
         c_a1, c_a2, c_a3 = st.columns([4.5, 4.5, 1.2])
         with c_a1:
             st.markdown(f"""
@@ -828,7 +827,6 @@ else:
                 </div>
             """, unsafe_allow_html=True)
         with c_a3:
-            # BOTÓN MINIMALISTA DE EXPORTAR
             buf_quiebres = io.BytesIO()
             cols_q_export = [c for c in ['COD REAL', 'EAN', 'Descripción', 'Marca', 'Categoría', 'Ubicación(es)', 'Estado', 'Stock', 'Cobertura', 'Venta'] if c in quiebres_df.columns]
             with pd.ExcelWriter(buf_quiebres, engine='openpyxl') as writer:
@@ -844,60 +842,100 @@ else:
             )
             st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
-        # Fila 1 de Gráficos: Quiebres vs Participación y Salud del Stock
-        col_g1, col_g2 = st.columns([6.2, 3.8])
-        with col_g1:
-            st.markdown("<b>🔥 Quiebres por Categoría vs % Participación de Ventas <span style='font-size:0.75rem; color:#2563eb;'>(PRIORIZACIÓN OPERATIVA)</span></b>", unsafe_allow_html=True)
+        # UNIVERSO PARA EL VELOCÍMETRO (SKUs Activos en Catálogo de esta Categoría/Lateral)
+        df_universo_ops = df_sku_unico_global.copy()
+        if 'Mundo' in df_universo_ops.columns:
+            df_universo_ops = df_universo_ops[df_universo_ops['Mundo'] == mundo_sel].copy()
+
+        if cat_sel != "Todas las Categorías":
+            df_universo_ops = df_universo_ops[df_universo_ops['Categoría'] == cat_sel].copy()
+        else:
+            cats_en_este_lateral = [c for c in df_base['Categoría'].dropna().unique() if str(c) not in ['SIN DATOS', 'S/C', 'nan', '']]
+            if cats_en_este_lateral:
+                df_universo_ops = df_universo_ops[df_universo_ops['Categoría'].isin(cats_en_este_lateral)].copy()
+
+        # Filtrado de catálogo con estatus Activo ('A')
+        df_cat_activos = df_universo_ops[df_universo_ops['Estado'].astype(str).str.strip().str.upper() == 'A'].copy()
+        tot_activos_catalogo = df_cat_activos['COD REAL'].nunique()
+
+        # SKUs en Planograma cruzados con su condición de stock
+        df_plano_activos_total = df_unicos[df_unicos['Estado'].astype(str).str.strip().str.upper() == 'A'].copy()
+        df_plano_activos_con_stock = df_plano_activos_total[df_plano_activos_total['Stock_Num'] > 0].copy()
+        df_plano_activos_sin_stock = df_plano_activos_total[df_plano_activos_total['Stock_Num'] <= 0].copy()
+
+        # --- FILA SUPERIOR: VELOCÍMETRO GERENCIAL + SALUD DE STOCK ---
+        col_gauge, col_pie = st.columns([5.5, 4.5])
+        with col_gauge:
+            col_g_title, col_g_btn = st.columns([5.2, 4.8])
+            with col_g_title:
+                st.markdown("<b>⏱️ Cumplimiento de Catálogo Activo en Góndola</b>", unsafe_allow_html=True)
+            with col_g_btn:
+                modo_gauge = st.segmented_control(
+                    "Filtro Activos:",
+                    ["Todos", "Con Stock", "Sin Stock"],
+                    default="Todos",
+                    label_visibility="collapsed",
+                    key="switch_gauge_ops"
+                )
+
+            # Dinámica de selección del velocímetro
+            if modo_gauge == "Con Stock":
+                numerador_gauge = df_plano_activos_con_stock['COD REAL'].nunique()
+                label_modo_gauge = "Activos con Stock (>0)"
+                bar_color_gauge = "#16a34a"
+            elif modo_gauge == "Sin Stock":
+                numerador_gauge = df_plano_activos_sin_stock['COD REAL'].nunique()
+                label_modo_gauge = "Activos sin Stock (=0)"
+                bar_color_gauge = "#dc2626"
+            else:
+                numerador_gauge = df_plano_activos_total['COD REAL'].nunique()
+                label_modo_gauge = "Total SKUs en Planograma"
+                bar_color_gauge = "#2563eb"
+
+            denominador_gauge = tot_activos_catalogo if tot_activos_catalogo > 0 else max(numerador_gauge, 1)
+            pct_gauge = (numerador_gauge / denominador_gauge * 100) if denominador_gauge > 0 else 0.0
+
+            fig_gauge = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=pct_gauge,
+                number={'suffix': "%", 'font': {'size': 38, 'weight': 900, 'color': '#0f172a'}},
+                gauge={
+                    'axis': {'range': [0, 100], 'tickwidth': 1, 'tickcolor': "#64748b"},
+                    'bar': {'color': bar_color_gauge, 'thickness': 0.3},
+                    'bgcolor': "#ffffff",
+                    'borderwidth': 1.5,
+                    'bordercolor': "#cbd5e1",
+                    'steps': [
+                        {'range': [0, 75], 'color': 'rgba(239, 68, 68, 0.15)'},
+                        {'range': [75, 90], 'color': 'rgba(234, 179, 8, 0.18)'},
+                        {'range': [90, 100], 'color': 'rgba(34, 197, 94, 0.20)'}
+                    ],
+                    'threshold': {
+                        'line': {'color': "#0f172a", 'width': 4},
+                        'thickness': 0.75,
+                        'value': pct_gauge
+                    }
+                }
+            ))
+            fig_gauge.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                margin=dict(t=15, b=10, l=20, r=20),
+                height=250
+            )
+
             st.markdown('<div class="dash-card">', unsafe_allow_html=True)
-            ventas_por_cat = df_unicos.groupby('Categoría')['Venta_Num'].sum()
-            total_vta_unicos = ventas_por_cat.sum()
-            quiebres_por_cat = quiebres_df.groupby('Categoría')['COD REAL'].nunique()
-            skus_tot_cat = df_unicos.groupby('Categoría')['COD REAL'].nunique()
-            vta_riesgo_cat = quiebres_df.groupby('Categoría')['Venta_Num'].sum()
-            
-            df_cat_ops = pd.DataFrame({
-                'Quiebres': quiebres_por_cat, 
-                'Venta': ventas_por_cat,
-                'SKUs_Total': skus_tot_cat,
-                'Venta_Riesgo': vta_riesgo_cat
-            }).fillna(0).reset_index()
-            df_cat_ops = df_cat_ops[~df_cat_ops['Categoría'].isin(['SIN DATOS', 'S/C', 'nan', ''])].copy()
-            df_cat_ops['Part_Venta'] = (df_cat_ops['Venta'] / total_vta_unicos) if total_vta_unicos > 0 else 0
-            df_cat_ops['OSA_Cat'] = [((r['SKUs_Total'] - r['Quiebres']) / r['SKUs_Total'] * 100) if r['SKUs_Total'] > 0 else 100 for _, r in df_cat_ops.iterrows()]
-            df_cat_ops = df_cat_ops.sort_values(by=['Quiebres', 'Part_Venta'], ascending=[False, False]).head(8)
-            
-            # Hover enriquecido para Quiebres vs Ventas
-            hover_q_matrix = df_cat_ops[['Venta_Riesgo', 'OSA_Cat', 'SKUs_Total']].values
-            
-            fig_ops = make_subplots(specs=[[{"secondary_y": True}]])
-            fig_ops.add_trace(go.Bar(
-                x=df_cat_ops['Categoría'], 
-                y=df_cat_ops['Quiebres'], 
-                name="Quiebres (Stock 0)",
-                text=df_cat_ops['Quiebres'].apply(lambda x: f"{int(x)} Q"), 
-                textposition='inside',
-                marker=dict(color='#dc2626'),
-                customdata=hover_q_matrix,
-                hovertemplate="<b>%{x}</b><br>🚨 Quiebres: %{y} SKUs de %{customdata[2]}<br>💸 Venta en Riesgo: S/ %{customdata[0]:,.2f}<br>🎯 OSA Categoría: %{customdata[1]:.1f}%<extra></extra>"
-            ), secondary_y=False)
-            
-            fig_ops.add_trace(go.Scatter(
-                x=df_cat_ops['Categoría'], 
-                y=df_cat_ops['Part_Venta'], 
-                name="% Participación Venta",
-                mode="lines+markers+text", 
-                text=df_cat_ops['Part_Venta'].apply(lambda x: f"{x*100:.1f}%"),
-                textposition='top center', 
-                line=dict(color='#2563eb', width=3),
-                hoverinfo='skip'
-            ), secondary_y=True)
-            fig_ops.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=20, b=20, l=10, r=10), hovermode='closest')
-            st.plotly_chart(fig_ops, use_container_width=True, config={'displayModeBar': False})
+            st.plotly_chart(fig_gauge, use_container_width=True, config={'displayModeBar': False})
+            st.markdown(f"""
+                <div style="text-align: center; font-size: 0.82rem; font-weight: 700; color: #475569; margin-top: -12px;">
+                    📌 <b>{numerador_gauge}</b> de <b>{denominador_gauge}</b> SKUs Activos catalogados ({label_modo_gauge})
+                </div>
+            """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
-            
-        with col_g2:
+
+        with col_pie:
             st.markdown("<b>🎯 Salud del Stock y Ventas Asociadas <span style='font-size:0.75rem; color:#2563eb;'>(SURTIDO TOTAL)</span></b>", unsafe_allow_html=True)
             st.markdown('<div class="dash-card">', unsafe_allow_html=True)
             def get_h(r):
@@ -921,69 +959,57 @@ else:
             fig_pie_h.update_traces(
                 hovertemplate="<b>%{label}</b><br>SKUs: %{value} (%{percent})<br>Venta Asociada: S/ %{customdata[0]:,.2f}<extra></extra>"
             )
-            fig_pie_h.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=10, b=10, l=10, r=10), showlegend=True)
+            fig_pie_h.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=10, b=10, l=10, r=10), showlegend=True, height=270)
             st.plotly_chart(fig_pie_h, use_container_width=True, config={'displayModeBar': False})
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # Fila 2 de Gráficos (Gerencia de Operaciones): Matriz de Priorización y Alerta de Sobrecobertura
-        col_g3, col_g4 = st.columns([6.2, 3.8])
-        with col_g3:
-            st.markdown("<b>⚡ Cuadrante de Priorización Operativa: Stock vs Venta Neta</b>", unsafe_allow_html=True)
-            st.markdown('<div class="dash-card">', unsafe_allow_html=True)
-            
-            df_scatter = df_unicos.copy()
-            df_scatter['Venta_Disp'] = df_scatter['Venta_Num']
-            df_scatter['Stock_Disp'] = df_scatter['Stock_Num'].apply(lambda x: max(0, x))
-            
-            fig_scat = px.scatter(
-                df_scatter,
-                x='Stock_Disp',
-                y='Venta_Disp',
-                color='H_Estado',
-                color_discrete_map={'Stock OK (>5)':'#16a34a', 'Alerta Baja (1-5)':'#facc15', 'Quiebre (0)':'#ea580c', 'Bloqueado (B)':'#dc2626'},
-                hover_data={
-                    'Stock_Disp': False,
-                    'Venta_Disp': False,
-                    'COD REAL': True,
-                    'Descripción': True,
-                    'Marca': True,
-                    'Cob_Num': True
-                },
-                labels={'Stock_Disp': 'Stock en Unidades', 'Venta_Disp': 'Venta Neta (S/)'}
-            )
-            fig_scat.update_traces(
-                hovertemplate="<b>%{customdata[1]}</b><br>SAP: %{customdata[0]} | Marca: %{customdata[2]}<br>Stock: %{x} uds | Venta: S/ %{y:,.2f}<br>Cobertura: %{customdata[3]:.1f} días<extra></extra>"
-            )
-            fig_scat.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', 
-                plot_bgcolor='rgba(0,0,0,0)', 
-                margin=dict(t=15, b=20, l=10, r=10),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-            )
-            st.plotly_chart(fig_scat, use_container_width=True, config={'displayModeBar': False})
-            st.markdown('</div>', unsafe_allow_html=True)
-
-        with col_g4:
-            st.markdown("<b>⏳ Semáforo: SKUs con Sobrecobertura (Riesgo de Merma)</b>", unsafe_allow_html=True)
-            st.markdown('<div class="dash-card">', unsafe_allow_html=True)
-            
-            df_sobrecob = df_unicos[df_unicos['Cob_Num'] >= 30].sort_values(by='Cob_Num', ascending=False).head(10)
-            if not df_sobrecob.empty:
-                cols_sc_show = ['COD REAL', 'Descripción', 'Stock_Num', 'Cob_Num', 'Venta_Num']
-                df_sc_view = df_sobrecob[cols_sc_show].copy()
-                df_sc_view.rename(columns={
-                    'COD REAL': 'SAP',
-                    'Descripción': 'Producto',
-                    'Stock_Num': 'Stock',
-                    'Cob_Num': 'Días Cob.',
-                    'Venta_Num': 'Venta S/'
-                }, inplace=True)
-                df_sc_view['Venta S/'] = df_sc_view['Venta S/'].apply(lambda x: f"S/ {x:,.0f}")
-                df_sc_view['Días Cob.'] = df_sc_view['Días Cob.'].apply(lambda x: f"{x:.0f} d")
-                st.dataframe(df_sc_view, use_container_width=True, hide_index=True)
-            else:
-                st.success("✅ Todo el surtido activo mantiene rotación con cobertura menor a 30 días.")
-            st.markdown('</div>', unsafe_allow_html=True)
+        # --- FILA INFERIOR: QUIEBRES POR CATEGORÍA VS PARTICIPACIÓN DE VENTA ---
+        st.markdown("<b>🔥 Quiebres por Categoría vs % Participación de Ventas <span style='font-size:0.75rem; color:#2563eb;'>(PRIORIZACIÓN OPERATIVA)</span></b>", unsafe_allow_html=True)
+        st.markdown('<div class="dash-card">', unsafe_allow_html=True)
+        ventas_por_cat = df_unicos.groupby('Categoría')['Venta_Num'].sum()
+        total_vta_unicos = ventas_por_cat.sum()
+        quiebres_por_cat = quiebres_df.groupby('Categoría')['COD REAL'].nunique()
+        skus_tot_cat = df_unicos.groupby('Categoría')['COD REAL'].nunique()
+        vta_riesgo_cat = quiebres_df.groupby('Categoría')['Venta_Num'].sum()
+        
+        df_cat_ops = pd.DataFrame({
+            'Quiebres': quiebres_por_cat, 
+            'Venta': ventas_por_cat,
+            'SKUs_Total': skus_tot_cat,
+            'Venta_Riesgo': vta_riesgo_cat
+        }).fillna(0).reset_index()
+        df_cat_ops = df_cat_ops[~df_cat_ops['Categoría'].isin(['SIN DATOS', 'S/C', 'nan', ''])].copy()
+        df_cat_ops['Part_Venta'] = (df_cat_ops['Venta'] / total_vta_unicos) if total_vta_unicos > 0 else 0
+        df_cat_ops['OSA_Cat'] = [((r['SKUs_Total'] - r['Quiebres']) / r['SKUs_Total'] * 100) if r['SKUs_Total'] > 0 else 100 for _, r in df_cat_ops.iterrows()]
+        df_cat_ops = df_cat_ops.sort_values(by=['Quiebres', 'Part_Venta'], ascending=[False, False]).head(8)
+        
+        hover_q_matrix = df_cat_ops[['Venta_Riesgo', 'OSA_Cat', 'SKUs_Total']].values
+        
+        fig_ops = make_subplots(specs=[[{"secondary_y": True}]])
+        fig_ops.add_trace(go.Bar(
+            x=df_cat_ops['Categoría'], 
+            y=df_cat_ops['Quiebres'], 
+            name="Quiebres (Stock 0)",
+            text=df_cat_ops['Quiebres'].apply(lambda x: f"{int(x)} Q"), 
+            textposition='inside',
+            marker=dict(color='#dc2626'),
+            customdata=hover_q_matrix,
+            hovertemplate="<b>%{x}</b><br>🚨 Quiebres: %{y} SKUs de %{customdata[2]}<br>💸 Venta en Riesgo: S/ %{customdata[0]:,.2f}<br>🎯 OSA Categoría: %{customdata[1]:.1f}%<extra></extra>"
+        ), secondary_y=False)
+        
+        fig_ops.add_trace(go.Scatter(
+            x=df_cat_ops['Categoría'], 
+            y=df_cat_ops['Part_Venta'], 
+            name="% Participación Venta",
+            mode="lines+markers+text", 
+            text=df_cat_ops['Part_Venta'].apply(lambda x: f"{x*100:.1f}%"),
+            textposition='top center', 
+            line=dict(color='#2563eb', width=3),
+            hoverinfo='skip'
+        ), secondary_y=True)
+        fig_ops.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(t=20, b=20, l=10, r=10), hovermode='closest', height=330)
+        st.plotly_chart(fig_ops, use_container_width=True, config={'displayModeBar': False})
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # =========================================================================
     # --- PESTAÑA 2: PLANOGRAMA FÍSICO PANORÁMICO ---
@@ -1953,7 +1979,6 @@ else:
             df_pesos['Venta_Ponderada'] = df_pesos['Venta_Num'] * df_pesos['Factor_Ponderacion']
             df_pesos['Margen_Ponderado'] = df_pesos['Margen_Num'] * df_pesos['Factor_Ponderacion']
             
-            # Mapeo de Categorías presentes por cuerpo
             mapa_cats_cuerpo = df_base.groupby('Cuerpo_Num')['Categoría'].apply(
                 lambda s: ", ".join(sorted([c for c in set(s.dropna()) if str(c) not in ['SIN DATOS', 'S/C', 'nan', '']]))
             ).to_dict()
@@ -2023,7 +2048,6 @@ else:
         with col_g_mix:
             st.markdown("<b>🍩 Mix de Venta <span style='font-size:0.75rem; color:#2563eb;'>(MARCA)</span></b>", unsafe_allow_html=True)
             
-            # Mix de Venta Enriquecido
             df_marca = df_unicos.groupby('Marca').agg(
                 Venta_Num=('Venta_Num', 'sum'),
                 Margen_Num=('Margen_Num', 'sum'),
@@ -2051,7 +2075,6 @@ else:
         st.markdown("<hr style='border-color: #cbd5e1; margin: 14px 0;'>", unsafe_allow_html=True)
         st.markdown("<b>⚖️ Fair Share: Espacio (% Caras) vs % Ventas y % Margen</b>", unsafe_allow_html=True)
         
-        # Conteo y nombres de cuerpos donde se exhibe cada categoría
         df_cuerpos_por_cat = df_base.groupby('Categoría')['Cuerpo_Num'].apply(
             lambda s: (len(set(s.dropna())), ", ".join([f"C{int(c):02d}" for c in sorted(set(s.dropna()))]))
         ).reset_index()
@@ -2079,7 +2102,6 @@ else:
             df_fs['Pct_Ventas'] = df_fs['Ventas_Total'] / tot_vta
             df_fs['Pct_Margen'] = (df_fs['Margen_Total'] / tot_mgn) if tot_mgn > 0 else 0.0
             
-            # Plantilla única consolidada que se activa al centro de la categoría
             hover_template_fs = (
                 "<b>%{x}</b><br>" +
                 "🏬 <b>Ocupación:</b> %{customdata[6]} cuerpos (%{customdata[7]})<br><br>" +
@@ -2133,7 +2155,7 @@ else:
             
             fig_fs.update_layout(
                 barmode='group', 
-                hovermode='x',  # Se activa al centro de la categoría
+                hovermode='x',
                 paper_bgcolor='rgba(0,0,0,0)', 
                 plot_bgcolor='rgba(0,0,0,0)', 
                 margin=dict(t=20, b=20, l=10, r=10),
