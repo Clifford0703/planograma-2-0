@@ -322,7 +322,7 @@ def cargar_todas_las_fuentes():
                 df = df.loc[:, ~df.columns.duplicated()].copy()
                 return df
 
-        # 0. Cargar el Libro Maestro de Imágenes
+        # 0. Cargar Libro de Imágenes
         mapa_imagenes_dict = {}
         try:
             df_img_sheet = pd.read_excel(url_cat_imagenes, sheet_name=0)
@@ -844,10 +844,10 @@ else:
 
         st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
 
-        # --- FILA SUPERIOR: VELOCÍMETRO GERENCIAL + SALUD DE STOCK ---
+        # --- FILA SUPERIOR: VELOCÍMETRO GERENCIAL (ACTIVOS EN PLANO VS ACTIVOS EN COBERTURAS) ---
         col_gauge, col_pie = st.columns([5.5, 4.5])
         with col_gauge:
-            col_g_title, col_g_btn = st.columns([6.0, 4.0])
+            col_g_title, col_g_btn = st.columns([5.8, 4.2])
             with col_g_title:
                 st.markdown("<b>⏱️ Cumplimiento de Catálogo Activo en Góndola</b>", unsafe_allow_html=True)
             with col_g_btn:
@@ -859,10 +859,7 @@ else:
                     key="switch_gauge_ops"
                 )
 
-            # 1. Numerador: TODOS los códigos presentes en el planograma
-            numerador_gauge = df_unicos['COD REAL'].nunique()
-
-            # 2. Denominador: Extraído de la data de Coberturas (Estatus Activo 'A')
+            # 1. Universo de Coberturas de Referencia (Catálogo Comercial Activo 'A')
             df_universo_cob = df_sku_unico_global.copy()
             if 'Mundo' in df_universo_cob.columns:
                 df_universo_cob = df_universo_cob[df_universo_cob['Mundo'] == mundo_sel].copy()
@@ -874,20 +871,30 @@ else:
                 if cats_en_este_lateral:
                     df_universo_cob = df_universo_cob[df_universo_cob['Categoría'].isin(cats_en_este_lateral)].copy()
 
-            df_cob_activos = df_universo_cob[df_universo_cob['Estado'].astype(str).str.strip().str.upper() == 'A'].copy()
+            # Base de Activos ('A') en Coberturas y en Planograma
+            df_cob_activos_base = df_universo_cob[df_universo_cob['Estado'].astype(str).str.strip().str.upper() == 'A'].copy()
+            df_plano_activos_base = df_unicos[df_unicos['Estado'].astype(str).str.strip().str.upper() == 'A'].copy()
+
+            # Conteo de Bloqueados en Góndola para transparentar espacio ocioso
+            skus_bloqueados_plano = df_unicos[df_unicos['Estado'].astype(str).str.strip().str.upper() == 'B']['COD REAL'].nunique()
 
             if modo_gauge == "Con Stock":
-                df_cob_filtrada = df_cob_activos[df_cob_activos['Stock'] > 0]
+                # Numerador: Activos en Plano con Stock > 0
+                numerador_gauge = df_plano_activos_base[df_plano_activos_base['Stock_Num'] > 0]['COD REAL'].nunique()
+                # Denominador: Activos en Coberturas con Stock > 0
+                denominador_gauge = df_cob_activos_base[df_cob_activos_base['Stock'] > 0]['COD REAL'].nunique()
                 label_modo_gauge = "Activos con Stock (>0)"
                 bar_color_gauge = "#16a34a"
             else:
-                df_cob_filtrada = df_cob_activos
+                # Numerador: Todos los Activos en Plano (con o sin stock)
+                numerador_gauge = df_plano_activos_base['COD REAL'].nunique()
+                # Denominador: Todos los Activos en Coberturas (con o sin stock)
+                denominador_gauge = df_cob_activos_base['COD REAL'].nunique()
                 label_modo_gauge = "Todos los Activos (con o sin stock)"
                 bar_color_gauge = "#2563eb"
 
-            denominador_gauge = df_cob_filtrada['COD REAL'].nunique()
             denominador_calc = denominador_gauge if denominador_gauge > 0 else max(numerador_gauge, 1)
-            pct_gauge = (numerador_gauge / denominador_calc * 100) if denominador_calc > 0 else 0.0
+            pct_gauge = min(100.0, (numerador_gauge / denominador_calc * 100)) if denominador_calc > 0 else 0.0
 
             fig_gauge = go.Figure(go.Indicator(
                 mode="gauge+number",
@@ -922,7 +929,10 @@ else:
             st.plotly_chart(fig_gauge, use_container_width=True, config={'displayModeBar': False})
             st.markdown(f"""
                 <div style="text-align: center; font-size: 0.82rem; font-weight: 700; color: #475569; margin-top: -12px;">
-                    📌 <b>{numerador_gauge}</b> SKUs en Planograma / <b>{denominador_gauge}</b> en Coberturas ({label_modo_gauge})
+                    📌 <b>{numerador_gauge}</b> de <b>{denominador_gauge}</b> SKUs Activos ({label_modo_gauge}) en góndola
+                    <span style="display: block; font-size: 0.74rem; font-weight: 600; color: #dc2626; margin-top: 4px;">
+                        ⚠️ Ocupación Ociosa: <b>{skus_bloqueados_plano}</b> SKUs Bloqueados (B) en el plano
+                    </span>
                 </div>
             """, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
@@ -2113,7 +2123,6 @@ else:
             custom_data_matrix['Pct_Margen'] = custom_data_matrix['Pct_Margen'] * 100
 
             fig_fs = go.Figure()
-            # Barra 1: % Caras (Espacio Físico)
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Espacio'], 
@@ -2124,7 +2133,6 @@ else:
                 customdata=custom_data_matrix.values,
                 hovertemplate=hover_template_fs
             ))
-            # Barra 2: % Ventas (Monto S/)
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Ventas'], 
@@ -2134,7 +2142,6 @@ else:
                 marker_color='#10b981',
                 hoverinfo='skip'
             ))
-            # Barra 3: % Margen (Ganancia S/)
             fig_fs.add_trace(go.Bar(
                 x=df_fs['Categoría'], 
                 y=df_fs['Pct_Margen'], 
