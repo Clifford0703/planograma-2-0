@@ -1020,8 +1020,13 @@ else:
         stk_ok_op = df_unicos[(df_unicos['Estado'].str.strip().str.upper() == 'A') & (df_unicos['Stock_Num'] > 5)]['COD REAL'].nunique()
         cob_alta_op = df_unicos[df_unicos['Cob_Num'] >= 30]['COD REAL'].nunique()
         
-        # Base ordenada de todos los SKUs para Top Ventas dinámico en JS
-        df_top_ranking = df_unicos[['COD REAL', 'Venta_Num']].sort_values(by='Venta_Num', ascending=False)
+        # Mapeo de ranking de ventas (1, 2, 3...) y caras por SKU
+        df_top_ranking = df_unicos[['COD REAL', 'Venta_Num']].sort_values(by='Venta_Num', ascending=False).reset_index(drop=True)
+        df_top_ranking['Rank'] = df_top_ranking.index + 1
+        mapa_ranking = df_top_ranking.set_index('COD REAL')['Rank'].to_dict()
+        
+        mapa_caras_totales = df_base.groupby('COD REAL')['Caras_Num'].sum().to_dict()
+
         lista_skus_ventas_json = json.dumps([
             {"cod": str(row['COD REAL']), "vta": float(row['Venta_Num'])}
             for _, row in df_top_ranking.iterrows()
@@ -1089,7 +1094,15 @@ else:
                     stock_val = safe_float(it.get("Stock", -999.0))
                     cob_val = safe_float(it.get("Cobertura", -999.0))
                     venta_val = safe_float(it.get("Venta", -999.0))
+                    margen_val = safe_float(it.get("Monto Margen", -999.0))
                     part_val = safe_float(it.get("% Part", -999.0))
+
+                    # Cálculos analíticos de SKU
+                    rank_pos = mapa_ranking.get(cod_real, "-")
+                    pct_venta_gondola = (venta_val / total_venta_plano_float * 100) if (venta_val > 0 and total_venta_plano_float > 0) else 0.0
+                    margen_pct_sku = (margen_val / venta_val * 100) if (venta_val > 0 and margen_val != -999.0) else 0.0
+                    caras_tot = mapa_caras_totales.get(cod_real, caras)
+                    vta_por_cara = (venta_val / caras_tot) if (venta_val > 0 and caras_tot > 0) else 0.0
 
                     dept_val = str(it.get("Departamento", "SIN DATOS")).replace('"', '&quot;')
                     sec_val = str(it.get("Sección", "SIN DATOS")).replace('"', '&quot;')
@@ -1109,7 +1122,10 @@ else:
                         <div class="plano-rect" style="background-color: {bg_color}; border-color: {border_color}; color: {text_color};"
                              data-estado="{cat_leyenda}" data-cobalta="{es_cob_alta}" data-topvta="{es_top_vta}"
                              data-brand="{marca}" data-name="{nombre}" data-ean="{ean}"
-                             data-stock="{stock_val:.2f}" data-cob="{cob_val:.2f}" data-venta="{venta_val}" data-part="{format_pct(part_val)}"
+                             data-stock="{stock_val:.2f}" data-cob="{cob_val:.2f}" data-venta="{venta_val}" 
+                             data-margen="{margen_val}" data-margenpct="{margen_pct_sku:.1f}"
+                             data-part="{pct_venta_gondola:.2f}" data-rank="{rank_pos}"
+                             data-caras="{caras_tot}" data-vtacara="{vta_por_cara:.2f}"
                              data-cod="{cod_real}" data-cat="{cat_leyenda}" data-pos="{pos_val}" data-nivel="{n_num}"
                              data-dept="{dept_val}" data-sec="{sec_val}" data-catjer="{catjer_val}" data-ga="{ga_val}"
                              data-foto="{foto_sku}"
@@ -1581,7 +1597,7 @@ else:
               padding: 20px 22px !important; 
               border-radius: 12px !important; 
               width: 92% !important; 
-              max-width: 440px !important; 
+              max-width: 460px !important; 
               border: 2.5px solid #2563eb !important; 
               box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important; 
               position: relative !important; 
@@ -1761,14 +1777,18 @@ else:
                     <h4 class="m-header-title" id="m-name">Producto</h4>
                   </div>
                 </div>
-                <div class="m-row"><span class="m-label">Código SAP / Cód. Real:</span><span class="m-val" id="m-cod" style="font-family: monospace; font-size: 0.95rem; font-weight: 900;"></span></div>
+                <div class="m-row"><span class="m-label">Código SAP:</span><span class="m-val" id="m-cod" style="font-family: monospace; font-size: 0.95rem; font-weight: 900;"></span></div>
                 <div class="m-row"><span class="m-label">Ubicación (Nivel / Pos):</span><span class="m-val" id="m-pos"></span></div>
                 <div class="m-row"><span class="m-label">EAN:</span><span class="m-val" id="m-ean"></span></div>
-                <div class="m-row"><span class="m-label">Categoría:</span><span class="m-val" id="m-catjer"></span></div>
+                <div class="m-row"><span class="m-label">Categoría SAP:</span><span class="m-val" id="m-catjer"></span></div>
+                <div class="m-row"><span class="m-label">Caras (Facings):</span><span class="m-val" id="m-caras"></span></div>
                 <div class="m-row"><span class="m-label">Stock Actual:</span><span class="m-val" id="m-stock"></span></div>
                 <div class="m-row"><span class="m-label">Cobertura:</span><span class="m-val" id="m-cob"></span></div>
                 <div class="m-row"><span class="m-label">Estado Stock:</span><span class="m-val" id="m-cat"></span></div>
-                <div class="m-row"><span class="m-label">Ventas:</span><span class="m-val" id="m-venta"></span></div>
+                <div class="m-row"><span class="m-label">Venta Neta S/:</span><span class="m-val" id="m-venta" style="color: #2563eb; font-weight: 800;"></span></div>
+                <div class="m-row"><span class="m-label">% Aporte en Góndola:</span><span class="m-val" id="m-part"></span></div>
+                <div class="m-row"><span class="m-label">Margen Bruto (S/ y %):</span><span class="m-val" id="m-margen" style="color: #16a34a; font-weight: 800;"></span></div>
+                <div class="m-row"><span class="m-label">Venta por Cara:</span><span class="m-val" id="m-vtacara"></span></div>
               </div>
             </div>
           </div>
@@ -1782,7 +1802,6 @@ else:
             const topInput = document.getElementById('inputTopVentas');
             const topLabel = document.getElementById('labelTopInfo');
 
-            // Data de ranking para Top Ventas en tiempo real
             const rankingVentas = {lista_skus_ventas_json};
             const totalVentaPlano = {total_venta_plano_float};
 
@@ -1796,10 +1815,8 @@ else:
                 const sumaVentaTop = topSlice.reduce((acc, cur) => acc + (cur.vta > 0 ? cur.vta : 0), 0);
                 const pctTop = totalVentaPlano > 0 ? (sumaVentaTop / totalVentaPlano * 100) : 0;
 
-                // Actualizar texto en tiempo real
                 topLabel.innerHTML = `TOP ${{n}} concentra el <span style="color: #16a34a;">${{pctTop.toFixed(1)}}%</span> de la venta (S/ ${{sumaVentaTop.toLocaleString('en-US', {{minimumFractionDigits: 2, maximumFractionDigits: 2}})}}).`;
 
-                // Actualizar dataset en cada rect del planograma
                 rects.forEach(r => {{
                     const cod = (r.getAttribute('data-cod') || '').trim().toLowerCase();
                     if (codigosTop.has(cod)) {{
@@ -1809,7 +1826,6 @@ else:
                     }}
                 }});
 
-                // Si el filtro actual es TOP_VENTAS, re-aplicar resaltado visual
                 if (activeFilterType === 'TOP_VENTAS') {{
                     aplicarFiltrosGlobales();
                 }}
@@ -1857,7 +1873,6 @@ else:
                 }});
             }}
 
-            // Evento para actualizar Top Ventas en tiempo real al escribir o dar Enter
             topInput.addEventListener('input', () => {{
                 actualizarTopVentasDinamico();
             }});
@@ -1868,7 +1883,6 @@ else:
                 if (e.key === 'Enter') {{
                     e.preventDefault();
                     actualizarTopVentasDinamico();
-                    // Al pulsar enter, activa automáticamente el modo Top Ventas
                     const btnTop = document.querySelector('.legend-btn[data-target="Top Ventas"]');
                     if (btnTop) {{
                         legendButtons.forEach(b => b.classList.remove('active'));
@@ -1949,11 +1963,32 @@ else:
                     document.getElementById('m-ean').textContent = rect.getAttribute('data-ean');
                     document.getElementById('m-brand').textContent = rect.getAttribute('data-brand');
                     document.getElementById('m-catjer').textContent = rect.getAttribute('data-catjer');
+                    document.getElementById('m-caras').textContent = (rect.getAttribute('data-caras') || '1') + " caras";
                     document.getElementById('m-stock').textContent = rect.getAttribute('data-stock');
-                    document.getElementById('m-cob').textContent = rect.getAttribute('data-cob');
+                    document.getElementById('m-cob').textContent = rect.getAttribute('data-cob') + " días";
                     document.getElementById('m-cat').textContent = rect.getAttribute('data-cat');
+                    
                     const v = parseFloat(rect.getAttribute('data-venta')) || 0;
-                    document.getElementById('m-venta').textContent = v === -999 ? "SIN DATOS" : "S/ " + v.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}});
+                    const rank = rect.getAttribute('data-rank') || '-';
+                    if (v === -999) {{
+                        document.getElementById('m-venta').textContent = "SIN DATOS";
+                    }} else {{
+                        document.getElementById('m-venta').textContent = "S/ " + v.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}}) + " (#" + rank + ")";
+                    }}
+
+                    const part = parseFloat(rect.getAttribute('data-part')) || 0;
+                    document.getElementById('m-part').textContent = part.toFixed(2) + "% del total góndola";
+
+                    const mgSoles = parseFloat(rect.getAttribute('data-margen')) || 0;
+                    const mgPct = parseFloat(rect.getAttribute('data-margenpct')) || 0;
+                    if (mgSoles === -999) {{
+                        document.getElementById('m-margen').textContent = "SIN DATOS";
+                    }} else {{
+                        document.getElementById('m-margen').textContent = "S/ " + mgSoles.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}}) + " (" + mgPct.toFixed(1) + "%)";
+                    }}
+
+                    const vCara = parseFloat(rect.getAttribute('data-vtacara')) || 0;
+                    document.getElementById('m-vtacara').textContent = "S/ " + vCara.toLocaleString('en-US', {{minimumFractionDigits:2, maximumFractionDigits:2}}) + " / cara";
 
                     const fotoUrl = rect.getAttribute('data-foto');
                     if (fotoUrl && fotoUrl.trim() !== '') {{
@@ -1968,7 +2003,6 @@ else:
             closeBtn.addEventListener('click', () => modal.classList.remove('active'));
             window.addEventListener('click', (e) => {{ if(e.target === modal) modal.classList.remove('active'); }});
 
-            // Inicialización al cargar la vista
             actualizarTopVentasDinamico();
           </script>
         </body>
