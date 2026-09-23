@@ -2064,13 +2064,14 @@ else:
 
         col_g_cuerpos, col_g_mix = st.columns([7, 3])
         with col_g_cuerpos:
-            col_titulo_c, col_btn_orden = st.columns([5.5, 4.5])
+            col_titulo_c, col_btn_orden = st.columns([5.0, 5.0])
             with col_titulo_c:
                 st.markdown(f"<b>📈 Rendimiento por Cuerpo (Lateral {lat_letra_activa})</b>", unsafe_allow_html=True)
             with col_btn_orden:
+                # SE INCORPORÓ EL BOTÓN "Por Margen (S/)" JUNTO A "Por Margen %"
                 orden_sel = st.segmented_control(
                     "Ordenar por:",
-                    ["Secuencial", "Por Venta", "Por Margen"],
+                    ["Secuencial", "Por Venta", "Por Margen (S/)", "Por Margen %"],
                     default="Secuencial",
                     label_visibility="collapsed",
                     key="orden_cuerpo_ctrl"
@@ -2104,9 +2105,12 @@ else:
             vc['Label'] = [f"Cuerpo {int(r['Cuerpo_Num']):02d}" for _, r in vc.iterrows()]
             vc['Part_Venta_Gondola'] = [(r['Venta_Total'] / ventas_plano * 100) if ventas_plano > 0 else 0 for _, r in vc.iterrows()]
             
+            # ORDENAMIENTO CONDICIONAL INCLUYENDO "Por Margen (S/)"
             if orden_sel == "Por Venta":
                 vc = vc.sort_values(by='Venta_Total', ascending=False)
-            elif orden_sel == "Por Margen":
+            elif orden_sel == "Por Margen (S/)":
+                vc = vc.sort_values(by='Margen_Total', ascending=False)
+            elif orden_sel == "Por Margen %":
                 vc = vc.sort_values(by='Margen_Pct', ascending=False)
             else:
                 vc = vc.sort_values(by='Cuerpo_Num', ascending=True)
